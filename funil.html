@@ -1,0 +1,3143 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Funil de Vendas · GPS.X</title>
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.js"></script>
+<style>
+/* ── RESET ─────────────────────────────────────────────────────── */
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+
+/* ── TOKENS ────────────────────────────────────────────────────── */
+:root{
+  --ink:     #000000;
+  --ink-2:   #111111;
+  --ink-3:   #333333;
+  --mid:     #666666;
+  --muted:   #999999;
+  --border:  #e5e5e5;
+  --silver:  #f4f4f4;
+  --canvas:  #fafafa;
+  --white:   #ffffff;
+  --green:   #15803d;
+  --green-b: #dcfce7;
+  --red:     #b91c1c;
+  --red-b:   #fee2e2;
+  --amber:   #92400e;
+  --amber-b: #fef3c7;
+  --blue:    #1d4ed8;
+  --blue-b:  #dbeafe;
+  --r:14px; --r-sm:8px; --r-xs:5px;
+  --sh: 0 1px 2px rgba(0,0,0,.06),0 4px 16px rgba(0,0,0,.05);
+  --sh-md: 0 4px 20px rgba(0,0,0,.09);
+  --sh-lg: 0 12px 40px rgba(0,0,0,.13);
+}
+
+/* ── BASE ──────────────────────────────────────────────────────── */
+body{font-family:'Inter',-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;
+  background:var(--canvas);color:var(--ink);font-size:14px;line-height:1.5;}
+
+/* ── HEADER ────────────────────────────────────────────────────── */
+.hdr{
+  background:var(--ink-2);
+  color:var(--white);
+  height:60px;
+  display:flex;align-items:center;justify-content:space-between;
+  padding:0 36px;
+  position:sticky;top:0;z-index:200;
+  border-bottom:1px solid #222;
+}
+.hdr-logo{display:flex;align-items:center;gap:10px;font-size:15px;font-weight:800;letter-spacing:-.3px;}
+.hdr-logo-mark{
+  width:28px;height:28px;border-radius:6px;
+  background:var(--white);color:var(--ink);
+  display:flex;align-items:center;justify-content:center;
+  font-size:12px;font-weight:900;
+}
+.hdr-title{font-size:13px;color:#777;font-weight:500;}
+.hdr-sync{display:flex;align-items:center;gap:8px;font-size:12px;color:#888;}
+.sync-dot{
+  width:7px;height:7px;border-radius:50%;background:#4ade80;
+  animation:pulse-dot 2s ease-in-out infinite;
+}
+.sync-dot.loading{background:#fbbf24;animation:spin-sm .8s linear infinite;}
+.sync-dot.error{background:#f87171;animation:none;}
+@keyframes pulse-dot{0%,100%{opacity:1}50%{opacity:.3}}
+@keyframes spin-sm{to{transform:rotate(360deg)}}
+
+/* ── TABS ──────────────────────────────────────────────────────── */
+.tab-bar{
+  background:var(--white);border-bottom:1px solid var(--border);
+  display:flex;align-items:center;gap:0;padding:0 36px;
+  position:sticky;top:60px;z-index:100;
+}
+.tb{
+  height:52px;display:flex;align-items:center;gap:8px;
+  padding:0 20px;cursor:pointer;border:none;background:none;
+  font-size:13px;font-weight:600;color:var(--muted);
+  border-bottom:2px solid transparent;margin-bottom:-1px;
+  transition:color .15s,border-color .15s;
+}
+.tb:hover{color:var(--ink);}
+.tb.on{color:var(--ink);border-bottom-color:var(--ink);}
+.tb-pill{
+  background:var(--silver);color:var(--mid);
+  font-size:11px;font-weight:700;padding:2px 8px;border-radius:20px;
+  transition:background .15s,color .15s;
+}
+.tb.on .tb-pill{background:var(--ink);color:var(--white);}
+.tab-divider{width:1px;height:20px;background:var(--border);margin:0 8px;}
+
+/* ── LAYOUT ────────────────────────────────────────────────────── */
+.view{display:none;}
+.view.on{display:block;}
+.page{max-width:1300px;margin:0 auto;padding:32px 36px;}
+
+/* ── SECTION HEAD ──────────────────────────────────────────────── */
+.sec-head{
+  font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.8px;
+  color:var(--muted);margin-bottom:14px;display:flex;align-items:center;gap:10px;
+}
+.sec-head::after{content:'';flex:1;height:1px;background:var(--border);}
+
+/* ── HERO ──────────────────────────────────────────────────────── */
+.hero{
+  display:flex;align-items:center;justify-content:space-between;
+  gap:20px;margin-bottom:28px;flex-wrap:wrap;
+}
+.hero-id{display:flex;align-items:center;gap:14px;}
+.avatar{
+  width:50px;height:50px;border-radius:50%;
+  background:var(--ink);color:var(--white);
+  display:flex;align-items:center;justify-content:center;
+  font-size:18px;font-weight:800;flex-shrink:0;
+}
+.hero-name{font-size:22px;font-weight:800;letter-spacing:-.4px;line-height:1.1;}
+.hero-sub{font-size:12px;color:var(--muted);margin-top:3px;}
+.kpi-row{display:flex;gap:10px;flex-wrap:wrap;}
+.kpi{
+  background:var(--white);border:1px solid var(--border);
+  border-radius:var(--r-sm);padding:12px 18px;min-width:86px;
+  box-shadow:var(--sh);text-align:center;
+}
+.kpi-v{font-size:24px;font-weight:900;line-height:1;color:var(--ink);}
+.kpi-l{font-size:10px;font-weight:600;text-transform:uppercase;letter-spacing:.5px;color:var(--muted);margin-top:3px;}
+.kpi.highlight .kpi-v{color:var(--green);}
+
+/* ── FUNNEL V SHAPE ────────────────────────────────────────────── */
+.funnel-card{
+  background:var(--white);border:1px solid var(--border);
+  border-radius:var(--r);padding:28px 24px;margin-bottom:20px;
+  box-shadow:var(--sh);
+}
+/* ── PIPELINE ──────────────────────────────────────────────────── */
+.pipeline-wrap{
+  display:flex; align-items:stretch;
+  overflow-x:auto; padding:2px 0 6px; gap:0;
+  scrollbar-width:thin; scrollbar-color:var(--border) transparent;
+}
+
+.pipe-stage{
+  flex:1; min-width:110px;
+  background:var(--white); border:1px solid var(--border);
+  border-top:3px solid transparent;
+  border-radius:var(--r-sm); padding:14px 12px 12px;
+  position:relative; cursor:default;
+  transition:transform .15s, box-shadow .15s;
+}
+.pipe-stage:hover{ transform:translateY(-2px); box-shadow:var(--sh-md); z-index:2; }
+.pipe-stage.is-bottleneck{
+  background:#fff5f5; border-color:#fca5a5;
+  border-top-color:var(--red) !important;
+}
+.pipe-stage.is-opportunity{
+  background:#f0fdf4; border-color:#86efac;
+  border-top-color:var(--green) !important;
+}
+
+.pipe-badge{
+  position:absolute; top:8px; right:8px;
+  font-size:9px; font-weight:700; padding:2px 6px; border-radius:20px;
+}
+.pipe-badge.bot{ background:var(--red-b); color:var(--red); }
+.pipe-badge.opp{ background:var(--green-b); color:var(--green); }
+
+.pipe-name{
+  font-size:10px; font-weight:700; text-transform:uppercase;
+  letter-spacing:.5px; margin-bottom:8px;
+  white-space:nowrap; overflow:hidden; text-overflow:ellipsis;
+  padding-right:48px;
+}
+.pipe-count{
+  font-size:30px; font-weight:900; line-height:1;
+  color:var(--ink); margin-bottom:6px;
+}
+.pipe-stage.is-bottleneck .pipe-count{ color:var(--red); }
+.pipe-stage.is-opportunity .pipe-count{ color:var(--green); }
+
+.pipe-conv-tag{
+  display:inline-block;
+  font-size:10px; font-weight:700; padding:2px 7px; border-radius:20px;
+}
+.pipe-conv-tag.good{ background:var(--green-b); color:var(--green); }
+.pipe-conv-tag.warn{ background:var(--amber-b); color:var(--amber); }
+.pipe-conv-tag.bad { background:var(--red-b);   color:var(--red);   }
+
+/* Connector arrow between stages */
+.pipe-conn{
+  display:flex; flex-direction:column;
+  align-items:center; justify-content:center;
+  flex-shrink:0; width:28px; gap:3px;
+}
+.pipe-conn-arrow{ font-size:18px; color:var(--border); line-height:1; }
+.pipe-conn-drop{ font-size:9px; font-weight:700; color:var(--muted); white-space:nowrap; }
+.pipe-conn-drop.big{ color:var(--red); }
+
+/* ── FUNNEL BARS ───────────────────────────────────────────────── */
+.fn-stages{ display:flex; flex-direction:column; gap:6px; }
+.fn-row{
+  display:grid;
+  grid-template-columns:140px 1fr 44px 54px;
+  align-items:center; gap:10px;
+}
+.fn-label{
+  font-size:12px; font-weight:600; color:var(--ink-3);
+  text-align:right; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;
+}
+.fn-bar-wrap{
+  height:32px; background:var(--silver);
+  border-radius:6px; overflow:hidden;
+}
+.fn-bar{
+  height:100%; border-radius:6px; min-width:36px;
+  display:flex; align-items:center; padding:0 10px;
+  transition:width .7s cubic-bezier(.25,.46,.45,.94);
+}
+.fn-bar span{
+  font-size:11px; font-weight:700; color:rgba(255,255,255,.9); white-space:nowrap;
+}
+.fn-count{
+  font-size:16px; font-weight:800; color:var(--ink); text-align:right;
+}
+.fn-conv{
+  font-size:11px; font-weight:600; color:var(--muted); text-align:right;
+}
+.fn-conv.low { color:var(--red); }
+.fn-conv.high{ color:var(--green); }
+
+/* ── STRATEGIC ─────────────────────────────────────────────────── */
+.str-grid{
+  display:grid; grid-template-columns:repeat(3,1fr); gap:14px; margin-bottom:20px;
+}
+.str-card{
+  background:var(--white); border:1px solid var(--border);
+  border-radius:var(--r); padding:16px; box-shadow:var(--sh);
+}
+.str-head{
+  display:flex; align-items:center; gap:10px;
+  margin-bottom:12px; padding-bottom:10px; border-bottom:1px solid var(--border);
+}
+.str-icon{
+  width:30px; height:30px; border-radius:7px;
+  display:flex; align-items:center; justify-content:center; font-size:15px; flex-shrink:0;
+}
+.str-title{ font-size:12px; font-weight:800; color:var(--ink); }
+.str-sub{ font-size:10px; color:var(--muted); margin-top:1px; }
+.str-item{
+  display:flex; align-items:flex-start; gap:7px;
+  padding:7px; border-radius:var(--r-xs); background:var(--silver); margin-bottom:4px;
+}
+.str-item-label{
+  font-size:10px; font-weight:800; color:var(--blue); white-space:nowrap;
+}
+.str-item-action{ font-size:11px; color:var(--ink-3); line-height:1.4; }
+
+/* ── CHART ─────────────────────────────────────────────────────── */
+.chart-card{
+  background:var(--white);border:1px solid var(--border);
+  border-radius:var(--r);padding:22px 24px;margin-bottom:20px;
+  box-shadow:var(--sh);
+}
+.card-hd{display:flex;align-items:center;justify-content:space-between;margin-bottom:18px;}
+.card-title{font-size:13px;font-weight:700;}
+.chart-legend{display:flex;gap:12px;align-items:center;}
+.legend-item{display:flex;align-items:center;gap:6px;font-size:11px;color:var(--mid);}
+.legend-dot{width:8px;height:8px;border-radius:50%;}
+.chart-wrap{position:relative;height:210px;}
+
+/* ── ALERTS ────────────────────────────────────────────────────── */
+.alerts-grid{display:grid;grid-template-columns:1fr 1fr;gap:14px;margin-bottom:20px;}
+.alert{border-radius:var(--r);padding:20px;border:1px solid;box-shadow:var(--sh);}
+.alert.danger{background:var(--red-b);border-color:#fca5a5;}
+.alert.success{background:var(--green-b);border-color:#86efac;}
+.alert.warn{background:var(--amber-b);border-color:#fcd34d;}
+.alert-icon{font-size:22px;margin-bottom:8px;}
+.alert-ttl{font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.6px;margin-bottom:6px;}
+.alert.danger .alert-ttl{color:var(--red);}
+.alert.success .alert-ttl{color:var(--green);}
+.alert.warn .alert-ttl{color:var(--amber);}
+.alert-body{font-size:13px;line-height:1.55;color:var(--ink-3);}
+.alert-body strong{font-weight:700;}
+.alert-cta{font-size:12px;font-weight:700;color:var(--mid);margin-top:10px;display:flex;align-items:center;gap:5px;}
+
+/* ── INSIGHT BOX ───────────────────────────────────────────────── */
+.insight-box{
+  background:var(--ink-2);color:var(--white);
+  border-radius:var(--r);padding:22px 24px;margin-bottom:20px;
+  display:flex;align-items:flex-start;gap:16px;
+  box-shadow:var(--sh-md);
+}
+.insight-icon{font-size:28px;flex-shrink:0;margin-top:2px;}
+.insight-title{font-size:14px;font-weight:800;margin-bottom:6px;}
+.insight-text{font-size:13px;color:#ccc;line-height:1.6;}
+.insight-pills{display:flex;flex-wrap:wrap;gap:6px;margin-top:12px;}
+.pill{
+  background:rgba(255,255,255,.12);color:rgba(255,255,255,.9);
+  font-size:11px;font-weight:700;padding:3px 10px;border-radius:20px;
+  border:1px solid rgba(255,255,255,.15);
+}
+.pill.urgent{background:rgba(74,222,128,.2);color:#4ade80;border-color:rgba(74,222,128,.3);}
+
+/* ── INVERTED FUNNEL (DETALHES) ─────────────────────────────────── */
+.stages-grid{ display:block; }
+
+.ifunnel{ display:flex; flex-direction:column; gap:5px; }
+
+.ifunnel-alert{
+  display:flex; align-items:center; gap:8px;
+  background:var(--red-b); border:1px solid #fca5a5;
+  border-radius:var(--r-sm); padding:10px 14px;
+  font-size:12px; font-weight:700; color:var(--red);
+  margin-bottom:4px;
+}
+
+.ifs-row{
+  display:flex; align-items:center; gap:12px;
+  background:var(--white); border:1px solid var(--border);
+  border-left:3px solid var(--border);
+  border-radius:var(--r-sm); padding:11px 14px;
+  transition:transform .12s, box-shadow .12s;
+}
+.ifs-row:hover{ transform:translateX(3px); box-shadow:var(--sh); }
+
+/* Tier 0-1: topo do funil — mais leve */
+.ifs-row.tier-0,.ifs-row.tier-1{ opacity:.72; }
+
+/* Tier 2: meio */
+.ifs-row.tier-2{ border-left-color:var(--border); }
+
+/* Tier 3: Apresentação */
+.ifs-row.tier-3{ border-left-color:#d97706; }
+
+/* Tier 4: Follow-Up */
+.ifs-row.tier-4{
+  border-left-width:4px; border-left-color:#ea580c;
+  background:#fffbf0; border-color:#fcd34d;
+}
+
+/* Tier 5: Negociação — máxima prioridade */
+.ifs-row.tier-5{
+  border-left-width:5px; border-left-color:#059669;
+  background:#f0fdf4; border-color:#86efac;
+  box-shadow:0 0 0 1px rgba(5,150,105,.12), var(--sh);
+}
+
+/* Gargalo — sempre vermelho, sobrescreve tier */
+.ifs-row.is-bot{
+  border-left-color:var(--red) !important;
+  background:#fff5f5 !important;
+  border-color:#fca5a5 !important;
+}
+
+.ifs-rank{
+  width:18px; flex-shrink:0;
+  font-size:10px; font-weight:800; color:var(--muted); text-align:center;
+}
+.ifs-name{
+  flex:1; font-size:11px; font-weight:700;
+  text-transform:uppercase; letter-spacing:.5px; color:var(--ink-3);
+}
+.ifs-row.tier-5 .ifs-name{ font-size:12px; color:#065f46; }
+.ifs-row.is-bot .ifs-name{ color:var(--red); }
+
+.ifs-conv{
+  font-size:10px; font-weight:700; padding:2px 7px; border-radius:20px;
+  display:inline-block; min-width:52px; text-align:center;
+}
+.ifs-conv.good{ background:var(--green-b); color:var(--green); }
+.ifs-conv.warn{ background:var(--amber-b); color:var(--amber); }
+.ifs-conv.bad { background:var(--red-b);   color:var(--red);   }
+
+.ifs-count{
+  font-size:22px; font-weight:900; line-height:1;
+  color:var(--ink); min-width:44px; text-align:right;
+}
+.ifs-row.tier-5 .ifs-count{ font-size:26px; color:#059669; }
+.ifs-row.tier-4 .ifs-count{ color:#ea580c; }
+.ifs-row.is-bot .ifs-count{ color:var(--red); }
+
+.ifs-badge{
+  font-size:9px; font-weight:700; padding:2px 7px; border-radius:20px;
+  white-space:nowrap; flex-shrink:0;
+}
+.ifs-badge.bot{ background:var(--red-b);  color:var(--red);   }
+.ifs-badge.pri{ background:#d1fae5;       color:#059669;      }
+.ifs-badge.fu { background:#fef3c7;       color:#d97706;      }
+
+/* ── PASSIVE STAGES (Stand By / Pago) ──────────────────────────── */
+/* Horizontal bar funnel */
+.fn-passive-sep{
+  display:flex; align-items:center; gap:8px;
+  margin:10px 0 6px;
+  font-size:10px; font-weight:700; color:var(--muted);
+  text-transform:uppercase; letter-spacing:.6px;
+}
+.fn-passive-sep::after{ content:''; flex:1; height:1px; background:var(--border); }
+.fn-row.passive .fn-label{ color:var(--muted); }
+.fn-row.passive .fn-bar-wrap{ opacity:.55; }
+.fn-row.passive .fn-count{ color:var(--muted); }
+
+/* Inverted funnel */
+.ifs-row.passive{
+  opacity:.6;
+  border-left-style:dashed !important;
+  border-left-color:var(--muted) !important;
+  background:var(--silver) !important;
+  border-color:var(--border) !important;
+  box-shadow:none !important;
+}
+.ifs-row.passive:hover{ transform:none; }
+.ifs-row.passive .ifs-name{ color:var(--muted); }
+.ifs-row.passive .ifs-count{ color:var(--muted); font-size:18px; }
+
+/* ── CMP FILTER BAR ────────────────────────────────────────────── */
+.cmp-filter-bar{
+  display:flex; align-items:center; gap:8px; flex-wrap:wrap;
+  margin-bottom:20px; padding:14px 18px;
+  background:var(--white); border:1px solid var(--border);
+  border-radius:var(--r); box-shadow:var(--sh);
+}
+.cmp-filter-label{
+  font-size:11px; font-weight:700; color:var(--muted);
+  text-transform:uppercase; letter-spacing:.6px; margin-right:4px; flex-shrink:0;
+}
+.cmp-filter-btn{
+  height:30px; padding:0 14px;
+  border:1px solid var(--border); border-radius:20px;
+  background:var(--silver); color:var(--muted);
+  font-size:12px; font-weight:600; cursor:pointer;
+  transition:all .15s;
+}
+.cmp-filter-btn:hover{ border-color:var(--ink); color:var(--ink); }
+.cmp-filter-btn.on{ background:var(--ink); color:var(--white); border-color:var(--ink); }
+
+/* ── CTRL (FECHAMENTOS / APRESENTAÇÕES) ────────────────────────── */
+.ctrl-filter-bar{
+  display:flex; align-items:center; gap:10px; flex-wrap:wrap;
+  margin-bottom:16px; padding:14px 18px;
+  background:var(--white); border:1px solid var(--border);
+  border-radius:var(--r); box-shadow:var(--sh);
+}
+.ctrl-filter-label{
+  font-size:11px; font-weight:700; color:var(--muted);
+  text-transform:uppercase; letter-spacing:.6px; flex-shrink:0;
+}
+.ctrl-filter-select{
+  height:32px; padding:0 10px;
+  border:1px solid var(--border); border-radius:var(--r-sm);
+  background:var(--silver); color:var(--ink);
+  font-size:12px; font-weight:600; cursor:pointer; outline:none;
+}
+.ctrl-filter-select:focus{ border-color:var(--ink); }
+.ctrl-empty{
+  padding:32px; text-align:center; color:var(--muted); font-size:13px; font-weight:500;
+  background:var(--white); border:1px solid var(--border);
+  border-radius:var(--r); box-shadow:var(--sh); margin-bottom:20px;
+}
+.ctrl-table-wrap{
+  background:var(--white); border:1px solid var(--border);
+  border-radius:var(--r); box-shadow:var(--sh); margin-bottom:20px; overflow:hidden;
+}
+.ctrl-table-hd{
+  display:grid; padding:10px 16px; background:var(--silver);
+  font-size:10px; font-weight:700; text-transform:uppercase;
+  letter-spacing:.6px; color:var(--muted); border-bottom:1px solid var(--border);
+}
+.ctrl-group-head{
+  padding:8px 16px; background:#f0f0f0;
+  font-size:11px; font-weight:800; color:var(--ink-3);
+  border-bottom:1px solid var(--border);
+  display:flex; align-items:center; gap:10px;
+}
+.ctrl-group-count{
+  background:var(--ink); color:var(--white);
+  font-size:10px; font-weight:700; padding:1px 8px; border-radius:20px;
+}
+.ctrl-row{
+  display:grid; padding:11px 16px;
+  border-bottom:1px solid var(--border); align-items:center;
+  font-size:12px; transition:background .12s;
+}
+.ctrl-row:last-child{ border-bottom:none; }
+.ctrl-row:hover{ background:var(--silver); }
+.ctrl-row-name{ font-weight:700; color:var(--ink); }
+.ctrl-row-seller{ color:var(--mid); font-size:11px; }
+.ctrl-row-date{ color:var(--mid); font-size:11px; font-weight:600; }
+.ctrl-row-valor{ font-weight:800; color:var(--green); font-size:13px; }
+.ctrl-status-tag{
+  font-size:10px; font-weight:700; padding:2px 8px; border-radius:20px;
+  white-space:nowrap; display:inline-block;
+}
+.ctrl-status-tag.st-pago   { background:var(--green-b); color:var(--green); }
+.ctrl-status-tag.st-neg    { background:var(--amber-b); color:var(--amber); }
+.ctrl-status-tag.st-follow { background:var(--blue-b);  color:var(--blue);  }
+.ctrl-status-tag.st-stand  { background:var(--silver);  color:var(--muted); border:1px solid var(--border); }
+.ctrl-status-tag.st-apres  { background:#ede9fe;        color:#7c3aed;      }
+.ctrl-status-tag.st-reuni  { background:#fce7f3;        color:#db2777;      }
+.ctrl-status-tag.st-other  { background:var(--silver);  color:var(--mid);   }
+
+/* Fechamentos 5-col layout */
+.ctrl-cols-5{ grid-template-columns:1fr 150px 90px 110px 110px; }
+/* Apresentações 4-col layout */
+.ctrl-cols-4{ grid-template-columns:1fr 150px 90px 130px; }
+
+/* ── RECEITA CHART ─────────────────────────────────────────────── */
+.rev-chart-wrap{
+  background:var(--white); border:1px solid var(--border);
+  border-radius:var(--r); box-shadow:var(--sh);
+  padding:20px 24px 16px; margin-bottom:20px;
+}
+.rev-chart-head{
+  display:flex; align-items:center; justify-content:space-between;
+  margin-bottom:14px;
+}
+.rev-chart-title{ font-size:13px; font-weight:800; color:var(--ink); }
+.rev-kpi-row{
+  display:flex; gap:16px; flex-wrap:wrap; margin-bottom:16px;
+}
+.rev-kpi{
+  background:var(--silver); border-radius:var(--r-sm);
+  padding:10px 16px; min-width:120px; flex:1;
+}
+.rev-kpi-v{ font-size:18px; font-weight:900; color:var(--ink); line-height:1.1; }
+.rev-kpi-v.green{ color:var(--green); }
+.rev-kpi-v.red{ color:var(--red); }
+.rev-kpi-l{ font-size:10px; color:var(--muted); font-weight:600; margin-top:2px; text-transform:uppercase; letter-spacing:.5px; }
+.rev-mom{ font-size:11px; font-weight:700; }
+.rev-mom.up{ color:var(--green); }
+.rev-mom.dn{ color:var(--red); }
+.rev-mom.flat{ color:var(--muted); }
+
+/* ── COMPARISON ────────────────────────────────────────────────── */
+.cmp-grid{display:grid;grid-template-columns:1fr 1fr;gap:20px;}
+.cmp-header{display:grid;grid-template-columns:1fr 1fr;gap:20px;margin-bottom:20px;}
+.cmp-card{
+  background:var(--white);border:1px solid var(--border);
+  border-radius:var(--r);padding:20px;box-shadow:var(--sh);
+}
+.cmp-name{font-size:14px;font-weight:800;margin-bottom:2px;}
+.cmp-total{font-size:32px;font-weight:900;line-height:1;margin-top:6px;}
+.cmp-label{font-size:11px;color:var(--muted);}
+.cmp-bar-row{
+  display:flex;align-items:center;gap:10px;margin-bottom:8px;font-size:12px;
+}
+.cmp-stage-label{min-width:120px;font-weight:600;color:var(--mid);}
+.cmp-track{flex:1;height:22px;background:var(--silver);border-radius:3px;overflow:hidden;}
+.cmp-fill{height:100%;border-radius:3px;display:flex;align-items:center;padding-left:8px;transition:width .6s ease;}
+.cmp-fill span{font-size:10px;font-weight:700;color:var(--white);}
+.cmp-count{min-width:28px;text-align:right;font-weight:800;}
+.winner-badge{
+  background:var(--green-b);color:var(--green);
+  font-size:10px;font-weight:700;padding:2px 7px;border-radius:20px;
+}
+
+/* ── LOADER ────────────────────────────────────────────────────── */
+.loader{
+  display:none;position:fixed;inset:0;
+  background:rgba(250,250,250,.8);backdrop-filter:blur(6px);
+  z-index:9999;flex-direction:column;
+  align-items:center;justify-content:center;gap:14px;
+}
+.loader.on{display:flex;}
+.spinner{width:34px;height:34px;border:3px solid var(--border);border-top-color:var(--ink);border-radius:50%;animation:spin-sm .6s linear infinite;}
+.loader-msg{font-size:13px;font-weight:600;color:var(--mid);}
+
+/* ── RESP ──────────────────────────────────────────────────────── */
+@media(max-width:768px){
+  .hdr,.tab-bar{padding:0 16px;}
+  .page{padding:20px 16px;}
+  .hdr-title{display:none;}
+  .fn-row{grid-template-columns:80px 1fr 36px 44px;}
+  .fn-conv{display:none;}
+  .alerts-grid{grid-template-columns:1fr;}
+  .str-grid{grid-template-columns:1fr;}
+  .cmp-grid,.cmp-header{grid-template-columns:1fr;}
+  .kpi-row{gap:6px;}
+  .ctrl-cols-5,.ctrl-cols-4{grid-template-columns:1fr 90px 80px;}
+  .ctrl-cols-5 div:nth-child(4),.ctrl-cols-5 div:nth-child(5),
+  .ctrl-cols-4 div:nth-child(4){display:none;}
+  .ctrl-table-hd.ctrl-cols-5 div:nth-child(4),
+  .ctrl-table-hd.ctrl-cols-5 div:nth-child(5),
+  .ctrl-table-hd.ctrl-cols-4 div:nth-child(4){display:none;}
+}
+
+/* ── ANÁLISE DO FUNIL ──────────────────────────────────────────── */
+.an-section{
+  background:var(--white); border:1px solid var(--border);
+  border-radius:var(--r); box-shadow:var(--sh);
+  padding:20px 24px; margin-bottom:20px;
+}
+.an-section-title{
+  font-size:12px; font-weight:800; text-transform:uppercase;
+  letter-spacing:.7px; color:var(--muted); margin-bottom:16px;
+}
+/* Fluxo de conversão */
+.an-flow-row{
+  display:flex; align-items:center; gap:10px;
+  padding:10px 0; border-bottom:1px solid var(--border);
+}
+.an-flow-row:last-child{ border-bottom:none; }
+.an-stage-pill{
+  min-width:140px; font-size:12px; font-weight:700;
+  color:var(--ink-3); line-height:1.2;
+}
+.an-stage-count{
+  font-size:10px; font-weight:600; color:var(--muted);
+  display:block; margin-top:1px;
+}
+.an-conv-mid{
+  flex:1; display:flex; flex-direction:column; gap:4px;
+}
+.an-conv-pct{
+  font-size:11px; font-weight:800; text-align:center;
+}
+.an-conv-pct.ok  { color:var(--green); }
+.an-conv-pct.warn{ color:#d97706; }
+.an-conv-pct.bad { color:var(--red); }
+.an-conv-track{
+  height:6px; background:var(--silver); border-radius:3px; overflow:hidden;
+}
+.an-conv-fill{
+  height:100%; border-radius:3px; transition:width .4s;
+}
+.an-conv-fill.ok  { background:var(--green); }
+.an-conv-fill.warn{ background:#f59e0b; }
+.an-conv-fill.bad { background:var(--red); }
+.an-conv-drop{
+  font-size:10px; color:var(--muted); text-align:right; white-space:nowrap;
+}
+/* Gargalos */
+.an-gap-item{
+  display:flex; align-items:center; gap:12px;
+  padding:10px 14px; border-radius:var(--r-sm);
+  margin-bottom:8px; border:1px solid transparent;
+}
+.an-gap-item.critical{ background:#fef2f2; border-color:#fecaca; }
+.an-gap-item.warning { background:#fffbeb; border-color:#fde68a; }
+.an-gap-item.ok      { background:#f0fdf4; border-color:#bbf7d0; }
+.an-gap-badge{
+  font-size:10px; font-weight:800; padding:2px 8px;
+  border-radius:20px; white-space:nowrap;
+}
+.an-gap-item.critical .an-gap-badge{ background:#fecaca; color:var(--red); }
+.an-gap-item.warning  .an-gap-badge{ background:#fde68a; color:#92400e; }
+.an-gap-item.ok       .an-gap-badge{ background:#bbf7d0; color:var(--green); }
+.an-gap-label{ font-size:12px; font-weight:700; color:var(--ink-3); flex:1; }
+.an-gap-pct{ font-size:13px; font-weight:900; }
+.an-gap-item.critical .an-gap-pct{ color:var(--red); }
+.an-gap-item.warning  .an-gap-pct{ color:#d97706; }
+.an-gap-item.ok       .an-gap-pct{ color:var(--green); }
+/* Diagnóstico */
+.an-diag-card{
+  display:flex; align-items:flex-start; gap:12px;
+  padding:12px 14px; border-radius:var(--r-sm);
+  margin-bottom:8px; border-left:3px solid transparent;
+}
+.an-diag-card.error  { background:#fef2f2; border-color:var(--red); }
+.an-diag-card.warn   { background:#fffbeb; border-color:#f59e0b; }
+.an-diag-card.info   { background:#eff6ff; border-color:var(--blue); }
+.an-diag-card.success{ background:#f0fdf4; border-color:var(--green); }
+.an-diag-icon{ font-size:18px; line-height:1; flex-shrink:0; }
+.an-diag-body{ flex:1; }
+.an-diag-title{ font-size:12px; font-weight:800; color:var(--ink); }
+.an-diag-text { font-size:11px; color:var(--mid); margin-top:2px; line-height:1.4; }
+/* Recomendações */
+.an-rec-item{
+  display:flex; align-items:flex-start; gap:12px;
+  padding:10px 0; border-bottom:1px solid var(--border);
+}
+.an-rec-item:last-child{ border-bottom:none; }
+.an-rec-num{
+  width:22px; height:22px; border-radius:50%;
+  background:var(--ink); color:var(--white);
+  font-size:10px; font-weight:800;
+  display:flex; align-items:center; justify-content:center;
+  flex-shrink:0; margin-top:1px;
+}
+.an-rec-text{ font-size:12px; color:var(--ink-3); line-height:1.5; flex:1; }
+.an-rec-text strong{ color:var(--ink); font-weight:800; }
+
+/* ── AVALIADOR DE DESEMPENHO ───────────────────────────────────── */
+.av-rank-item{
+  display:flex; align-items:center; gap:12px;
+  padding:10px 0; border-bottom:1px solid var(--border);
+}
+.av-rank-item:last-child{ border-bottom:none; }
+.av-rank-pos{ width:18px; font-size:11px; font-weight:800; color:var(--muted); }
+.av-rank-name{ min-width:130px; font-size:13px; font-weight:700; }
+.av-rank-track{ flex:1; height:8px; background:var(--silver); border-radius:4px; overflow:hidden; }
+.av-rank-fill{ height:100%; border-radius:4px; transition:width .4s; }
+.av-rank-fill.excellent{ background:var(--green); }
+.av-rank-fill.good     { background:#3b82f6; }
+.av-rank-fill.attention{ background:#f59e0b; }
+.av-rank-fill.critical { background:var(--red); }
+.av-rank-score{ font-size:16px; font-weight:900; min-width:34px; text-align:right; }
+.av-rank-score.excellent{ color:var(--green); }
+.av-rank-score.good     { color:#1d4ed8; }
+.av-rank-score.attention{ color:#d97706; }
+.av-rank-score.critical { color:var(--red); }
+.av-rank-badge{ font-size:11px; font-weight:700; min-width:90px; text-align:right; white-space:nowrap; }
+.av-seller-grid{ display:grid; grid-template-columns:1fr 1fr; gap:20px; }
+.av-card{
+  background:var(--white); border:1px solid var(--border);
+  border-radius:var(--r); box-shadow:var(--sh); padding:20px;
+}
+.av-card-head{ display:flex; justify-content:space-between; align-items:flex-start; margin-bottom:16px; }
+.av-card-name{ font-size:15px; font-weight:900; color:var(--ink); margin-bottom:5px; }
+.av-badge{ display:inline-block; font-size:11px; font-weight:700; padding:2px 10px; border-radius:20px; }
+.av-badge.excellent{ background:var(--green-b); color:var(--green); }
+.av-badge.good     { background:var(--blue-b);  color:var(--blue); }
+.av-badge.attention{ background:var(--amber-b); color:var(--amber); }
+.av-badge.critical { background:var(--red-b);   color:var(--red); }
+.av-score-circle{
+  width:60px; height:60px; border-radius:50%;
+  display:flex; align-items:center; justify-content:center;
+  font-size:20px; font-weight:900; flex-shrink:0;
+}
+.av-score-circle.excellent{ background:var(--green-b); color:var(--green); }
+.av-score-circle.good     { background:var(--blue-b);  color:var(--blue); }
+.av-score-circle.attention{ background:var(--amber-b); color:var(--amber); }
+.av-score-circle.critical { background:var(--red-b);   color:var(--red); }
+.av-subs{ margin-bottom:14px; }
+.av-sub-row{ display:flex; align-items:center; gap:8px; margin-bottom:7px; }
+.av-sub-label{ font-size:11px; font-weight:600; color:var(--mid); min-width:0; }
+.av-sub-track{ flex:0 0 80px; height:5px; background:var(--silver); border-radius:3px; overflow:hidden; }
+.av-sub-fill{ height:100%; border-radius:3px; }
+.av-sub-fill.excellent{ background:var(--green); }
+.av-sub-fill.good     { background:#3b82f6; }
+.av-sub-fill.attention{ background:#f59e0b; }
+.av-sub-fill.critical { background:var(--red); }
+.av-sub-pct{ font-size:10px; color:var(--muted); min-width:54px; text-align:right; } /* score relativo — secundário */
+.av-sub-raw{ font-size:13px; font-weight:800; color:var(--ink); min-width:64px; text-align:right; } /* valor real — principal */
+.av-period-chip{
+  display:inline-flex; align-items:center; gap:4px;
+  font-size:10px; font-weight:700; color:var(--muted);
+  background:var(--silver); border-radius:20px;
+  padding:2px 8px; margin-top:4px;
+}
+.av-insights{ margin-bottom:12px; }
+.av-insight-item{
+  font-size:11px; line-height:1.4; padding:5px 0;
+  border-bottom:1px solid var(--border); color:var(--mid);
+  display:flex; align-items:flex-start; gap:5px;
+}
+.av-insight-item:last-child{ border-bottom:none; }
+.av-rec-box{
+  background:var(--silver); border-radius:var(--r-sm); padding:10px 12px;
+}
+.av-rec-label{ font-size:10px; font-weight:800; text-transform:uppercase; letter-spacing:.5px; color:var(--muted); margin-bottom:3px; }
+.av-rec-text{ font-size:11px; color:var(--ink-3); line-height:1.4; }
+@media(max-width:768px){ .av-seller-grid{ grid-template-columns:1fr; } }
+
+/* ── AVALIADOR — filtros e contexto ───────────────────────────── */
+.av-filter-bar{
+  background:var(--white); border:1px solid var(--border);
+  border-radius:var(--r); padding:14px 20px;
+  display:flex; align-items:center; gap:16px; flex-wrap:wrap;
+  margin-bottom:16px; box-shadow:var(--sh);
+}
+.av-filter-label{ font-size:11px; font-weight:700; color:var(--muted); text-transform:uppercase; letter-spacing:.5px; }
+.av-filter-select{
+  padding:6px 10px; border:1px solid var(--border); border-radius:var(--r-xs);
+  font-size:12px; font-weight:600; background:var(--silver);
+  color:var(--ink); cursor:pointer; outline:none;
+}
+.av-filter-select:focus{ border-color:#3b82f6; }
+.av-context-badge{
+  margin-left:auto; background:var(--ink); color:var(--white);
+  font-size:11px; font-weight:700; padding:4px 14px;
+  border-radius:20px; white-space:nowrap; letter-spacing:.3px;
+}
+/* Card destacado (filtro individual) */
+.av-card.featured{
+  border:2px solid #3b82f6; box-shadow:0 0 0 3px rgba(59,130,246,.1);
+}
+.av-card.dimmed{ opacity:.45; }
+/* Score circle — tamanho maior para individual */
+.av-score-circle.large{
+  width:80px; height:80px; font-size:26px;
+}
+/* Critérios de avaliação */
+.av-criteria-wrap{
+  background:var(--white); border:1px solid var(--border);
+  border-radius:var(--r); margin-top:24px; overflow:hidden;
+  box-shadow:var(--sh);
+}
+.av-criteria-toggle{
+  width:100%; display:flex; align-items:center; justify-content:space-between;
+  padding:14px 20px; background:none; border:none; cursor:pointer;
+  font-size:12px; font-weight:800; color:var(--ink-3); text-align:left;
+}
+.av-criteria-toggle:hover{ background:var(--silver); }
+.av-criteria-toggle span{ color:var(--muted); font-weight:600; }
+.av-criteria-body{
+  display:none; padding:0 20px 16px;
+  border-top:1px solid var(--border);
+}
+.av-criteria-body.open{ display:block; }
+.av-criteria-grid{
+  display:grid; grid-template-columns:1fr 1fr; gap:10px; margin:14px 0;
+}
+.av-criteria-item{
+  background:var(--silver); border-radius:var(--r-sm); padding:10px 14px;
+}
+.av-criteria-item-title{ font-size:11px; font-weight:800; color:var(--ink); margin-bottom:2px; }
+.av-criteria-item-desc{ font-size:10px; color:var(--muted); line-height:1.4; }
+.av-criteria-tiers{
+  display:flex; gap:8px; flex-wrap:wrap; margin-top:12px;
+}
+.av-tier{
+  flex:1; min-width:100px; border-radius:var(--r-sm);
+  padding:8px 12px; text-align:center;
+}
+.av-tier-score{ font-size:13px; font-weight:900; }
+.av-tier-label{ font-size:10px; font-weight:700; margin-top:2px; }
+.av-tier.excellent{ background:var(--green-b); }
+.av-tier.excellent .av-tier-score{ color:var(--green); }
+.av-tier.good     { background:var(--blue-b); }
+.av-tier.good      .av-tier-score{ color:var(--blue); }
+.av-tier.attention{ background:var(--amber-b); }
+.av-tier.attention .av-tier-score{ color:var(--amber); }
+.av-tier.critical { background:var(--red-b); }
+.av-tier.critical  .av-tier-score{ color:var(--red); }
+.av-criteria-note{ font-size:10px; color:var(--muted); margin-top:10px; line-height:1.5; }
+
+/* ── ROLETA ─────────────────────────────────────────────────────── */
+.roleta-notif{
+  display:none;position:fixed;bottom:28px;right:28px;z-index:500;
+  background:var(--ink);color:var(--white);
+  border-radius:50px;padding:13px 22px;
+  font-size:13px;font-weight:800;box-shadow:var(--sh-lg);cursor:pointer;
+  align-items:center;gap:8px;animation:slide-up .3s ease;
+}
+.roleta-notif.on{display:flex;}
+@keyframes slide-up{from{transform:translateY(20px);opacity:0;}}
+.roleta-overlay{
+  display:none;position:fixed;inset:0;z-index:1000;
+  background:rgba(0,0,0,.78);backdrop-filter:blur(5px);
+  align-items:center;justify-content:center;
+}
+.roleta-overlay.on{display:flex;}
+.roleta-modal{
+  background:var(--white);border-radius:20px;padding:32px 28px;
+  max-width:500px;width:calc(100% - 40px);
+  box-shadow:var(--sh-lg);text-align:center;
+}
+.roleta-modal-title{font-size:18px;font-weight:900;margin-bottom:3px;}
+.roleta-modal-sub{font-size:12px;color:var(--muted);margin-bottom:18px;}
+.roleta-spins-badge{
+  display:inline-block;background:var(--ink);color:var(--white);
+  font-size:12px;font-weight:700;padding:4px 14px;border-radius:20px;margin-bottom:18px;
+}
+.roleta-spins-badge.empty{background:var(--muted);}
+.roleta-canvas-wrap{
+  position:relative;display:inline-block;margin-bottom:20px;
+}
+.roleta-canvas-wrap::before{
+  content:'▼';position:absolute;top:-18px;left:50%;transform:translateX(-50%);
+  font-size:22px;color:var(--ink);z-index:2;line-height:1;
+}
+canvas.roleta-canvas{border-radius:50%;box-shadow:0 8px 32px rgba(0,0,0,.18);}
+.roleta-result{
+  display:none;min-height:44px;font-size:20px;font-weight:900;
+  color:var(--green);margin-bottom:16px;
+  animation:pop-in .3s ease;
+}
+.roleta-result.on{display:block;}
+@keyframes pop-in{from{transform:scale(.7);opacity:0;}to{transform:scale(1);opacity:1;}}
+.roleta-btn{
+  padding:11px 32px;border:none;border-radius:var(--r-sm);
+  font-size:14px;font-weight:800;cursor:pointer;
+  background:var(--ink);color:var(--white);
+  transition:opacity .15s,transform .1s;letter-spacing:.3px;
+}
+.roleta-btn:hover:not(:disabled){opacity:.85;}
+.roleta-btn:active:not(:disabled){transform:scale(.97);}
+.roleta-btn:disabled{background:var(--muted);cursor:not-allowed;}
+.roleta-btn.sec{
+  background:var(--silver);color:var(--ink);
+  font-size:13px;padding:8px 18px;margin-left:8px;
+}
+.roleta-admin-toggle{
+  background:rgba(255,255,255,.1);color:var(--white);border:1px solid rgba(255,255,255,.2);
+  border-radius:var(--r-sm);padding:6px 14px;font-size:12px;font-weight:700;
+  cursor:pointer;transition:background .15s;
+}
+.roleta-admin-toggle:hover{background:rgba(255,255,255,.2);}
+.roleta-admin-panel{
+  display:none;position:fixed;inset:0;z-index:1001;
+  background:rgba(0,0,0,.65);align-items:flex-start;justify-content:center;
+  padding-top:40px;
+}
+.roleta-admin-panel.on{display:flex;}
+.roleta-admin-modal{
+  background:var(--white);border-radius:var(--r);padding:28px;
+  max-width:580px;width:calc(100% - 40px);
+  max-height:80vh;overflow-y:auto;box-shadow:var(--sh-lg);
+}
+.roleta-admin-hd{
+  display:flex;align-items:center;justify-content:space-between;
+  font-size:15px;font-weight:900;margin-bottom:20px;
+}
+.roleta-admin-x{
+  background:none;border:none;font-size:22px;cursor:pointer;
+  color:var(--muted);line-height:1;padding:0 4px;
+}
+.roleta-admin-x:hover{color:var(--ink);}
+.roleta-admin-sec{margin-bottom:22px;}
+.roleta-admin-sec-title{
+  font-size:10px;font-weight:700;text-transform:uppercase;
+  letter-spacing:.6px;color:var(--muted);margin-bottom:10px;
+}
+.roleta-queue-grid{
+  display:grid;grid-template-columns:repeat(auto-fill,minmax(110px,1fr));gap:8px;
+}
+.roleta-queue-item{
+  background:var(--silver);border-radius:var(--r-sm);padding:10px 12px;text-align:center;
+}
+.roleta-queue-name{font-size:11px;font-weight:700;color:var(--muted);margin-bottom:4px;}
+.roleta-queue-counts{font-size:12px;font-weight:800;line-height:1.6;}
+.roleta-grant-row{display:flex;gap:8px;align-items:center;flex-wrap:wrap;}
+.roleta-grant-sel{
+  padding:6px 10px;border:1px solid var(--border);border-radius:var(--r-xs);
+  font-size:12px;font-weight:600;background:var(--silver);color:var(--ink);outline:none;
+}
+.roleta-grant-btn{
+  padding:6px 14px;border:none;border-radius:var(--r-xs);
+  font-size:12px;font-weight:800;cursor:pointer;
+  background:var(--green);color:var(--white);
+}
+.roleta-grant-btn:hover{opacity:.85;}
+.roleta-prize-list{display:flex;flex-direction:column;gap:5px;margin-bottom:8px;}
+.roleta-prize-item{
+  display:flex;align-items:center;gap:8px;padding:7px 10px;
+  background:var(--silver);border-radius:var(--r-xs);
+}
+.roleta-prize-clr{
+  width:22px;height:22px;border-radius:4px;flex-shrink:0;
+  border:1px solid var(--border);cursor:pointer;padding:0;
+}
+.roleta-prize-inp{
+  flex:1;border:1px solid var(--border);border-radius:var(--r-xs);
+  padding:4px 8px;font-size:12px;font-weight:600;background:var(--white);outline:none;
+}
+.roleta-prize-del{
+  background:none;border:none;color:var(--muted);cursor:pointer;
+  font-size:18px;line-height:1;padding:0 2px;
+}
+.roleta-prize-del:hover{color:var(--red);}
+.roleta-add-btn{
+  background:none;border:1px dashed var(--border);color:var(--mid);
+  border-radius:var(--r-xs);padding:6px;font-size:12px;font-weight:700;
+  cursor:pointer;width:100%;margin-bottom:8px;
+}
+.roleta-add-btn:hover{border-color:var(--ink);color:var(--ink);}
+.roleta-save-btn{
+  background:var(--ink);color:var(--white);border:none;
+  border-radius:var(--r-xs);padding:7px 18px;
+  font-size:12px;font-weight:800;cursor:pointer;
+}
+.roleta-save-btn:hover{opacity:.85;}
+</style>
+</head>
+<body>
+
+<!-- LOADER -->
+<div class="loader" id="loader">
+  <div class="spinner"></div>
+  <div class="loader-msg">Buscando dados do ClickUp...</div>
+</div>
+
+<!-- HEADER -->
+<header class="hdr">
+  <div class="hdr-logo">
+    <div class="hdr-logo-mark">G</div>
+    GPS.X
+  </div>
+  <div class="hdr-title">Funil de Vendas · Visão Estratégica</div>
+  <div style="display:flex;align-items:center;gap:12px">
+    <span id="hdr-user" style="font-size:12px;color:#888;"></span>
+    <button class="roleta-admin-toggle" onclick="openAdminPanel()">🎰 Roleta</button>
+    <button class="roleta-admin-toggle" onclick="logout()" style="background:rgba(255,255,255,.07)">Sair</button>
+    <div class="hdr-sync">
+      <div class="sync-dot" id="syncDot"></div>
+      <span id="syncLabel">Iniciando...</span>
+    </div>
+  </div>
+</header>
+
+<!-- NOTIFICAÇÃO ROLETA -->
+<div class="roleta-notif" id="roleta-notif" onclick="openRoleta()">
+  🎰 <span id="roleta-notif-text">Girar!</span>
+</div>
+
+<!-- ROLETA MODAL -->
+<div class="roleta-overlay" id="roleta-overlay">
+  <div class="roleta-modal">
+    <div class="roleta-modal-title" id="roleta-modal-title">🎰 Roleta de Prêmios</div>
+    <div class="roleta-modal-sub" id="roleta-modal-sub"></div>
+    <div class="roleta-spins-badge" id="roleta-spins-badge">1 giro</div>
+    <div class="roleta-canvas-wrap">
+      <canvas class="roleta-canvas" id="roleta-canvas" width="320" height="320"></canvas>
+    </div>
+    <div class="roleta-result" id="roleta-result"></div>
+    <div>
+      <button class="roleta-btn" id="roleta-spin-btn" onclick="spinWheel()">Girar!</button>
+      <button class="roleta-btn sec" onclick="closeRoleta()">Fechar</button>
+    </div>
+  </div>
+</div>
+
+<!-- ADMIN PANEL -->
+<div class="roleta-admin-panel" id="roleta-admin-panel">
+  <div class="roleta-admin-modal">
+    <div class="roleta-admin-hd">
+      ⚙️ Administração da Roleta
+      <button class="roleta-admin-x" onclick="closeAdminPanel()">×</button>
+    </div>
+    <div class="roleta-admin-sec">
+      <div class="roleta-admin-sec-title">Giros Pendentes</div>
+      <div class="roleta-queue-grid" id="roleta-queue-grid"></div>
+    </div>
+    <div class="roleta-admin-sec">
+      <div class="roleta-admin-sec-title">Liberar Giro Manualmente</div>
+      <div class="roleta-grant-row">
+        <select class="roleta-grant-sel" id="grant-seller"></select>
+        <select class="roleta-grant-sel" id="grant-wheel">
+          <option value="alta">Alta ≥ R$9.900</option>
+          <option value="baixa">Baixa ≤ R$8.899</option>
+        </select>
+        <button class="roleta-grant-btn" onclick="grantSpin()">+ Liberar</button>
+      </div>
+    </div>
+    <div class="roleta-admin-sec">
+      <div class="roleta-admin-sec-title">Prêmios — Alta (≥ R$9.900)</div>
+      <div class="roleta-prize-list" id="prizes-alta-list"></div>
+      <button class="roleta-add-btn" onclick="addPrize('alta')">+ Adicionar prêmio</button>
+      <button class="roleta-save-btn" onclick="savePrizes('alta')">Salvar</button>
+    </div>
+    <div class="roleta-admin-sec">
+      <div class="roleta-admin-sec-title">Prêmios — Baixa (≤ R$8.899)</div>
+      <div class="roleta-prize-list" id="prizes-baixa-list"></div>
+      <button class="roleta-add-btn" onclick="addPrize('baixa')">+ Adicionar prêmio</button>
+      <button class="roleta-save-btn" onclick="savePrizes('baixa')">Salvar</button>
+    </div>
+  </div>
+</div>
+
+<!-- TABS -->
+<nav class="tab-bar">
+  <button class="tb on" id="tb-maria"   onclick="switchTab('maria')">Maria Eduarda <span class="tb-pill" id="pill-maria">–</span></button>
+  <button class="tb"    id="tb-nicolas" onclick="switchTab('nicolas')">Nicolas <span class="tb-pill" id="pill-nicolas">–</span></button>
+  <button class="tb"    id="tb-kennyd"  onclick="switchTab('kennyd')">Kennyd <span class="tb-pill" id="pill-kennyd">–</span></button>
+  <button class="tb"    id="tb-gabriel" onclick="switchTab('gabriel')">Gabriel <span class="tb-pill" id="pill-gabriel">–</span></button>
+  <div class="tab-divider"></div>
+  <button class="tb"    id="tb-fechamentos" onclick="switchTab('fechamentos')">Fechamentos <span class="tb-pill" id="pill-fechamentos">–</span></button>
+  <button class="tb"    id="tb-cmp"         onclick="switchTab('cmp')">Comparativo</button>
+  <button class="tb"    id="tb-analise"     onclick="switchTab('analise')">Análise do Funil</button>
+  <button class="tb"    id="tb-avaliador"   onclick="switchTab('avaliador')">Avaliador</button>
+</nav>
+
+<!-- VIEW: MARIA -->
+<div class="view on" id="view-maria">
+  <div class="page">
+    <div class="hero">
+      <div class="hero-id">
+        <div class="avatar">M</div>
+        <div>
+          <div class="hero-name">Maria Eduarda</div>
+          <div class="hero-sub">CRM-VENDAS · Atualizado ao vivo</div>
+        </div>
+      </div>
+      <div class="kpi-row" id="kpi-maria"></div>
+    </div>
+
+    <div class="sec-head">Distribuição do Funil</div>
+    <div class="funnel-card"><div id="fn-maria"></div></div>
+
+    <div class="chart-card">
+      <div class="card-hd">
+        <div class="card-title">Volume por Etapa</div>
+        <div class="chart-legend">
+          <div class="legend-item"><div class="legend-dot" style="background:#dc2626"></div>Gargalo</div>
+          <div class="legend-item"><div class="legend-dot" style="background:#15803d"></div>Oportunidade</div>
+          <div class="legend-item"><div class="legend-dot" style="background:#111"></div>Normal</div>
+        </div>
+      </div>
+      <div class="chart-wrap"><canvas id="chart-maria"></canvas></div>
+    </div>
+
+    <div class="sec-head">Alertas Inteligentes</div>
+    <div class="alerts-grid" id="alerts-maria"></div>
+
+    <div id="insight-maria"></div>
+
+    <div class="sec-head">Detalhes por Etapa</div>
+    <div class="stages-grid" id="stages-maria"></div>
+
+    <div class="sec-head">Direcionamento Estratégico</div>
+    <div class="str-grid" id="strategic-maria"></div>
+  </div>
+</div>
+
+<!-- VIEW: NICOLAS -->
+<div class="view" id="view-nicolas">
+  <div class="page">
+    <div class="hero">
+      <div class="hero-id">
+        <div class="avatar">N</div>
+        <div>
+          <div class="hero-name">Nicolas</div>
+          <div class="hero-sub">CRM-VENDAS · Atualizado ao vivo</div>
+        </div>
+      </div>
+      <div class="kpi-row" id="kpi-nicolas"></div>
+    </div>
+
+    <div class="sec-head">Distribuição do Funil</div>
+    <div class="funnel-card"><div id="fn-nicolas"></div></div>
+
+    <div class="chart-card">
+      <div class="card-hd">
+        <div class="card-title">Volume por Etapa</div>
+        <div class="chart-legend">
+          <div class="legend-item"><div class="legend-dot" style="background:#dc2626"></div>Gargalo</div>
+          <div class="legend-item"><div class="legend-dot" style="background:#15803d"></div>Oportunidade</div>
+          <div class="legend-item"><div class="legend-dot" style="background:#111"></div>Normal</div>
+        </div>
+      </div>
+      <div class="chart-wrap"><canvas id="chart-nicolas"></canvas></div>
+    </div>
+
+    <div class="sec-head">Alertas Inteligentes</div>
+    <div class="alerts-grid" id="alerts-nicolas"></div>
+
+    <div id="insight-nicolas"></div>
+
+    <div class="sec-head">Detalhes por Etapa</div>
+    <div class="stages-grid" id="stages-nicolas"></div>
+
+    <div class="sec-head">Direcionamento Estratégico</div>
+    <div class="str-grid" id="strategic-nicolas"></div>
+  </div>
+</div>
+
+<!-- VIEW: KENNYD -->
+<div class="view" id="view-kennyd">
+  <div class="page">
+    <div class="hero">
+      <div class="hero-id">
+        <div class="avatar">K</div>
+        <div>
+          <div class="hero-name">Kennyd</div>
+          <div class="hero-sub">CRM-VENDAS · Atualizado ao vivo</div>
+        </div>
+      </div>
+      <div class="kpi-row" id="kpi-kennyd"></div>
+    </div>
+    <div class="sec-head">Distribuição do Funil</div>
+    <div class="funnel-card"><div id="fn-kennyd"></div></div>
+    <div class="chart-card">
+      <div class="card-hd">
+        <div class="card-title">Volume por Etapa</div>
+        <div class="chart-legend">
+          <div class="legend-item"><div class="legend-dot" style="background:#dc2626"></div>Gargalo</div>
+          <div class="legend-item"><div class="legend-dot" style="background:#15803d"></div>Oportunidade</div>
+          <div class="legend-item"><div class="legend-dot" style="background:#111"></div>Normal</div>
+        </div>
+      </div>
+      <div class="chart-wrap"><canvas id="chart-kennyd"></canvas></div>
+    </div>
+    <div class="sec-head">Alertas Inteligentes</div>
+    <div class="alerts-grid" id="alerts-kennyd"></div>
+    <div id="insight-kennyd"></div>
+    <div class="sec-head">Detalhes por Etapa</div>
+    <div class="stages-grid" id="stages-kennyd"></div>
+    <div class="sec-head">Direcionamento Estratégico</div>
+    <div class="str-grid" id="strategic-kennyd"></div>
+  </div>
+</div>
+
+<!-- VIEW: GABRIEL -->
+<div class="view" id="view-gabriel">
+  <div class="page">
+    <div class="hero">
+      <div class="hero-id">
+        <div class="avatar">Gb</div>
+        <div>
+          <div class="hero-name">Gabriel</div>
+          <div class="hero-sub">CRM-VENDAS · Atualizado ao vivo</div>
+        </div>
+      </div>
+      <div class="kpi-row" id="kpi-gabriel"></div>
+    </div>
+    <div class="sec-head">Distribuição do Funil</div>
+    <div class="funnel-card"><div id="fn-gabriel"></div></div>
+    <div class="chart-card">
+      <div class="card-hd">
+        <div class="card-title">Volume por Etapa</div>
+        <div class="chart-legend">
+          <div class="legend-item"><div class="legend-dot" style="background:#dc2626"></div>Gargalo</div>
+          <div class="legend-item"><div class="legend-dot" style="background:#15803d"></div>Oportunidade</div>
+          <div class="legend-item"><div class="legend-dot" style="background:#111"></div>Normal</div>
+        </div>
+      </div>
+      <div class="chart-wrap"><canvas id="chart-gabriel"></canvas></div>
+    </div>
+    <div class="sec-head">Alertas Inteligentes</div>
+    <div class="alerts-grid" id="alerts-gabriel"></div>
+    <div id="insight-gabriel"></div>
+    <div class="sec-head">Detalhes por Etapa</div>
+    <div class="stages-grid" id="stages-gabriel"></div>
+    <div class="sec-head">Direcionamento Estratégico</div>
+    <div class="str-grid" id="strategic-gabriel"></div>
+  </div>
+</div>
+
+<!-- VIEW: FECHAMENTOS -->
+<div class="view" id="view-fechamentos">
+  <div class="page">
+
+    <!-- ── CONTROLE DE FECHAMENTOS ── -->
+    <div class="sec-head">Controle de Fechamentos</div>
+
+    <div class="ctrl-filter-bar">
+      <span class="ctrl-filter-label">Responsável:</span>
+      <select id="cf-seller" class="ctrl-filter-select" onchange="renderFechamentos()">
+        <option value="all">Todos</option>
+        <option value="maria">Maria Eduarda</option>
+        <option value="nicolas">Nicolas</option>
+        <option value="kennyd">Kennyd</option>
+        <option value="gabriel">Gabriel</option>
+        <option value="outros">Sem responsável</option>
+      </select>
+      <span class="ctrl-filter-label" style="margin-left:6px">Mês:</span>
+      <select id="cf-month" class="ctrl-filter-select" onchange="renderFechamentos()">
+        <option value="all">Todos os meses</option>
+      </select>
+    </div>
+
+    <div id="cf-kpis" style="margin-bottom:16px"></div>
+
+    <!-- Gráfico de Receita Mensal -->
+    <div class="rev-chart-wrap" id="rev-chart-section" style="display:none">
+      <div class="rev-chart-head">
+        <span class="rev-chart-title">Receita Mensal</span>
+      </div>
+      <div class="rev-kpi-row" id="rev-kpis"></div>
+      <canvas id="rev-chart" height="80"></canvas>
+    </div>
+
+    <div id="cf-list"></div>
+
+    <!-- ── CONTROLE DE APRESENTAÇÕES ── -->
+    <div class="sec-head">Controle de Apresentações</div>
+
+    <div class="ctrl-filter-bar">
+      <span class="ctrl-filter-label">Responsável:</span>
+      <select id="cp-seller" class="ctrl-filter-select" onchange="renderFechamentos()">
+        <option value="all">Todos</option>
+        <option value="maria">Maria Eduarda</option>
+        <option value="nicolas">Nicolas</option>
+        <option value="kennyd">Kennyd</option>
+        <option value="gabriel">Gabriel</option>
+        <option value="outros">Sem responsável</option>
+      </select>
+      <span class="ctrl-filter-label" style="margin-left:6px">Período:</span>
+      <select id="cp-period" class="ctrl-filter-select" onchange="renderFechamentos()">
+        <option value="all">Todos</option>
+        <option value="this-week">Últimos 7 dias</option>
+        <option value="this-month">Este mês</option>
+        <option value="last-month">Mês passado</option>
+        <option value="last-3-months">Últimos 3 meses</option>
+      </select>
+    </div>
+
+    <div id="cp-kpis" style="margin-bottom:16px"></div>
+    <div id="cp-list"></div>
+
+  </div>
+</div>
+
+<!-- VIEW: COMPARATIVO -->
+<div class="view" id="view-cmp">
+  <div class="page">
+    <div class="cmp-filter-bar">
+      <span class="cmp-filter-label">Comparar:</span>
+      <button class="cmp-filter-btn on" data-seller="maria"   onclick="toggleCmpSeller('maria')">Maria Eduarda</button>
+      <button class="cmp-filter-btn on" data-seller="nicolas" onclick="toggleCmpSeller('nicolas')">Nicolas</button>
+      <button class="cmp-filter-btn on" data-seller="kennyd"  onclick="toggleCmpSeller('kennyd')">Kennyd</button>
+      <button class="cmp-filter-btn on" data-seller="gabriel" onclick="toggleCmpSeller('gabriel')">Gabriel</button>
+    </div>
+    <div class="sec-head">Visão Comparativa</div>
+    <div class="cmp-header" id="cmp-header"></div>
+    <div class="sec-head">Volume por Etapa</div>
+    <div class="cmp-grid" id="cmp-grid"></div>
+  </div>
+</div>
+
+<!-- VIEW: ANÁLISE DO FUNIL -->
+<div class="view" id="view-analise">
+  <div class="page">
+
+    <!-- 1. Visão Geral -->
+    <div class="sec-head">Visão Geral do Funil</div>
+    <div id="an-kpis" style="margin-bottom:20px"></div>
+
+    <!-- 2. Fluxo de Conversão por Etapa -->
+    <div class="sec-head">Conversão por Etapa</div>
+    <div class="an-section" id="an-flow"></div>
+
+    <!-- 3. Gargalos -->
+    <div class="sec-head">Gargalos Identificados</div>
+    <div id="an-gaps" style="margin-bottom:20px"></div>
+
+    <!-- 4. Diagnóstico Inteligente -->
+    <div class="sec-head">Diagnóstico Inteligente</div>
+    <div id="an-diag" style="margin-bottom:20px"></div>
+
+    <!-- 5. Recomendações -->
+    <div class="sec-head">Recomendações</div>
+    <div class="an-section" id="an-recs"></div>
+
+  </div>
+</div>
+
+<!-- VIEW: AVALIADOR DE DESEMPENHO -->
+<div class="view" id="view-avaliador">
+  <div class="page">
+
+    <!-- Filtros + contexto -->
+    <div class="av-filter-bar">
+      <span class="av-filter-label">Período:</span>
+      <select id="av-period" class="av-filter-select" onchange="renderAvaliador()">
+        <option value="this-month">Este mês</option>
+        <option value="last-month">Mês passado</option>
+        <option value="last-3-months">Últimos 3 meses</option>
+        <option value="all">Todo o período</option>
+      </select>
+      <span class="av-filter-label" style="margin-left:8px">Vendedor:</span>
+      <select id="av-seller" class="av-filter-select" onchange="renderAvaliador()">
+        <option value="all">Geral (todos)</option>
+        <option value="maria">Maria Eduarda</option>
+        <option value="nicolas">Nicolas</option>
+        <option value="kennyd">Kennyd</option>
+        <option value="gabriel">Gabriel</option>
+      </select>
+      <div class="av-context-badge" id="av-context-badge">–</div>
+    </div>
+
+    <!-- Ranking do Time -->
+    <div class="sec-head">Ranking do Time</div>
+    <div class="an-section" id="av-ranking" style="margin-bottom:20px"></div>
+
+    <!-- Cards individuais -->
+    <div class="sec-head">Avaliação Individual</div>
+    <div class="av-seller-grid" id="av-cards"></div>
+
+    <!-- Critérios de avaliação -->
+    <div class="av-criteria-wrap">
+      <button class="av-criteria-toggle" onclick="toggleAvCriteria()">
+        Como o score é calculado
+        <span id="av-criteria-arrow">▼ ver detalhes</span>
+      </button>
+      <div class="av-criteria-body" id="av-criteria-body">
+        <div class="av-criteria-grid">
+          <div class="av-criteria-item">
+            <div class="av-criteria-item-title">Conversão — 35%</div>
+            <div class="av-criteria-item-desc">Fechamentos ÷ leads no topo do funil. Mede a eficiência de converter leads em clientes.</div>
+          </div>
+          <div class="av-criteria-item">
+            <div class="av-criteria-item-title">Volume — 20%</div>
+            <div class="av-criteria-item-desc">Total de leads ativos no funil. Mede o tamanho do pipeline em comparação ao restante do time.</div>
+          </div>
+          <div class="av-criteria-item">
+            <div class="av-criteria-item-title">Fechamentos — 25%</div>
+            <div class="av-criteria-item-desc">Quantidade de deals fechados no período. Mede o resultado direto de vendas concluídas.</div>
+          </div>
+          <div class="av-criteria-item">
+            <div class="av-criteria-item-title">Receita — 20%</div>
+            <div class="av-criteria-item-desc">Valor total gerado no período. Aparece apenas quando o campo "Valor Pago" está preenchido.</div>
+          </div>
+        </div>
+        <div class="av-criteria-tiers">
+          <div class="av-tier excellent"><div class="av-tier-score">85–100</div><div class="av-tier-label">🏆 Excelente</div></div>
+          <div class="av-tier good"     ><div class="av-tier-score">70–84</div> <div class="av-tier-label">⭐ Bom</div></div>
+          <div class="av-tier attention"><div class="av-tier-score">50–69</div> <div class="av-tier-label">⚠️ Atenção</div></div>
+          <div class="av-tier critical" ><div class="av-tier-score">0–49</div>  <div class="av-tier-label">🔴 Crítico</div></div>
+        </div>
+        <div class="av-criteria-note">
+          ⚠️ Scores são normalizados relativos ao melhor do time no período: o vendedor com melhor conversão recebe 100 nessa dimensão.
+          Isso significa que um score alto indica liderança dentro do time, não necessariamente um benchmark externo de mercado.
+        </div>
+      </div>
+    </div>
+
+  </div>
+</div>
+
+<script>
+// ================================================================
+// CONFIG
+// ================================================================
+const CONFIG = {
+  API_KEY:  'pk_112005023_9TZEPKOULXBLLVAFWFAUOQA6V0M48OUH',
+  LIST_ID:          '901309503357',
+  CLOSINGS_LIST_ID: '901326269889',
+  INTERVAL: 30_000,
+  // Mapeamento por username ClickUp (lowercase, sem acento — partial match)
+  SELLERS: {
+    maria:   ['maria', 'eduarda'],
+    nicolas: ['nicolas'],
+    kennyd:  ['kennyd'],
+    gabriel: ['gabriel'],
+  },
+  // Metadados de exibição por vendedor
+  SELLER_META: {
+    maria:   { name: 'Maria Eduarda', init: 'M' },
+    nicolas: { name: 'Nicolas',       init: 'N' },
+    kennyd:  { name: 'Kennyd',        init: 'K' },
+    gabriel: { name: 'Gabriel',       init: 'Gb' },
+  }
+};
+// NOTA: Para produção, mova API_KEY para proxy backend.
+
+// ================================================================
+// FUNIL — Stages dinâmicos (lidos da API do ClickUp)
+// ================================================================
+let STAGES = []; // preenchido por buildStages() após cada fetch
+
+// Status terminais — não aparecem no funil ativo
+const STAGE_EXCLUDE = ['negocio fechado', 'finalizado', 'perdido'];
+
+// Etapas passivas — visíveis no funil, mas FORA das métricas de conversão/gargalo/oportunidade
+// Stand By = lead frio fora do fluxo | Pago = cliente fechado, não mais ativo
+const STAGE_PASSIVE = new Set(['stand by', 'pago']);
+
+// Cores semânticas por chave de status (sobrescreve paleta automática)
+const STAGE_COLORS = {
+  'stand by': ['#fcd34d','#d97706'],  // amber — atenção
+  'pago':     ['#34d399','#059669'],  // emerald — conversão/fechamento
+};
+
+// Paleta de cores por índice — cicla se houver mais etapas que 10
+const COLOR_PALETTE = [
+  ['#60a5fa','#2563eb'],  // blue
+  ['#a78bfa','#7c3aed'],  // violet
+  ['#22d3ee','#0891b2'],  // cyan
+  ['#fcd34d','#d97706'],  // amber
+  ['#fb923c','#ea580c'],  // orange
+  ['#34d399','#059669'],  // emerald
+  ['#f472b6','#db2777'],  // pink
+  ['#94a3b8','#475569'],  // slate
+  ['#a3e635','#65a30d'],  // lime
+  ['#818cf8','#4338ca'],  // indigo
+];
+function getStageColor(i, key) {
+  if (key && STAGE_COLORS[key]) return STAGE_COLORS[key];
+  return COLOR_PALETTE[i % COLOR_PALETTE.length];
+}
+
+// Constrói STAGES a partir dos tasks retornados pela API
+function buildStages(tasks) {
+  const map = new Map();
+  for (const task of tasks) {
+    const raw = task.status?.status || '';
+    if (!raw) continue;
+    const key = norm(raw);
+    if (STAGE_EXCLUDE.some(ex => key.includes(norm(ex)))) continue;
+    if (!map.has(key)) {
+      map.set(key, { key, label: formatLabel(raw), orderindex: task.status?.orderindex ?? 999 });
+    }
+  }
+  return [...map.values()].sort((a, b) => a.orderindex - b.orderindex);
+}
+
+// Formata label da etapa (corrige typos conhecidos, capitaliza)
+function formatLabel(raw) {
+  const s = norm(raw);
+  if (s.includes('qualfic') && !s.includes('qualific')) return 'Qualificado';
+  if (s.includes('reuni')) return 'Reunião Agendada';
+  if (s === 'stand by') return 'Stand By';
+  return raw.trim().replace(/(?:^|\s)\S/g, c => c.toUpperCase());
+}
+
+// ================================================================
+// STATE
+// ================================================================
+const charts   = {};
+let activeTab  = 'maria';
+let data       = {}; // populated dynamically per seller keys in CONFIG.SELLERS
+
+// Comparativo filter — which sellers are visible in the comparison tab
+let cmpFilter = new Set(Object.keys(CONFIG.SELLERS));
+
+// ================================================================
+// FECHAMENTOS / APRESENTAÇÕES — Field IDs (CRM-VENDAS custom fields)
+// ================================================================
+const FIELD_PAGAMENTO    = '886eb0c3-a892-4e94-99c5-f7c6f080b0c6'; // Data do pagamento (date)
+const FIELD_APRESENTACAO = '05d84734-956d-4972-96c0-f60e6966dfaa'; // Data da Apresentação (date)
+const FIELD_NOME_COMP    = '97b8f6c1-8787-4ae7-8986-e404401507e8'; // Nome Completo (text)
+const FIELD_EMPRESA      = 'f9b40f42-1449-4648-878d-5aa9775e3ae9'; // Nome da empresa (text)
+const FIELD_VALOR_PAGO   = '131b8561-86af-4232-93b2-1951a1215e5c'; // Valor Pago (currency)
+
+const PT_MONTHS = ['Janeiro','Fevereiro','Março','Abril','Maio','Junho',
+                   'Julho','Agosto','Setembro','Outubro','Novembro','Dezembro'];
+
+let closingsData      = []; // { name, seller, date, status, valor }
+let presentationsData = []; // { name, seller, date, status }
+
+// ================================================================
+// UTILS
+// ================================================================
+const norm = s => (s||'').toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g,'').trim();
+
+function mapStatus(raw) {
+  return norm(raw) || null;
+}
+
+function identifySeller(assignees) {
+  for (const a of (assignees||[])) {
+    const name = norm(a.username || a.email || '');
+    for (const [key,terms] of Object.entries(CONFIG.SELLERS)) {
+      if (terms.some(t => name.includes(t))) return key;
+    }
+  }
+  return null;
+}
+
+function getArr(key) {
+  return STAGES.map(s => data[key][s.key] || 0);
+}
+
+function getTotal(key) {
+  return getArr(key).reduce((a,b) => a+b, 0);
+}
+
+function findBottleneck(arr) {
+  let worst = null, worstRate = Infinity;
+  for (let i=1; i<arr.length; i++) {
+    if (arr[i-1] < 3) continue;
+    const rate = arr[i] / arr[i-1];
+    if (rate < worstRate) { worstRate = rate; worst = i; }
+  }
+  return worst;
+}
+
+function findOpportunity(arr) {
+  // Prioriza o fundo do funil (metade inferior)
+  const mid = Math.floor(arr.length / 2);
+  for (let i = arr.length-1; i >= mid; i--) {
+    if (arr[i] > 0) return i;
+  }
+  for (let i = arr.length-1; i >= 0; i--) {
+    if (arr[i] > 0) return i;
+  }
+  return null;
+}
+
+function convRate(arr, i) {
+  if (i === 0 || arr[i-1] === 0) return null;
+  return ((arr[i] / arr[i-1]) * 100).toFixed(1);
+}
+
+function convClass(rate) {
+  if (rate === null) return '';
+  if (rate < 20) return 'conv-drop';
+  if (rate < 50) return 'conv-warn';
+  return 'conv-ok';
+}
+
+// ================================================================
+// FECHAMENTOS — Data extraction from raw tasks
+// ================================================================
+function buildClosingsData(tasks) {
+  closingsData      = [];
+  presentationsData = [];
+
+  for (const task of tasks) {
+    const isOficial  = !!task._source;
+    const cfs        = task.custom_fields || [];
+    const getField   = id => cfs.find(f => f.id === id);
+    const nomeF      = getField(FIELD_NOME_COMP);
+    const empresaF   = getField(FIELD_EMPRESA);
+    const pagF       = getField(FIELD_PAGAMENTO);
+    const apresF     = getField(FIELD_APRESENTACAO);
+    const valorF     = getField(FIELD_VALOR_PAGO);
+
+    const name   = isOficial
+      ? (task.name || '').trim().slice(0, 50) || task.name
+      : ((nomeF?.value || empresaF?.value || task.name) + '').trim().slice(0, 50) || task.name;
+    const seller = identifySeller(task.assignees) || 'outros';
+    const status = isOficial ? 'pago' : (task.status?.status || '');
+
+    if (pagF?.value) {
+      closingsData.push({
+        id:     task.id,
+        name, seller, status,
+        date:   new Date(parseInt(pagF.value)),
+        valor:  valorF?.value ? parseFloat(valorF.value) : null,
+        source: isOficial ? 'oficial' : 'vendas',
+      });
+    }
+    // Apresentações: contabiliza de ambas as listas.
+    // Tasks repetidas já foram removidas pela deduplicação por task.id antes de chegar aqui.
+    if (apresF?.value) {
+      presentationsData.push({
+        name, seller, status,
+        date: new Date(parseInt(apresF.value)),
+      });
+    }
+  }
+
+  // Sort newest first
+  closingsData.sort((a, b) => b.date - a.date);
+  presentationsData.sort((a, b) => b.date - a.date);
+
+  // Update tab pill with total fechamentos
+  const pillEl = document.getElementById('pill-fechamentos');
+  if (pillEl) pillEl.textContent = closingsData.length || '–';
+}
+
+function isInPeriod(date, period) {
+  const now = new Date();
+  if (period === 'all') return true;
+  if (period === 'this-week')     return date >= new Date(now - 7*24*60*60*1000);
+  if (period === 'this-month')    return date.getFullYear() === now.getFullYear() && date.getMonth() === now.getMonth();
+  if (period === 'last-month') {
+    const lm = new Date(now.getFullYear(), now.getMonth()-1, 1);
+    return date.getFullYear() === lm.getFullYear() && date.getMonth() === lm.getMonth();
+  }
+  if (period === 'last-3-months') return date >= new Date(now.getFullYear(), now.getMonth()-3, 1);
+  return true;
+}
+
+function statusTagClass(status) {
+  const s = (status||'').toLowerCase();
+  if (s.includes('pago'))   return 'st-pago';
+  if (s.includes('negoc'))  return 'st-neg';
+  if (s.includes('follow')) return 'st-follow';
+  if (s.includes('stand'))  return 'st-stand';
+  if (s.includes('apres'))  return 'st-apres';
+  if (s.includes('reuni'))  return 'st-reuni';
+  return 'st-other';
+}
+
+// ================================================================
+// REVENUE CHART — Receita mensal (últimos 6 meses)
+// ================================================================
+function renderRevenueChart(sellerFilter) {
+  const section = document.getElementById('rev-chart-section');
+  const hasValor = closingsData.some(r => r.valor > 0);
+  if (!hasValor) { section.style.display = 'none'; return; }
+  section.style.display = '';
+
+  // Últimos 6 meses
+  const months = [];
+  for (let i = 5; i >= 0; i--) {
+    const d = new Date();
+    d.setDate(1);
+    d.setMonth(d.getMonth() - i);
+    months.push(`${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}`);
+  }
+
+  const sellers = Object.keys(CONFIG.SELLER_META);
+  const sellerColors = { maria:'#60a5fa', nicolas:'#f472b6', kennyd:'#34d399', gabriel:'#fbbf24' };
+
+  // Por vendedor × mês
+  const datasets = sellers.map(sk => {
+    const meta = CONFIG.SELLER_META[sk];
+    return {
+      label: meta.name,
+      data: months.map(m => {
+        if (sellerFilter !== 'all' && sellerFilter !== sk) return 0;
+        return closingsData
+          .filter(r => r.seller === sk && `${r.date.getFullYear()}-${String(r.date.getMonth()+1).padStart(2,'0')}` === m)
+          .reduce((s, r) => s + (r.valor || 0), 0);
+      }),
+      backgroundColor: sellerColors[sk] || '#94a3b8',
+      borderRadius: 4,
+      borderSkipped: false,
+    };
+  });
+
+  const labels = months.map(m => {
+    const [y, mo] = m.split('-');
+    return PT_MONTHS[parseInt(mo)-1].slice(0,3) + '/' + y.slice(2);
+  });
+
+  // KPIs de receita no gráfico
+  const totalByMonth = months.map((m, i) => datasets.reduce((s, d) => s + d.data[i], 0));
+  const peakMonth    = months[totalByMonth.indexOf(Math.max(...totalByMonth))];
+  const [py, pm]     = peakMonth.split('-');
+  const peakLabel    = PT_MONTHS[parseInt(pm)-1] + '/' + py;
+  const peakVal      = Math.max(...totalByMonth);
+  const totalAll     = totalByMonth.reduce((a,b) => a+b, 0);
+  const avgMonthly   = totalAll / months.filter((_,i) => totalByMonth[i] > 0).length || 0;
+
+  document.getElementById('rev-kpis').innerHTML = [
+    { v: 'R$\u00A0' + totalAll.toLocaleString('pt-BR',{minimumFractionDigits:0}), l: 'Receita 6 meses', cls: 'green' },
+    { v: 'R$\u00A0' + avgMonthly.toLocaleString('pt-BR',{minimumFractionDigits:0}), l: 'Média Mensal' },
+    { v: peakVal > 0 ? `R$\u00A0${peakVal.toLocaleString('pt-BR',{minimumFractionDigits:0})}` : '–', l: `Pico (${peakLabel})` },
+  ].map(k => `<div class="rev-kpi"><div class="rev-kpi-v ${k.cls||''}">${k.v}</div><div class="rev-kpi-l">${k.l}</div></div>`).join('');
+
+  // Chart.js
+  const ctx = document.getElementById('rev-chart').getContext('2d');
+  if (charts['rev']) { charts['rev'].destroy(); }
+  charts['rev'] = new Chart(ctx, {
+    type: 'bar',
+    data: { labels, datasets },
+    options: {
+      responsive: true,
+      plugins: {
+        legend: { position: 'bottom', labels: { font: { size: 11 }, boxWidth: 12, padding: 12 } },
+        tooltip: {
+          callbacks: {
+            label: ctx => ` ${ctx.dataset.label}: R$ ${ctx.parsed.y.toLocaleString('pt-BR',{minimumFractionDigits:0})}`,
+          }
+        },
+      },
+      scales: {
+        x: { stacked: true, grid: { display: false }, ticks: { font: { size: 11 } } },
+        y: { stacked: true, grid: { color: '#f0f0f0' }, ticks: { font: { size: 11 }, callback: v => 'R$\u00A0' + v.toLocaleString('pt-BR') } },
+      },
+    },
+  });
+}
+
+// ================================================================
+// RENDER FECHAMENTOS (Fechamentos + Apresentações sections)
+// ================================================================
+function renderFechamentos() {
+  if (closingsData.length === 0 && presentationsData.length === 0) return;
+
+  const cfSeller = document.getElementById('cf-seller')?.value || 'all';
+  const cfMonth  = document.getElementById('cf-month')?.value  || 'all';
+  const cpSeller = document.getElementById('cp-seller')?.value || 'all';
+  const cpPeriod = document.getElementById('cp-period')?.value || 'all';
+
+  // ── FECHAMENTOS ──────────────────────────────────────────────
+  const filtClosed = closingsData.filter(r => {
+    const sellerOk = cfSeller === 'all' || r.seller === cfSeller;
+    const mKey     = `${r.date.getFullYear()}-${String(r.date.getMonth()+1).padStart(2,'0')}`;
+    const monthOk  = cfMonth  === 'all' || mKey === cfMonth;
+    return sellerOk && monthOk;
+  });
+
+  // Rebuild month filter options from all data
+  const monthSelect = document.getElementById('cf-month');
+  if (monthSelect) {
+    const cur = monthSelect.value;
+    monthSelect.innerHTML = '<option value="all">Todos os meses</option>';
+    const seen = [...new Set(closingsData.map(r =>
+      `${r.date.getFullYear()}-${String(r.date.getMonth()+1).padStart(2,'0')}`
+    ))].sort().reverse();
+    seen.forEach(m => {
+      const [y, mo] = m.split('-');
+      const opt = document.createElement('option');
+      opt.value = m;
+      opt.textContent = PT_MONTHS[parseInt(mo)-1] + ' ' + y;
+      if (m === cur) opt.selected = true;
+      monthSelect.appendChild(opt);
+    });
+  }
+
+  // KPI row — fechamentos
+  const totalValor  = filtClosed.reduce((s, r) => s + (r.valor || 0), 0);
+  const ticket      = filtClosed.length > 0 ? totalValor / filtClosed.length : 0;
+
+  // variação MoM — compara mês atual com anterior (sobre todos os dados, não filtrado)
+  const now = new Date();
+  const curMo  = `${now.getFullYear()}-${String(now.getMonth()+1).padStart(2,'0')}`;
+  const prevMo = (() => { const d = new Date(now.getFullYear(), now.getMonth()-1, 1); return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}`; })();
+  const revCur  = closingsData.filter(r => `${r.date.getFullYear()}-${String(r.date.getMonth()+1).padStart(2,'0')}` === curMo).reduce((s,r) => s+(r.valor||0), 0);
+  const revPrev = closingsData.filter(r => `${r.date.getFullYear()}-${String(r.date.getMonth()+1).padStart(2,'0')}` === prevMo).reduce((s,r) => s+(r.valor||0), 0);
+  const momPct  = revPrev > 0 ? ((revCur - revPrev) / revPrev * 100) : null;
+  const momHtml = momPct === null ? '' :
+    `<span class="rev-mom ${momPct>0?'up':momPct<0?'dn':'flat'}">${momPct>0?'▲':'▼'} ${Math.abs(momPct).toFixed(0)}% vs mês ant.</span>`;
+
+  const cfKpiItems = [
+    { v: filtClosed.length, l: 'Fechamentos', h: filtClosed.length > 0 },
+    ...Object.entries(CONFIG.SELLER_META).map(([k, m]) => ({
+      v: filtClosed.filter(r => r.seller === k).length, l: m.name
+    })),
+    ...(totalValor > 0
+      ? [{ v: 'R$\u00A0' + totalValor.toLocaleString('pt-BR', {minimumFractionDigits: 0}), l: 'Valor Total', h: true }]
+      : []),
+    ...(ticket > 0
+      ? [{ v: 'R$\u00A0' + ticket.toLocaleString('pt-BR', {minimumFractionDigits: 0}), l: 'Ticket Médio' }]
+      : []),
+  ];
+  document.getElementById('cf-kpis').innerHTML =
+    `<div class="kpi-row">${cfKpiItems.map(k =>
+      `<div class="kpi ${k.h?'highlight':''}"><div class="kpi-v">${k.v}</div><div class="kpi-l">${k.l}</div></div>`
+    ).join('')}</div>${momHtml ? `<div style="margin-top:6px;margin-bottom:4px">${momHtml}</div>` : ''}`;
+
+  // Gráfico de receita mensal
+  renderRevenueChart(cfSeller);
+
+  // Fechamentos list grouped by month
+  if (filtClosed.length === 0) {
+    document.getElementById('cf-list').innerHTML =
+      `<div class="ctrl-empty">Nenhum fechamento encontrado. Os dados são carregados a partir do campo "Data do pagamento" no CRM-VENDAS e no CRM OFICIAL.</div>`;
+  } else {
+    const groups = {};
+    for (const r of filtClosed) {
+      const k = `${r.date.getFullYear()}-${String(r.date.getMonth()+1).padStart(2,'0')}`;
+      if (!groups[k]) groups[k] = [];
+      groups[k].push(r);
+    }
+    const sortedKeys = Object.keys(groups).sort().reverse();
+    const body = sortedKeys.map(k => {
+      const [y, mo] = k.split('-');
+      const rows = groups[k].map(r => `
+        <div class="ctrl-row ctrl-cols-5">
+          <div class="ctrl-row-name">${r.name}${r.source==='oficial'?' <span style="font-size:9px;font-weight:700;background:#dbeafe;color:#1d4ed8;border-radius:4px;padding:1px 5px;vertical-align:middle">CRM OFICIAL</span>':''}</div>
+          <div class="ctrl-row-seller">${CONFIG.SELLER_META[r.seller]?.name || r.seller}</div>
+          <div class="ctrl-row-date">${r.date.toLocaleDateString('pt-BR')}</div>
+          <div class="ctrl-row-valor">${r.valor ? 'R$\u00A0'+r.valor.toLocaleString('pt-BR',{minimumFractionDigits:2}) : '–'}</div>
+          <div><span class="ctrl-status-tag st-pago">✅ Pago</span></div>
+        </div>`).join('');
+      return `
+        <div class="ctrl-group-head">${PT_MONTHS[parseInt(mo)-1]} ${y}
+          <span class="ctrl-group-count">${groups[k].length} fechamento${groups[k].length>1?'s':''}</span>
+        </div>${rows}`;
+    }).join('');
+    document.getElementById('cf-list').innerHTML = `
+      <div class="ctrl-table-wrap">
+        <div class="ctrl-table-hd ctrl-cols-5">
+          <div>Cliente</div><div>Responsável</div><div>Data Pagamento</div><div>Valor Pago</div><div>Status</div>
+        </div>${body}
+      </div>`;
+  }
+
+  // ── APRESENTAÇÕES ────────────────────────────────────────────
+  const filtApres = presentationsData.filter(r => {
+    const sellerOk = cpSeller === 'all' || r.seller === cpSeller;
+    return sellerOk && isInPeriod(r.date, cpPeriod);
+  });
+
+  // KPI row — apresentações
+  const cpKpiItems = [
+    { v: filtApres.length, l: 'Apresentações', h: filtApres.length > 0 },
+    ...Object.entries(CONFIG.SELLER_META).map(([k, m]) => ({
+      v: filtApres.filter(r => r.seller === k).length, l: m.name
+    })),
+  ];
+  document.getElementById('cp-kpis').innerHTML =
+    `<div class="kpi-row">${cpKpiItems.map(k =>
+      `<div class="kpi ${k.h?'highlight':''}"><div class="kpi-v">${k.v}</div><div class="kpi-l">${k.l}</div></div>`
+    ).join('')}</div>`;
+
+  if (filtApres.length === 0) {
+    document.getElementById('cp-list').innerHTML =
+      `<div class="ctrl-empty">Nenhuma apresentação encontrada para os filtros selecionados.</div>`;
+  } else {
+    const rows = filtApres.map(r => `
+      <div class="ctrl-row ctrl-cols-4">
+        <div class="ctrl-row-name">${r.name}</div>
+        <div class="ctrl-row-seller">${CONFIG.SELLER_META[r.seller]?.name || (r.seller==='outros'?'Sem Responsável':r.seller)}</div>
+        <div class="ctrl-row-date">${r.date.toLocaleDateString('pt-BR')}</div>
+        <div><span class="ctrl-status-tag ${statusTagClass(r.status)}">${r.status || '–'}</span></div>
+      </div>`).join('');
+    document.getElementById('cp-list').innerHTML = `
+      <div class="ctrl-table-wrap">
+        <div class="ctrl-table-hd ctrl-cols-4">
+          <div>Cliente</div><div>Responsável</div><div>Data Apresentação</div><div>Status Atual</div>
+        </div>${rows}
+      </div>`;
+  }
+}
+
+// ================================================================
+// AVALIADOR DE DESEMPENHO COMERCIAL
+// ================================================================
+
+// Filtra closingsData pelo período selecionado
+function filterClosingsByPeriod(period) {
+  const now = new Date();
+  return closingsData.filter(r => {
+    if (period === 'all') return true;
+    if (period === 'this-month')
+      return r.date.getFullYear() === now.getFullYear() && r.date.getMonth() === now.getMonth();
+    if (period === 'last-month') {
+      const lm = new Date(now.getFullYear(), now.getMonth() - 1, 1);
+      return r.date.getFullYear() === lm.getFullYear() && r.date.getMonth() === lm.getMonth();
+    }
+    if (period === 'last-3-months')
+      return r.date >= new Date(now.getFullYear(), now.getMonth() - 3, 1);
+    return true;
+  });
+}
+
+// Rótulo legível do período
+function periodLabel(period) {
+  const now = new Date();
+  if (period === 'this-month')   return PT_MONTHS[now.getMonth()] + ' ' + now.getFullYear();
+  if (period === 'last-month') {
+    const lm = new Date(now.getFullYear(), now.getMonth() - 1, 1);
+    return PT_MONTHS[lm.getMonth()] + ' ' + lm.getFullYear();
+  }
+  if (period === 'last-3-months') return 'Últimos 3 meses';
+  return 'Todo o período';
+}
+
+function calcSellerScore(key, filteredClosings) {
+  if (!STAGES.length) return null;
+
+  const sellers      = Object.keys(CONFIG.SELLERS);
+  const activeStages = STAGES.filter(st => !STAGE_PASSIVE.has(st.key));
+  if (activeStages.length === 0) return null;
+
+  // Dados brutos de todos os vendedores (volume do funil = sempre atual; fechamentos = período filtrado)
+  const raw = sellers.map(k => {
+    const topo    = data[k][activeStages[0].key] || 0;
+    const active  = activeStages.reduce((s, st) => s + (data[k][st.key] || 0), 0);
+    const myClose = filteredClosings.filter(r => r.seller === k);
+    const nClose  = myClose.length;
+    const revenue = myClose.reduce((s, r) => s + (r.valor || 0), 0);
+    const conv    = topo > 0 ? (nClose / topo * 100) : 0;
+    return { key: k, topo, active, nClose, revenue, conv };
+  });
+
+  const mine       = raw.find(r => r.key === key);
+  const maxActive  = Math.max(...raw.map(r => r.active),  1);
+  const maxClose   = Math.max(...raw.map(r => r.nClose),  1);
+  const maxRevenue = Math.max(...raw.map(r => r.revenue), 0);
+  const maxConv    = Math.max(...raw.map(r => r.conv),    1);
+  const hasRevData = maxRevenue > 0;
+  const hasData    = mine.active > 0 || mine.nClose > 0;
+
+  const sConv = maxConv    > 0 ? Math.round(mine.conv    / maxConv    * 100) : 0;
+  const sVol  = maxActive  > 0 ? Math.round(mine.active  / maxActive  * 100) : 0;
+  const sFech = Math.round(mine.nClose / maxClose * 100);
+  const sRev  = hasRevData ? Math.round(mine.revenue / maxRevenue * 100) : null;
+
+  const total = hasRevData
+    ? Math.round(sConv * 0.35 + sVol * 0.20 + sFech * 0.25 + sRev * 0.20)
+    : Math.round(sConv * 0.40 + sVol * 0.25 + sFech * 0.35);
+
+  const cls      = total >= 85 ? 'excellent' : total >= 70 ? 'good' : total >= 50 ? 'attention' : 'critical';
+  const clsLabel = total >= 85 ? 'Excelente'  : total >= 70 ? 'Bom'  : total >= 50 ? 'Atenção'   : 'Crítico';
+  const clsIcon  = total >= 85 ? '🏆'          : total >= 70 ? '⭐'   : total >= 50 ? '⚠️'         : '🔴';
+
+  const avgActive = raw.reduce((s, r) => s + r.active, 0) / sellers.length;
+  const avgClose  = raw.reduce((s, r) => s + r.nClose, 0) / sellers.length;
+  const standBy   = data[key]['stand by'] || 0;
+
+  const insights = [];
+  if (!hasData) {
+    insights.push({ icon: 'ℹ️', text: 'Sem dados suficientes para avaliação completa.' });
+  } else {
+    if (mine.conv > 0 && sConv >= 80 && mine.active < avgActive * 0.7) {
+      insights.push({ icon: '💡', text: `Alta conversão (${mine.conv.toFixed(0)}%), mas volume abaixo da média do time. Prioridade: aumentar prospecção.` });
+    } else if (sConv < 50 && mine.active >= avgActive) {
+      insights.push({ icon: '⚠️', text: `Bom volume no funil, mas conversão baixa (${mine.conv.toFixed(0)}%). Revisar qualificação e abordagem de vendas.` });
+    }
+    if (standBy > 0 && mine.active > 0 && standBy / mine.active > 0.25) {
+      insights.push({ icon: '⏸️', text: `${standBy} lead${standBy > 1 ? 's' : ''} em Stand By (${(standBy / mine.active * 100).toFixed(0)}% do pipeline). Reativar antes de buscar novos contatos.` });
+    }
+    if (mine.nClose === 0 && mine.active > 0) {
+      insights.push({ icon: '🔴', text: 'Nenhum fechamento no período. Verificar preenchimento do campo "Data do pagamento" ou revisar etapas finais.' });
+    } else if (mine.nClose > 0 && mine.nClose >= avgClose * 1.2) {
+      insights.push({ icon: '💡', text: `Acima da média em fechamentos: ${mine.nClose} vs média de ${avgClose.toFixed(0)} do time.` });
+    }
+    if (insights.length === 0) {
+      insights.push({ icon: 'ℹ️', text: 'Performance dentro dos padrões do time. Manter consistência e ritmo.' });
+    }
+  }
+
+  let rec;
+  if (!hasData) {
+    rec = 'Adicionar leads ao funil para iniciar avaliação de desempenho.';
+  } else if (sConv < 40) {
+    rec = 'Foco em conversão: revisar cadência de follow-up, script de vendas e critérios de qualificação.';
+  } else if (sVol < 40) {
+    rec = 'Aumentar volume no topo: intensificar prospecção e geração de novos contatos qualificados.';
+  } else if (sFech < 40) {
+    rec = 'Trabalhar fechamentos: criar senso de urgência, revisar proposta comercial e técnicas de conversão final.';
+  } else if (standBy > 2) {
+    rec = `Reativar os ${standBy} leads em Stand By com abordagem personalizada antes de buscar novos contatos.`;
+  } else {
+    rec = 'Manter ritmo atual e focar em qualidade dos leads no topo do funil para escalar resultados.';
+  }
+
+  // Labels de origem/destino para conversão geral
+  const topoLabel = activeStages[0].label;
+  const convLabel = `${topoLabel} → Fechamento`;
+  const convRaw   = mine.topo > 0
+    ? `${mine.conv.toFixed(1)}% (${mine.nClose} de ${mine.topo})`
+    : '–';
+
+  return {
+    key, hasData, total, cls, clsLabel, clsIcon,
+    scores: [
+      { label: convLabel,    value: sConv, raw: convRaw,           tooltip: `Conversão geral: ${mine.nClose} fechamentos ÷ ${mine.topo} leads no topo do funil` },
+      { label: 'Volume',     value: sVol,  raw: mine.active + ' leads', tooltip: 'Total de leads nas etapas ativas do funil' },
+      { label: 'Fechamentos',value: sFech, raw: mine.nClose,        tooltip: `Deals fechados no período selecionado` },
+      ...(hasRevData ? [{ label: 'Receita', value: sRev, raw: 'R$\u00A0' + mine.revenue.toLocaleString('pt-BR', { minimumFractionDigits: 0 }), tooltip: 'Valor total de Valor Pago no período' }] : []),
+    ],
+    insights,
+    rec,
+  };
+}
+
+function toggleAvCriteria() {
+  const body  = document.getElementById('av-criteria-body');
+  const arrow = document.getElementById('av-criteria-arrow');
+  const open  = body.classList.toggle('open');
+  arrow.textContent = open ? '▲ ocultar' : '▼ ver detalhes';
+}
+
+function renderAvaliador() {
+  if (!STAGES.length || !Object.keys(data).length) return;
+
+  const period       = document.getElementById('av-period')?.value  || 'this-month';
+  const sellerFilter = document.getElementById('av-seller')?.value  || 'all';
+  const filteredCl   = filterClosingsByPeriod(period);
+
+  // Atualiza badge de contexto
+  const sellerName = sellerFilter === 'all'
+    ? 'Geral'
+    : (CONFIG.SELLER_META[sellerFilter]?.name || sellerFilter);
+  const ctxEl = document.getElementById('av-context-badge');
+  if (ctxEl) ctxEl.textContent = `${periodLabel(period)} · ${sellerName}`;
+
+  const sellers = Object.keys(CONFIG.SELLERS);
+  const results = sellers.map(k => calcSellerScore(k, filteredCl)).filter(Boolean);
+  if (results.length === 0) return;
+
+  const ranked = [...results].sort((a, b) => b.total - a.total);
+
+  // Ranking
+  document.getElementById('av-ranking').innerHTML = ranked.map((s, i) => {
+    const meta    = CONFIG.SELLER_META[s.key];
+    const isMatch = sellerFilter === 'all' || sellerFilter === s.key;
+    return `
+      <div class="av-rank-item" style="${isMatch ? '' : 'opacity:.35'}">
+        <div class="av-rank-pos">${i + 1}</div>
+        <div class="av-rank-name">${meta.name}</div>
+        <div class="av-rank-track">
+          <div class="av-rank-fill ${s.cls}" style="width:${s.total}%"></div>
+        </div>
+        <div class="av-rank-score ${s.cls}">${s.total}</div>
+        <div class="av-rank-badge">${s.clsIcon} ${s.clsLabel}</div>
+      </div>`;
+  }).join('');
+
+  // Cards individuais
+  document.getElementById('av-cards').innerHTML = results.map(s => {
+    const meta      = CONFIG.SELLER_META[s.key];
+    const isMatch   = sellerFilter === 'all' || sellerFilter === s.key;
+    const cardCls   = sellerFilter === 'all' ? '' : (isMatch ? 'featured' : 'dimmed');
+    const circleExtra = isMatch && sellerFilter !== 'all' ? ' large' : '';
+
+    const pLabel = periodLabel(period);
+
+    // Sub-scores: valor real em destaque, score relativo pequeno e explicado
+    const subsHtml = s.scores.map(sub => `
+      <div class="av-sub-row" title="${sub.tooltip || ''}">
+        <div class="av-sub-label" style="min-width:0;flex:1;white-space:nowrap;overflow:hidden;text-overflow:ellipsis" title="${sub.label}">${sub.label}</div>
+        <div class="av-sub-track" style="flex:0 0 80px"><div class="av-sub-fill ${s.cls}" style="width:${sub.value}%"></div></div>
+        <div class="av-sub-raw">${sub.raw}</div>
+        <div class="av-sub-pct" title="Score relativo ao melhor do time (0–100)">${sub.value}pts</div>
+      </div>`).join('');
+
+    const insightsHtml = s.insights.map(ins => `
+      <div class="av-insight-item">
+        <span>${ins.icon}</span>
+        <span>${ins.text}</span>
+      </div>`).join('');
+
+    return `
+      <div class="av-card ${cardCls}">
+        <div class="av-card-head">
+          <div>
+            <div class="av-card-name">${meta.name}</div>
+            <span class="av-badge ${s.cls}">${s.clsIcon} ${s.clsLabel}</span>
+            <div class="av-period-chip">📅 ${pLabel}</div>
+          </div>
+          <div class="av-score-circle ${s.cls}${circleExtra}">${s.total}</div>
+        </div>
+        <div style="font-size:10px;color:var(--muted);margin-bottom:10px;display:flex;justify-content:space-between">
+          <span>Métrica real</span>
+          <span>Score relativo ao time</span>
+        </div>
+        <div class="av-subs">${subsHtml}</div>
+        <div class="av-insights">${insightsHtml}</div>
+        <div class="av-rec-box">
+          <div class="av-rec-label">Próxima ação</div>
+          <div class="av-rec-text">${s.rec}</div>
+        </div>
+      </div>`;
+  }).join('');
+}
+
+// ================================================================
+// ANÁLISE DO FUNIL — Painel de Gestão Comercial
+// ================================================================
+function renderAnalise() {
+  if (!STAGES.length || !Object.keys(data).length) return;
+
+  const sellers      = Object.keys(CONFIG.SELLERS);
+  const activeStages = STAGES.filter(st => !STAGE_PASSIVE.has(st.key));
+
+  // Agrega todos os vendedores por etapa
+  const stageData = STAGES.map(st => ({
+    ...st,
+    total:     sellers.reduce((s, k) => s + (data[k][st.key] || 0), 0),
+    isPassive: STAGE_PASSIVE.has(st.key),
+  }));
+  const activeData   = stageData.filter(s => !s.isPassive);
+  const totalFunil   = activeData.reduce((s, d) => s + d.total, 0);
+  const totalTopo    = activeData[0]?.total || 0;
+  const aBotSlice    = Math.max(0, activeData.length - 3);
+  const totalFundo   = activeData.slice(aBotSlice).reduce((s, d) => s + d.total, 0);
+  const totalStandBy = stageData.find(s => s.key === 'stand by')?.total || 0;
+  const convGeral    = totalTopo > 0 ? (closingsData.length / totalTopo * 100) : 0;
+
+  // Taxa de conversão entre etapas consecutivas (ativas)
+  const convRates = [];
+  for (let i = 1; i < activeData.length; i++) {
+    const from = activeData[i - 1];
+    const to   = activeData[i];
+    const rate = from.total > 0 ? (to.total / from.total * 100) : null;
+    convRates.push({ from, to, rate, drop: from.total - to.total });
+  }
+
+  // Gargalo = menor taxa de conversão
+  const validRates  = convRates.filter(r => r.rate !== null && r.from.total > 0);
+  const bottleneck  = validRates.length ? validRates.reduce((w, r) => r.rate < w.rate ? r : w) : null;
+  const bnIdx       = bottleneck ? validRates.indexOf(bottleneck) : -1;
+  const bnPos       = validRates.length > 1 ? bnIdx / (validRates.length - 1) : 0.5;
+
+  const fmtR = v => `R$\u00A0${v.toLocaleString('pt-BR',{minimumFractionDigits:0})}`;
+
+  // ── 1. KPIs ────────────────────────────────────────────────────
+  const convClass = convGeral >= 15 ? 'highlight' : convGeral >= 8 ? '' : '';
+  document.getElementById('an-kpis').innerHTML = `<div class="kpi-row">
+    <div class="kpi highlight"><div class="kpi-v">${totalFunil}</div><div class="kpi-l">Total no Funil</div></div>
+    <div class="kpi"><div class="kpi-v">${totalTopo}</div><div class="kpi-l">Topo do Funil</div></div>
+    <div class="kpi"><div class="kpi-v">${totalFundo}</div><div class="kpi-l">Fundo do Funil</div></div>
+    <div class="kpi ${convClass}"><div class="kpi-v">${convGeral.toFixed(1)}%</div><div class="kpi-l">Conversão Geral</div></div>
+    <div class="kpi"><div class="kpi-v">${closingsData.length}</div><div class="kpi-l">Fechamentos</div></div>
+    ${totalStandBy > 0 ? `<div class="kpi"><div class="kpi-v">${totalStandBy}</div><div class="kpi-l">Stand By</div></div>` : ''}
+  </div>`;
+
+  // ── 2. Fluxo de conversão por etapa ────────────────────────────
+  const flowRows = convRates.map(r => {
+    const cls   = r.rate === null ? 'ok' : r.rate >= 50 ? 'ok' : r.rate >= 25 ? 'warn' : 'bad';
+    const pct   = r.rate === null ? '–' : r.rate.toFixed(0) + '%';
+    const width = r.rate === null ? 0 : Math.min(100, r.rate);
+    const dropTxt = r.drop > 0 ? `−${r.drop} leads` : '';
+    return `
+      <div class="an-flow-row">
+        <div class="an-stage-pill">
+          ${r.from.label}
+          <span class="an-stage-count">${r.from.total} leads</span>
+        </div>
+        <div class="an-conv-mid">
+          <div class="an-conv-pct ${cls}">${pct}</div>
+          <div class="an-conv-track"><div class="an-conv-fill ${cls}" style="width:${width}%"></div></div>
+        </div>
+        <div class="an-stage-pill" style="text-align:right">
+          ${r.to.label}
+          <span class="an-stage-count" style="text-align:right">${r.to.total} leads</span>
+        </div>
+        <div class="an-conv-drop" style="min-width:70px;text-align:right">${dropTxt}</div>
+      </div>`;
+  }).join('');
+
+  // Adiciona linha final: fundo → fechamentos
+  const lastActive = activeData[activeData.length - 1];
+  const closingRate = lastActive?.total > 0 ? (closingsData.length / lastActive.total * 100) : null;
+  const clsCl = closingRate === null ? 'ok' : closingRate >= 50 ? 'ok' : closingRate >= 25 ? 'warn' : 'bad';
+  const closingRow = lastActive ? `
+    <div class="an-flow-row">
+      <div class="an-stage-pill">
+        ${lastActive.label}
+        <span class="an-stage-count">${lastActive.total} leads</span>
+      </div>
+      <div class="an-conv-mid">
+        <div class="an-conv-pct ${clsCl}">${closingRate !== null ? closingRate.toFixed(0)+'%' : '–'}</div>
+        <div class="an-conv-track"><div class="an-conv-fill ${clsCl}" style="width:${Math.min(100,closingRate||0)}%"></div></div>
+      </div>
+      <div class="an-stage-pill" style="text-align:right">
+        Fechamentos
+        <span class="an-stage-count" style="text-align:right">${closingsData.length} clientes</span>
+      </div>
+      <div class="an-conv-drop" style="min-width:70px"></div>
+    </div>` : '';
+
+  document.getElementById('an-flow').innerHTML = flowRows + closingRow ||
+    '<div style="color:var(--muted);font-size:12px;padding:8px 0">Dados insuficientes para calcular conversão por etapa.</div>';
+
+  // ── 3. Gargalos ────────────────────────────────────────────────
+  const gapItems = convRates
+    .filter(r => r.rate !== null && r.from.total > 0)
+    .sort((a, b) => a.rate - b.rate)
+    .map(r => {
+      const cls = r.rate < 20 ? 'critical' : r.rate < 40 ? 'warning' : 'ok';
+      const badge = r.rate < 20 ? 'CRÍTICO' : r.rate < 40 ? 'ATENÇÃO' : 'NORMAL';
+      return `<div class="an-gap-item ${cls}">
+        <span class="an-gap-badge">${badge}</span>
+        <span class="an-gap-label">${r.from.label} → ${r.to.label}</span>
+        <span class="an-gap-pct">${r.rate.toFixed(0)}%</span>
+        ${r.drop > 0 ? `<span style="font-size:10px;color:var(--muted)">&nbsp;(−${r.drop} leads)</span>` : ''}
+      </div>`;
+    }).join('');
+
+  document.getElementById('an-gaps').innerHTML = gapItems ||
+    '<div style="color:var(--muted);font-size:12px;padding:4px 0">Nenhum dado disponível.</div>';
+
+  // ── 4. Diagnóstico automático ───────────────────────────────────
+  const diags = [];
+
+  if (closingsData.length === 0) {
+    diags.push({ cls:'error', icon:'🚨', title:'Nenhum fechamento registrado', text:'Não há dados de pagamento no CRM. Verifique se o campo "Data do pagamento" está sendo preenchido.' });
+  }
+  if (bottleneck && bottleneck.rate < 20) {
+    diags.push({ cls:'error', icon:'🔴', title:`Gargalo crítico: ${bottleneck.from.label} → ${bottleneck.to.label}`, text:`Apenas ${bottleneck.rate.toFixed(0)}% dos leads avançam desta etapa. ${bottleneck.drop} leads travados — revisar processo e follow-up.` });
+  } else if (bottleneck && bottleneck.rate < 40) {
+    diags.push({ cls:'warn', icon:'⚠️', title:`Gargalo identificado: ${bottleneck.from.label}`, text:`Taxa de conversão de ${bottleneck.rate.toFixed(0)}% está abaixo do ideal. Revisar cadência de contatos nesta etapa.` });
+  }
+  if (totalStandBy > 0 && totalFunil > 0 && (totalStandBy / totalFunil) > 0.25) {
+    diags.push({ cls:'warn', icon:'⏸️', title:'Alto volume em Stand By', text:`${totalStandBy} leads (${(totalStandBy/totalFunil*100).toFixed(0)}% do funil) estão parados. Criar campanha de reativação.` });
+  }
+  if (activeData.length >= 2 && activeData[0].total > 0 && activeData[1].total < activeData[0].total * 0.3) {
+    diags.push({ cls:'warn', icon:'📉', title:'Alta perda na qualificação inicial', text:`Menos de 30% dos leads entram no fluxo ativo após a 1ª etapa. Revisar critérios de qualificação e origem dos leads.` });
+  }
+  if (totalFundo > 0 && totalTopo > 0 && (totalFundo / totalTopo) < 0.1) {
+    diags.push({ cls:'warn', icon:'📊', title:'Fundo do funil muito esvaziado', text:`Apenas ${(totalFundo/totalTopo*100).toFixed(0)}% dos leads chegam ao fundo. O funil está com muito atrito no meio.` });
+  }
+  if (diags.length === 0) {
+    diags.push({ cls:'success', icon:'✅', title:'Funil em bom estado', text:'Nenhum gargalo crítico identificado. Mantenha o acompanhamento dos indicadores.' });
+  }
+
+  document.getElementById('an-diag').innerHTML = diags.map(d => `
+    <div class="an-diag-card ${d.cls}">
+      <div class="an-diag-icon">${d.icon}</div>
+      <div class="an-diag-body">
+        <div class="an-diag-title">${d.title}</div>
+        <div class="an-diag-text">${d.text}</div>
+      </div>
+    </div>`).join('');
+
+  // ── 5. Recomendações ───────────────────────────────────────────
+  const recs = [];
+
+  if (bottleneck) {
+    if (bnPos <= 0.33) {
+      recs.push({ t:'Revisar qualificação de entrada', d:`O gargalo está no início do funil (${bottleneck.from.label}). Leads estão entrando sem critério claro. Defina um ICP mais preciso e qualifique antes de adicionar ao funil.` });
+    } else if (bnPos <= 0.66) {
+      recs.push({ t:'Reforçar follow-up e proposta de valor', d:`O gargalo está no meio do funil (${bottleneck.from.label}). Leads qualificados travam aqui — revisar cadência de contato, objeções mais comuns e clareza da oferta.` });
+    } else {
+      recs.push({ t:'Trabalhar objeções de fechamento', d:`O gargalo está no fundo do funil (${bottleneck.from.label}). O problema é de conversão final — revisar proposta comercial, condições de pagamento e técnicas de fechamento.` });
+    }
+  }
+  if (totalStandBy > 0 && (totalStandBy / totalFunil) > 0.15) {
+    recs.push({ t:'Campanha de reativação de leads Stand By', d:`${totalStandBy} leads inativos representam uma oportunidade imediata. Criar sequência de reaquecimento: contato direto, nova oferta ou desconto por tempo limitado.` });
+  }
+  if (convGeral < 5 && totalTopo > 10) {
+    recs.push({ t:'Auditoria completa do processo de vendas', d:`Taxa de conversão geral abaixo de 5% com volume significativo no topo. Problema sistêmico — revisar todo o processo, scripts e abordagens.` });
+  }
+  if (closingsData.length > 0) {
+    const totalRec = closingsData.reduce((s,r) => s+(r.valor||0), 0);
+    const ticket   = totalRec / closingsData.length;
+    if (ticket > 0) {
+      recs.push({ t:'Aumentar ticket médio com upsell', d:`Ticket médio atual de ${fmtR(ticket)}. Estruturar oferta de upgrade ou serviço adicional no momento do fechamento pode aumentar receita sem novos leads.` });
+    }
+  }
+  if (recs.length === 0) {
+    recs.push({ t:'Manter cadência e monitorar', d:'O funil está saudável. Foco em aumentar volume no topo e manter as taxas de conversão atuais.' });
+  }
+
+  document.getElementById('an-recs').innerHTML = recs.map((r, i) => `
+    <div class="an-rec-item">
+      <div class="an-rec-num">${i + 1}</div>
+      <div class="an-rec-text"><strong>${r.t}.</strong> ${r.d}</div>
+    </div>`).join('');
+}
+
+function setSyncStatus(state, text) {
+  document.getElementById('syncDot').className  = 'sync-dot' + (state !== 'ok' ? ' '+state : '');
+  document.getElementById('syncLabel').textContent = text;
+}
+
+function toggleCmpSeller(key) {
+  if (cmpFilter.has(key)) {
+    if (cmpFilter.size > 1) cmpFilter.delete(key); // keep at least 1
+  } else {
+    cmpFilter.add(key);
+  }
+  document.querySelectorAll('.cmp-filter-btn').forEach(b => {
+    b.classList.toggle('on', cmpFilter.has(b.dataset.seller));
+  });
+  renderComparison();
+}
+
+// ================================================================
+// RENDER SELLER
+// ================================================================
+function renderSeller(key) {
+  const arr   = getArr(key);
+  const total = arr.reduce((a,b)=>a+b,0);
+
+  // ── Active vs Passive split ───────────────────────────────────
+  // Passive stages (Stand By, Pago) are VISIBLE but excluded from
+  // all conversion metrics, bottleneck detection, and opportunity analysis.
+  const activeStages = STAGES.filter(st => !STAGE_PASSIVE.has(st.key));
+  const activeArr    = activeStages.map(st => data[key][st.key] || 0);
+
+  // Bottleneck / opportunity computed ONLY on active stages
+  const bActiveIdx = findBottleneck(activeArr);
+  const oActiveIdx = findOpportunity(activeArr);
+  // Map back to full STAGES index (for display highlighting)
+  const bIdx = bActiveIdx !== null ? STAGES.findIndex(s => s.key === activeStages[bActiveIdx].key) : null;
+  const oIdx = oActiveIdx !== null ? STAGES.findIndex(s => s.key === activeStages[oActiveIdx].key) : null;
+
+  // Bottom-of-funnel references from ACTIVE stages only
+  const aLastIdx     = activeStages.length - 1;
+  const aSecIdx      = activeStages.length - 2;
+  const aBotSlice    = Math.max(0, activeStages.length - 3);
+  const bottomFunnel = activeArr.slice(aBotSlice).reduce((a,b)=>a+b,0);
+  const negLabel     = aLastIdx >= 0 ? activeStages[aLastIdx].label : 'Negociação';
+  const fuLabel      = aSecIdx  >= 0 ? activeStages[aSecIdx].label  : 'Follow-Up';
+
+  // TAB PILL — total includes passive (real headcount)
+  document.getElementById(`pill-${key}`).textContent = total || '–';
+
+  // KPI — Fundo Funil uses ACTIVE stages only
+  document.getElementById(`kpi-${key}`).innerHTML = [
+    { v: total,                      l: 'Total Funil' },
+    { v: bottomFunnel,               l: 'Fundo Funil',  h: bottomFunnel > 0 },
+    { v: activeArr[aLastIdx]||0,     l: negLabel,       h: (activeArr[aLastIdx]||0) > 0 },
+    { v: activeArr[aSecIdx]||0,      l: fuLabel },
+  ].map(k => `
+    <div class="kpi ${k.h?'highlight':''}">
+      <div class="kpi-v">${k.v}</div>
+      <div class="kpi-l">${k.l}</div>
+    </div>`).join('');
+
+  // HORIZONTAL BAR FUNNEL
+  // Active stages: full visual treatment + conversion rates
+  // Passive stages: muted bars, no conv rate, no bottleneck/opportunity highlight
+  const maxVal    = Math.max(...arr, 1);
+  const funnelRows = [];
+  let passiveSepInserted = false;
+
+  STAGES.forEach((st, i) => {
+    const passive  = STAGE_PASSIVE.has(st.key);
+    const isBottle = !passive && i === bIdx;
+    const isOpp    = !passive && i === oIdx;
+    const pctWidth = Math.max((arr[i] / maxVal * 100), arr[i] > 0 ? 3 : 0).toFixed(0);
+    const [topColor] = getStageColor(i, st.key);
+    const barColor   = isBottle ? '#dc2626' : isOpp ? '#15803d' : passive ? '#94a3b8' : topColor;
+
+    let cr = null, convCls = '';
+    if (!passive) {
+      const ai = activeStages.findIndex(s => s.key === st.key);
+      cr = convRate(activeArr, ai);
+      const rate = cr !== null ? parseFloat(cr) : null;
+      convCls = isBottle ? 'low' : (rate !== null && rate >= 50) ? 'high' : '';
+    }
+
+    // Insert separator before first passive stage
+    if (passive && !passiveSepInserted) {
+      passiveSepInserted = true;
+      funnelRows.push(`<div class="fn-passive-sep"><span>Fora do Fluxo Ativo</span></div>`);
+    }
+
+    funnelRows.push(`
+      <div class="fn-row${passive ? ' passive' : ''}">
+        <div class="fn-label">${st.label}</div>
+        <div class="fn-bar-wrap">
+          <div class="fn-bar" style="width:${pctWidth}%;background:${barColor}">
+            <span>${arr[i]} leads</span>
+          </div>
+        </div>
+        <div class="fn-count">${arr[i]}</div>
+        <div class="fn-conv ${convCls}">${cr !== null ? cr + '%' : ''}</div>
+      </div>`);
+  });
+
+  document.getElementById(`fn-${key}`).innerHTML = `<div class="fn-stages">${funnelRows.join('')}</div>`;
+
+  // CHART — passive bars are grey/desaturated
+  const ctx = document.getElementById(`chart-${key}`).getContext('2d');
+  if (charts[key]) charts[key].destroy();
+
+  const chartH = 210;
+  const bgGrads = STAGES.map((st,i) => {
+    const g = ctx.createLinearGradient(0, 0, 0, chartH);
+    if (STAGE_PASSIVE.has(st.key)) {
+      g.addColorStop(0, '#cbd5e1');
+      g.addColorStop(1, '#94a3b8');
+    } else {
+      const [top, bot] = getStageColor(i, st.key);
+      g.addColorStop(0, top);
+      g.addColorStop(1, bot);
+    }
+    return g;
+  });
+
+  charts[key] = new Chart(ctx, {
+    type: 'bar',
+    data: {
+      labels: STAGES.map(s => s.label),
+      datasets: [{
+        data: arr,
+        backgroundColor: bgGrads,
+        borderColor: STAGES.map((st,i) => STAGE_PASSIVE.has(st.key) ? '#94a3b8' : getStageColor(i, st.key)[1]),
+        borderWidth: 1.5,
+        borderRadius: 9,
+        borderSkipped: false,
+        barPercentage: 0.65,
+        categoryPercentage: 0.75,
+      }]
+    },
+    options: {
+      responsive:true, maintainAspectRatio:false,
+      animation: { duration: 600, easing: 'easeOutQuart' },
+      plugins: {
+        legend: { display: false },
+        tooltip: {
+          backgroundColor:'#111', titleColor:'#fff', bodyColor:'#ccc',
+          padding:12, cornerRadius:8,
+          callbacks: {
+            afterBody: items => {
+              const i = items[0].dataIndex;
+              const st = STAGES[i];
+              const lines = [];
+              if (STAGE_PASSIVE.has(st.key)) {
+                lines.push('Etapa fora do fluxo ativo');
+              } else {
+                const ai = activeStages.findIndex(s => s.key === st.key);
+                const cr = convRate(activeArr, ai);
+                if (cr !== null) lines.push(`Conversão: ${cr}% da etapa anterior`);
+                if (i === bIdx) lines.push('⚠ Gargalo identificado');
+                if (i === oIdx) lines.push('✓ Maior oportunidade');
+              }
+              return lines;
+            }
+          }
+        }
+      },
+      scales: {
+        y: { beginAtZero:true, grid:{ color:'#f0f0f0' }, ticks:{ font:{ size:11 } } },
+        x: { grid:{ display:false }, ticks:{ font:{ size:11, weight:'600' } } }
+      }
+    }
+  });
+
+  // ALERTS — based on ACTIVE stages only
+  const bStage = bIdx !== null ? STAGES[bIdx] : null;
+  const oStage = oIdx !== null ? STAGES[oIdx] : null;
+  const bCr    = bActiveIdx !== null ? convRate(activeArr, bActiveIdx) : null;
+  const bPrev  = bActiveIdx !== null ? activeStages[bActiveIdx-1]?.label : null;
+
+  document.getElementById(`alerts-${key}`).innerHTML = `
+    <div class="alert ${bStage ? 'danger' : 'warn'}">
+      <div class="alert-icon">${bStage ? '🚨' : '✅'}</div>
+      <div class="alert-ttl">Gargalo no Funil</div>
+      <div class="alert-body">
+        ${bStage
+          ? `Queda de <strong>${bCr}%</strong> entre <strong>${bPrev}</strong> → <strong>${bStage.label}</strong>. Esta etapa está freando os resultados.`
+          : 'Nenhum gargalo crítico detectado no momento.'}
+      </div>
+      ${bStage ? `<div class="alert-cta">→ Aumentar volume em ${bStage.label}</div>` : ''}
+    </div>
+    <div class="alert ${oStage ? 'success' : 'warn'}">
+      <div class="alert-icon">🎯</div>
+      <div class="alert-ttl">Maior Oportunidade de Fechamento</div>
+      <div class="alert-body">
+        ${oStage
+          ? `<strong>${oStage.label}</strong> tem o maior potencial agora. <strong>${activeArr[oActiveIdx]} leads</strong> próximos do fechamento.`
+          : 'Alimente o fundo do funil para gerar oportunidades de fechamento.'}
+      </div>
+      ${oStage ? `<div class="alert-cta">→ Priorizar ${oStage.label} imediatamente</div>` : ''}
+    </div>
+  `;
+
+  // INSIGHT — based on ACTIVE stages only
+  const urgentStages = [];
+  for (let ai = aLastIdx; ai >= aBotSlice; ai--) {
+    if (activeArr[ai] > 0) urgentStages.push(`${activeStages[ai].label} (${activeArr[ai]})`);
+  }
+
+  const bottleneckMsg = bStage
+    ? `Gargalo crítico em <strong>${bPrev} → ${bStage.label}</strong> (${bCr}%). `
+    : '';
+  const focusMsg = urgentStages.length
+    ? `Foque agora em <strong>${urgentStages.join(', ')}</strong> para maximizar fechamentos.`
+    : 'Alimente o topo do funil para criar oportunidades.';
+
+  document.getElementById(`insight-${key}`).innerHTML = `
+    <div class="insight-box">
+      <div class="insight-icon">💡</div>
+      <div>
+        <div class="insight-title">Diagnóstico Estratégico</div>
+        <div class="insight-text">${bottleneckMsg}${focusMsg}</div>
+        <div class="insight-pills">
+          ${(activeArr[aLastIdx]||0)>0 ? `<span class="pill urgent">🔥 ${negLabel}: fechar agora</span>` : ''}
+          ${(activeArr[aSecIdx]||0)>0  ? `<span class="pill urgent">⚡ ${fuLabel}: reativar urgente</span>` : ''}
+          ${bStage ? `<span class="pill">⚠ Gargalo: ${bStage.label}</span>` : ''}
+          ${(activeArr[0]||0)>10 ? `<span class="pill">📥 ${activeStages[0]?.label}: triagem pendente</span>` : ''}
+        </div>
+      </div>
+    </div>
+  `;
+
+  // INVERTED FUNNEL — active stages with tier system, passive stages in separate section
+  const bottleneckAlert = bIdx !== null
+    ? `<div class="ifunnel-alert">⚠️ Gargalo em <strong>${STAGES[bIdx].label}</strong> — apenas ${bCr}% de conversão da etapa anterior</div>`
+    : '';
+
+  const activeRows  = [];
+  const passiveRows = [];
+
+  STAGES.forEach((st, i) => {
+    const passive = STAGE_PASSIVE.has(st.key);
+    const isBot   = !passive && i === bIdx;
+
+    let convTag = '';
+    if (!passive) {
+      const ai = activeStages.findIndex(s => s.key === st.key);
+      const cr = convRate(activeArr, ai);
+      const rate = cr !== null ? parseFloat(cr) : null;
+      if (cr !== null) {
+        const tagCls = isBot ? 'bad' : rate >= 50 ? 'good' : rate >= 20 ? 'warn' : 'bad';
+        convTag = `<span class="ifs-conv ${tagCls}">${cr}%</span>`;
+      }
+    } else {
+      convTag = `<span class="ifs-conv" style="background:#f1f5f9;color:#94a3b8;border:1px dashed #cbd5e1;font-size:9px">Ext.</span>`;
+    }
+
+    let badge = '';
+    if (isBot) {
+      badge = `<span class="ifs-badge bot">⚠ Gargalo</span>`;
+    } else if (!passive) {
+      const ai = activeStages.findIndex(s => s.key === st.key);
+      if (ai === aLastIdx)  badge = `<span class="ifs-badge pri">🎯 Fechar</span>`;
+      else if (ai === aSecIdx) badge = `<span class="ifs-badge fu">⚡ Urgente</span>`;
+    } else if (st.key === 'stand by') {
+      badge = `<span class="ifs-badge" style="background:#fef3c7;color:#92400e">⏸ Pausado</span>`;
+    } else if (st.key === 'pago') {
+      badge = `<span class="ifs-badge" style="background:#d1fae5;color:#059669">✅ Fechado</span>`;
+    }
+
+    if (!passive) {
+      const ai   = activeStages.findIndex(s => s.key === st.key);
+      const tier = Math.max(0, 5 - (aLastIdx - ai));
+      activeRows.push(`
+        <div class="ifs-row tier-${tier} ${isBot ? 'is-bot' : ''}">
+          <div class="ifs-rank">${i + 1}</div>
+          <div class="ifs-name">${st.label}</div>
+          ${convTag}
+          <div class="ifs-count">${arr[i]}</div>
+          ${badge}
+        </div>`);
+    } else {
+      passiveRows.push(`
+        <div class="ifs-row passive">
+          <div class="ifs-rank">${i + 1}</div>
+          <div class="ifs-name">${st.label}</div>
+          ${convTag}
+          <div class="ifs-count">${arr[i]}</div>
+          ${badge}
+        </div>`);
+    }
+  });
+
+  const passiveDivider = passiveRows.length > 0 ? `
+    <div style="display:flex;align-items:center;gap:8px;margin:10px 0 4px;font-size:10px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:.6px">
+      <span style="white-space:nowrap">Fora do Fluxo Ativo</span>
+      <div style="flex:1;height:1px;background:var(--border)"></div>
+    </div>` : '';
+
+  document.getElementById(`stages-${key}`).innerHTML = `
+    <div class="ifunnel">
+      ${bottleneckAlert}
+      ${activeRows.join('')}
+      ${passiveDivider}
+      ${passiveRows.join('')}
+    </div>`;
+
+  // DIRECIONAMENTO ESTRATÉGICO — active stages only (passive excluded from action plan)
+  const shortTerm = activeStages.slice(aBotSlice).map((st, relIdx) => ({
+    label: st.label,
+    action: relIdx === 0 ? 'Prioridade máxima: fechar agora' :
+            'Reativar e avançar para fechamento'
+  }));
+  const midTerm = activeStages.slice(2, Math.max(3, activeStages.length - 3)).map(st => ({
+    label: st.label,
+    action: st.key.includes('reuni') ? 'Melhorar condução e aproveitamento' :
+            st.key.includes('apresent') ? 'Aumentar volume e taxa de avanço' :
+            'Alimentar fundo do funil'
+  }));
+  const topTerm = activeStages.slice(0, 2).map(st => ({
+    label: st.label,
+    action: st.key.includes('prospec') ? 'Triagem: avançar ou arquivar' : 'Focar em agendamento de reuniões'
+  }));
+
+  document.getElementById(`strategic-${key}`).innerHTML = [
+    { icon:'🔥', bg:'#fef3c7', title:'Curto Prazo', sub:'Fechamento imediato', items: shortTerm },
+    { icon:'📈', bg:'#ede9fe', title:'Médio Prazo', sub:'Alimentar vendas', items: midTerm },
+    { icon:'🌱', bg:'#dcfce7', title:'Topo do Funil', sub:'Organização e volume', items: topTerm }
+  ].map(b => `
+    <div class="str-card">
+      <div class="str-head">
+        <div class="str-icon" style="background:${b.bg}">${b.icon}</div>
+        <div>
+          <div class="str-title">${b.title}</div>
+          <div class="str-sub">${b.sub}</div>
+        </div>
+      </div>
+      ${b.items.map(it => `
+        <div class="str-item">
+          <div class="str-item-label">${it.label}</div>
+          <div class="str-item-action">${it.action}</div>
+        </div>`).join('')}
+    </div>`).join('');
+}
+
+// ================================================================
+// RENDER COMPARISON
+// ================================================================
+function renderComparison() {
+  const sellers = [...cmpFilter].filter(k => Object.keys(CONFIG.SELLERS).includes(k));
+  if (sellers.length === 0) return;
+
+  const arrs   = Object.fromEntries(sellers.map(k => [k, getArr(k)]));
+  const totals = Object.fromEntries(sellers.map(k => [k, arrs[k].reduce((a,b)=>a+b,0)]));
+  const maxTotal = Math.max(...Object.values(totals), 1);
+
+  // Active stages for bottom-of-funnel count (passive excluded)
+  const activeStagesC = STAGES.filter(st => !STAGE_PASSIVE.has(st.key));
+  const botSliceC = Math.max(0, activeStagesC.length - 3);
+  const bots = Object.fromEntries(sellers.map(k => [
+    k, activeStagesC.slice(botSliceC).map(st => data[k]?.[st.key]||0).reduce((a,b)=>a+b,0)
+  ]));
+
+  const maxAll = Math.max(...sellers.flatMap(k => arrs[k]), 1);
+  const colCount = Math.min(sellers.length, 4);
+
+  // HEADER — summary cards
+  const headerEl = document.getElementById('cmp-header');
+  headerEl.style.gridTemplateColumns = `repeat(${colCount},1fr)`;
+  headerEl.innerHTML = sellers.map(k => {
+    const meta  = CONFIG.SELLER_META[k] || { name: k, init: k[0].toUpperCase() };
+    const isTop = totals[k] === maxTotal && sellers.some(s => totals[s] !== totals[k]);
+    return `
+      <div class="cmp-card">
+        <div style="display:flex;align-items:center;gap:10px">
+          <div class="avatar" style="width:36px;height:36px;font-size:${meta.init.length>1?'11':'14'}px">${meta.init}</div>
+          <div>
+            <div class="cmp-name">${meta.name} ${isTop ? '<span class="winner-badge">↑ Mais volume</span>' : ''}</div>
+            <div class="cmp-label">Total no funil</div>
+          </div>
+        </div>
+        <div class="cmp-total">${totals[k]}</div>
+        <div style="font-size:12px;color:var(--muted);margin-top:2px">Fundo: ${bots[k]} leads</div>
+      </div>`;
+  }).join('');
+
+  // GRID — per-seller bar breakdown
+  const gridEl = document.getElementById('cmp-grid');
+  gridEl.style.gridTemplateColumns = `repeat(${Math.min(colCount,2)},1fr)`;
+  gridEl.innerHTML = sellers.map(k => {
+    const arr    = arrs[k];
+    const meta   = CONFIG.SELLER_META[k] || { name: k, init: k[0].toUpperCase() };
+    const others = sellers.filter(s => s !== k).map(s => arrs[s]);
+    return `
+      <div class="cmp-card">
+        <div style="display:flex;align-items:center;gap:8px;margin-bottom:16px">
+          <div class="avatar" style="width:30px;height:30px;font-size:${meta.init.length>1?'10':'12'}px">${meta.init}</div>
+          <div style="font-size:13px;font-weight:700">${meta.name}</div>
+        </div>
+        ${STAGES.map((st,i) => {
+          const w = ((arr[i]/maxAll)*100).toFixed(0);
+          const [topColor, botColor] = getStageColor(i, st.key);
+          // Compare vs best of other selected sellers
+          const otherMax = others.length > 0 ? Math.max(...others.map(oa => oa[i]||0)) : arr[i];
+          const diff = arr[i] - otherMax;
+          const indicator = diff > 0
+            ? `<span style="font-size:10px;font-weight:700;color:#15803d;margin-left:4px">▲${diff}</span>`
+            : diff < 0
+            ? `<span style="font-size:10px;font-weight:700;color:#b91c1c;margin-left:4px">▼${Math.abs(diff)}</span>`
+            : `<span style="font-size:10px;color:#999;margin-left:4px">=</span>`;
+          return `
+            <div class="cmp-bar-row">
+              <div class="cmp-stage-label" style="display:flex;align-items:center;gap:4px">
+                <span style="width:8px;height:8px;border-radius:50%;background:${topColor};display:inline-block;flex-shrink:0"></span>
+                ${st.label}
+              </div>
+              <div class="cmp-track">
+                <div class="cmp-fill" style="width:${Math.max(w,arr[i]>0?2:0)}%;background:linear-gradient(90deg,${topColor},${botColor})">
+                  <span>${arr[i]}</span>
+                </div>
+              </div>
+              <div class="cmp-count" style="display:flex;align-items:center">${arr[i]}${others.length>0?indicator:''}</div>
+            </div>`;
+        }).join('')}
+      </div>`;
+  }).join('');
+}
+
+// ================================================================
+// TAB
+// ================================================================
+function switchTab(key) {
+  activeTab = key;
+  document.querySelectorAll('.tb').forEach(b => b.classList.remove('on'));
+  document.querySelectorAll('.view').forEach(v => v.classList.remove('on'));
+  document.getElementById(`tb-${key}`).classList.add('on');
+  document.getElementById(`view-${key}`).classList.add('on');
+}
+
+// ================================================================
+// API
+// ================================================================
+async function fetchTasks(listId = CONFIG.LIST_ID) {
+  const tasks = [];
+  let page = 0;
+  const { data: { session } } = await _sb.auth.getSession();
+  const token = session?.access_token || '';
+  while (true) {
+    const r = await fetch(
+      `/api/tasks?listId=${listId}&page=${page}`,
+      { headers: { Authorization: `Bearer ${token}` } }
+    );
+    if (!r.ok) throw new Error(`HTTP ${r.status}`);
+    const d = await r.json();
+    tasks.push(...(d.tasks || []));
+    if (!d.tasks || d.tasks.length < 100) break;
+    page++;
+  }
+  return tasks;
+}
+
+async function carregarDadosClickUp(isFirst = false) {
+  if (isFirst) document.getElementById('loader').classList.add('on');
+  setSyncStatus('loading', 'Sincronizando...');
+
+  try {
+    const [vendasTasks, oficialTasks] = await Promise.all([
+      fetchTasks(CONFIG.LIST_ID),
+      fetchTasks(CONFIG.CLOSINGS_LIST_ID).catch(() => []),
+    ]);
+    const tasks = vendasTasks;
+
+    // Passo 1: detectar todas as etapas do ClickUp dinamicamente
+    STAGES = buildStages(tasks);
+    console.log('[ClickUp] Etapas detectadas:', STAGES.map(s => s.label));
+    console.log('[ClickUp] CRM OFICIAL tasks:', oficialTasks.length);
+
+    // Passo 1b: extrair dados de fechamentos (CRM-VENDAS + CRM OFICIAL, sem duplicatas)
+    const vendaIds      = new Set(tasks.map(t => t.id));
+    const oficialUnique = oficialTasks.filter(t => !vendaIds.has(t.id));
+    const oficialTagged = oficialUnique.map(t => ({ ...t, _source: 'oficial' }));
+    buildClosingsData([...tasks, ...oficialTagged]);
+    detectNewClosings();
+
+    // Passo 2: resetar contadores com as etapas atuais (todos os vendedores)
+    const allSellers = Object.keys(CONFIG.SELLERS);
+    data = Object.fromEntries(allSellers.map(k => [k, {}]));
+    for (const k of allSellers)
+      for (const st of STAGES) data[k][st.key] = 0;
+
+    // Passo 3: contar tasks por vendedor/etapa
+    for (const task of tasks) {
+      const seller = identifySeller(task.assignees);
+      if (!seller) continue;
+      const sk = mapStatus(task.status?.status);
+      if (sk && data[seller].hasOwnProperty(sk)) data[seller][sk]++;
+    }
+
+    for (const k of allSellers) renderSeller(k);
+    renderComparison();
+    renderFechamentos();
+    renderAnalise();
+    renderAvaliador();
+
+    const t = new Date().toLocaleTimeString('pt-BR',{hour:'2-digit',minute:'2-digit',second:'2-digit'});
+    setSyncStatus('ok', `Atualizado ${t}`);
+  } catch (err) {
+    setSyncStatus('error', 'Falha na API');
+    console.warn('[ClickUp]', err.message);
+  } finally {
+    if (isFirst) document.getElementById('loader').classList.remove('on');
+  }
+}
+
+// ================================================================
+// ROLETA DE PRÊMIOS
+// ================================================================
+const ROLETA_DEFAULT = {
+  alta: [
+    { label: 'Day Off',           color: '#f472b6' },
+    { label: 'R$ 150 em crédito', color: '#60a5fa' },
+    { label: 'Almoço em equipe',  color: '#34d399' },
+    { label: 'Saída mais cedo',   color: '#fbbf24' },
+    { label: 'Presente surpresa', color: '#a78bfa' },
+    { label: 'Vale R$ 50',        color: '#fb923c' },
+  ],
+  baixa: [
+    { label: 'Saída mais cedo',   color: '#fbbf24' },
+    { label: 'R$ 75 em crédito',  color: '#60a5fa' },
+    { label: 'Almoço pago',       color: '#34d399' },
+    { label: 'Vale R$ 25',        color: '#fb923c' },
+    { label: 'Kit GPS.X',         color: '#a78bfa' },
+    { label: 'Sorte próxima vez', color: '#94a3b8' },
+  ],
+};
+
+let roletaPrizes   = { alta: null, baixa: null };
+let pendingSpins   = {}; // { seller: { alta: N, baixa: N } }
+let prevClosingIds = null;
+let roletaCtx      = null; // { seller, wheel }
+let isSpinning     = false;
+let spinAngle      = 0;
+let spinAnimId     = null;
+
+function roletaInit() {
+  try {
+    const sp = localStorage.getItem('roleta-prizes');
+    if (sp) roletaPrizes = JSON.parse(sp);
+  } catch(_) {}
+  if (!roletaPrizes.alta)  roletaPrizes.alta  = [...ROLETA_DEFAULT.alta];
+  if (!roletaPrizes.baixa) roletaPrizes.baixa = [...ROLETA_DEFAULT.baixa];
+
+  try {
+    const ss = localStorage.getItem('roleta-spins');
+    if (ss) pendingSpins = JSON.parse(ss);
+  } catch(_) {}
+
+  for (const sk of Object.keys(CONFIG.SELLERS)) {
+    if (!pendingSpins[sk]) pendingSpins[sk] = { alta: 0, baixa: 0 };
+  }
+
+  const sel = document.getElementById('grant-seller');
+  if (sel) sel.innerHTML = Object.entries(CONFIG.SELLER_META)
+    .map(([k, m]) => `<option value="${k}">${m.name}</option>`).join('');
+
+  updateRoletaNotif();
+}
+
+// ── Detecção automática de novos fechamentos ─────────────────────
+function detectNewClosings() {
+  const ids = new Set(closingsData.map(c => c.id));
+  if (prevClosingIds === null) { prevClosingIds = ids; return; }
+
+  let changed = false;
+  for (const id of ids) {
+    if (prevClosingIds.has(id)) continue;
+    const entry = closingsData.find(c => c.id === id);
+    if (!entry || !entry.seller || entry.seller === 'outros') continue;
+    const wheel = (entry.valor && entry.valor >= 9900) ? 'alta' : 'baixa';
+    if (!pendingSpins[entry.seller]) pendingSpins[entry.seller] = { alta: 0, baixa: 0 };
+    pendingSpins[entry.seller][wheel]++;
+    console.log(`[Roleta] +1 giro ${wheel} para ${entry.seller} (${entry.name})`);
+    changed = true;
+  }
+  prevClosingIds = ids;
+  if (changed) { saveSpins(); updateRoletaNotif(); }
+}
+
+function saveSpins() {
+  localStorage.setItem('roleta-spins', JSON.stringify(pendingSpins));
+}
+
+function totalSpins(seller) {
+  if (!pendingSpins[seller]) return 0;
+  return (pendingSpins[seller].alta || 0) + (pendingSpins[seller].baixa || 0);
+}
+
+function updateRoletaNotif() {
+  const total = Object.keys(CONFIG.SELLERS).reduce((s, k) => s + totalSpins(k), 0);
+  const notif = document.getElementById('roleta-notif');
+  const txt   = document.getElementById('roleta-notif-text');
+  if (total > 0) {
+    txt.textContent = `${total} giro${total > 1 ? 's' : ''} disponível${total > 1 ? 'is' : ''}!`;
+    notif.classList.add('on');
+  } else {
+    notif.classList.remove('on');
+  }
+}
+
+// ── Abrir roleta ─────────────────────────────────────────────────
+function openRoleta(seller, wheel) {
+  if (!seller) {
+    outer: for (const [s, sp] of Object.entries(pendingSpins)) {
+      for (const w of ['alta', 'baixa']) {
+        if (sp[w] > 0) { seller = s; wheel = w; break outer; }
+      }
+    }
+  }
+  if (!seller) return;
+  if (!wheel) wheel = (pendingSpins[seller]?.alta > 0) ? 'alta' : 'baixa';
+
+  roletaCtx  = { seller, wheel };
+  spinAngle  = 0;
+  isSpinning = false;
+
+  const meta  = CONFIG.SELLER_META[seller] || { name: seller };
+  const spins = pendingSpins[seller]?.[wheel] || 0;
+  const isAlta = wheel === 'alta';
+
+  document.getElementById('roleta-modal-title').textContent =
+    `🎰 ${meta.name} — Roleta ${isAlta ? 'Alta' : 'Baixa'}`;
+  document.getElementById('roleta-modal-sub').textContent =
+    isAlta ? 'Fechamento acima de R$ 9.900!' : 'Fechamento até R$ 8.899!';
+  updateSpinBadge(spins);
+  document.getElementById('roleta-result').classList.remove('on');
+  document.getElementById('roleta-result').textContent = '';
+  document.getElementById('roleta-spin-btn').disabled = spins === 0;
+
+  drawWheel(roletaPrizes[wheel], spinAngle);
+  document.getElementById('roleta-overlay').classList.add('on');
+}
+
+function closeRoleta() {
+  document.getElementById('roleta-overlay').classList.remove('on');
+  if (spinAnimId) { cancelAnimationFrame(spinAnimId); spinAnimId = null; }
+  roletaCtx  = null;
+  isSpinning = false;
+}
+
+function updateSpinBadge(n) {
+  const el = document.getElementById('roleta-spins-badge');
+  el.textContent = n > 0 ? `${n} giro${n > 1 ? 's' : ''}` : 'Sem giros';
+  el.classList.toggle('empty', n === 0);
+}
+
+// ── Desenhar roda ────────────────────────────────────────────────
+function drawWheel(prizes, angle) {
+  const canvas = document.getElementById('roleta-canvas');
+  const ctx    = canvas.getContext('2d');
+  const cx     = canvas.width  / 2;
+  const cy     = canvas.height / 2;
+  const r      = cx - 4;
+  const n      = prizes.length;
+  const arc    = (2 * Math.PI) / n;
+
+  ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+  for (let i = 0; i < n; i++) {
+    const s = angle + i * arc;
+    const e = s + arc;
+    ctx.beginPath();
+    ctx.moveTo(cx, cy);
+    ctx.arc(cx, cy, r, s, e);
+    ctx.closePath();
+    ctx.fillStyle   = prizes[i].color || '#94a3b8';
+    ctx.fill();
+    ctx.strokeStyle = 'rgba(255,255,255,.6)';
+    ctx.lineWidth   = 1.5;
+    ctx.stroke();
+
+    ctx.save();
+    ctx.translate(cx, cy);
+    ctx.rotate(s + arc / 2);
+    ctx.textAlign  = 'right';
+    ctx.fillStyle  = '#fff';
+    ctx.font       = 'bold 11px Inter,sans-serif';
+    ctx.shadowColor = 'rgba(0,0,0,.4)';
+    ctx.shadowBlur  = 3;
+    const txt = prizes[i].label;
+    ctx.fillText(txt.length > 19 ? txt.slice(0, 18) + '…' : txt, r - 10, 4);
+    ctx.restore();
+  }
+
+  // Centro
+  ctx.beginPath();
+  ctx.arc(cx, cy, 16, 0, 2 * Math.PI);
+  ctx.shadowColor = 'rgba(0,0,0,.2)';
+  ctx.shadowBlur  = 6;
+  ctx.fillStyle   = '#fff';
+  ctx.fill();
+  ctx.shadowBlur  = 0;
+}
+
+// ── Girar ────────────────────────────────────────────────────────
+function spinWheel() {
+  if (isSpinning || !roletaCtx) return;
+  const { seller, wheel } = roletaCtx;
+  if (!pendingSpins[seller] || pendingSpins[seller][wheel] <= 0) return;
+
+  const prizes    = roletaPrizes[wheel];
+  const n         = prizes.length;
+  const arc       = (2 * Math.PI) / n;
+  const winnerIdx = Math.floor(Math.random() * n);
+
+  // Calcula ângulo final: ponteiro no topo (-π/2) aponta para segmento vencedor
+  const segCenter  = winnerIdx * arc + arc / 2;
+  const targetBase = -Math.PI / 2 - segCenter;
+  const extra      = ((targetBase - spinAngle) % (2 * Math.PI) + 2 * Math.PI) % (2 * Math.PI);
+  const fullSpins  = (5 + Math.floor(Math.random() * 4)) * 2 * Math.PI;
+  const endAngle   = spinAngle + fullSpins + extra;
+  const startAngle = spinAngle;
+  const duration   = 4000 + Math.random() * 1500;
+  const t0         = performance.now();
+
+  isSpinning = true;
+  document.getElementById('roleta-spin-btn').disabled = true;
+
+  function frame(now) {
+    const p = Math.min((now - t0) / duration, 1);
+    const e = 1 - Math.pow(1 - p, 3); // ease-out cubic
+    spinAngle = startAngle + (endAngle - startAngle) * e;
+    drawWheel(prizes, spinAngle);
+
+    if (p < 1) {
+      spinAnimId = requestAnimationFrame(frame);
+    } else {
+      isSpinning = false;
+      spinAngle  = endAngle;
+      pendingSpins[seller][wheel] = Math.max(0, pendingSpins[seller][wheel] - 1);
+      saveSpins();
+      updateRoletaNotif();
+
+      const left = pendingSpins[seller][wheel];
+      updateSpinBadge(left);
+      const resEl = document.getElementById('roleta-result');
+      resEl.textContent = '🎉 ' + prizes[winnerIdx].label + '!';
+      resEl.classList.add('on');
+      if (left > 0) document.getElementById('roleta-spin-btn').disabled = false;
+    }
+  }
+  spinAnimId = requestAnimationFrame(frame);
+}
+
+// ── Admin panel ──────────────────────────────────────────────────
+function openAdminPanel() {
+  renderQueueGrid();
+  renderPrizeEditor('alta');
+  renderPrizeEditor('baixa');
+  document.getElementById('roleta-admin-panel').classList.add('on');
+}
+
+function closeAdminPanel() {
+  document.getElementById('roleta-admin-panel').classList.remove('on');
+}
+
+function renderQueueGrid() {
+  const el = document.getElementById('roleta-queue-grid');
+  if (!el) return;
+  el.innerHTML = Object.entries(CONFIG.SELLER_META).map(([k, m]) => {
+    const a = pendingSpins[k]?.alta  || 0;
+    const b = pendingSpins[k]?.baixa || 0;
+    return `<div class="roleta-queue-item">
+      <div class="roleta-queue-name">${m.name}</div>
+      <div class="roleta-queue-counts">
+        <span style="color:#a78bfa">Alta: ${a}</span><br>
+        <span style="color:#60a5fa">Baixa: ${b}</span>
+      </div>
+    </div>`;
+  }).join('');
+}
+
+function grantSpin() {
+  const seller = document.getElementById('grant-seller').value;
+  const wheel  = document.getElementById('grant-wheel').value;
+  if (!seller || !wheel) return;
+  if (!pendingSpins[seller]) pendingSpins[seller] = { alta: 0, baixa: 0 };
+  pendingSpins[seller][wheel]++;
+  saveSpins();
+  updateRoletaNotif();
+  renderQueueGrid();
+}
+
+function renderPrizeEditor(wheel) {
+  const list = document.getElementById(`prizes-${wheel}-list`);
+  if (!list) return;
+  list.innerHTML = (roletaPrizes[wheel] || []).map((p, i) => `
+    <div class="roleta-prize-item">
+      <input type="color" class="roleta-prize-clr" value="${p.color || '#94a3b8'}"
+        onchange="roletaPrizes['${wheel}'][${i}].color = this.value">
+      <input type="text" class="roleta-prize-inp" value="${p.label || ''}"
+        onchange="roletaPrizes['${wheel}'][${i}].label = this.value" placeholder="Nome do prêmio">
+      <button class="roleta-prize-del" onclick="deletePrize('${wheel}', ${i})">×</button>
+    </div>`).join('');
+}
+
+function deletePrize(wheel, idx) {
+  roletaPrizes[wheel].splice(idx, 1);
+  renderPrizeEditor(wheel);
+}
+
+function addPrize(wheel) {
+  const palette = ['#f472b6','#60a5fa','#34d399','#fbbf24','#a78bfa','#fb923c','#94a3b8'];
+  roletaPrizes[wheel].push({
+    label: 'Novo prêmio',
+    color: palette[roletaPrizes[wheel].length % palette.length],
+  });
+  renderPrizeEditor(wheel);
+}
+
+function savePrizes(wheel) {
+  const list  = document.getElementById(`prizes-${wheel}-list`);
+  const items = list.querySelectorAll('.roleta-prize-item');
+  roletaPrizes[wheel] = [...items].map(item => ({
+    label: item.querySelector('.roleta-prize-inp').value,
+    color: item.querySelector('.roleta-prize-clr').value,
+  }));
+  localStorage.setItem('roleta-prizes', JSON.stringify(roletaPrizes));
+  const btn = list.nextElementSibling.nextElementSibling; // save btn is 2 siblings after list
+  const orig = btn.textContent;
+  btn.textContent = '✓ Salvo!';
+  setTimeout(() => btn.textContent = orig, 1500);
+}
+
+// ================================================================
+// AUTH
+// ================================================================
+const _SUPA_URL  = 'https://gmpdcgjsbbyqkuftohce.supabase.co';
+const _SUPA_ANON = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImdtcGRjZ2pzYmJ5cWt1ZnRvaGNlIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzQ1NTIxOTYsImV4cCI6MjA5MDEyODE5Nn0.5IfKctbsC42fDWlyElqe1d-YuCik_s6kQyipxCDIOIc';
+const _sb = supabase.createClient(_SUPA_URL, _SUPA_ANON);
+
+async function logout() {
+  await _sb.auth.signOut();
+  window.location.href = '/login.html';
+}
+
+// ================================================================
+// INIT
+// ================================================================
+(async () => {
+  const { data: { session } } = await _sb.auth.getSession();
+  if (!session) { window.location.href = '/login.html'; return; }
+
+  // Exibir email do usuário no header
+  const hdrUser = document.getElementById('hdr-user');
+  if (hdrUser) hdrUser.textContent = session.user.email;
+
+  carregarDadosClickUp(true);
+  setInterval(() => carregarDadosClickUp(false), CONFIG.INTERVAL);
+  roletaInit();
+})();
+</script>
+</body>
+</html>

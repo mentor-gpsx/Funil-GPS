@@ -1,0 +1,120 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Login · Funil de Vendas GPS.X</title>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.js"></script>
+<style>
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+body{
+  font-family:'Inter',-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;
+  background:#fafafa;color:#111;font-size:14px;
+  display:flex;align-items:center;justify-content:center;
+  min-height:100vh;
+}
+.card{
+  background:#fff;border:1px solid #e5e5e5;border-radius:14px;
+  padding:40px 36px;width:100%;max-width:380px;
+  box-shadow:0 4px 20px rgba(0,0,0,.08);
+}
+.logo{display:flex;align-items:center;gap:10px;margin-bottom:28px;}
+.logo-mark{
+  width:32px;height:32px;border-radius:7px;
+  background:#111;color:#fff;
+  display:flex;align-items:center;justify-content:center;
+  font-size:14px;font-weight:900;
+}
+.logo-text{font-size:16px;font-weight:800;letter-spacing:-.3px;}
+h1{font-size:20px;font-weight:900;margin-bottom:6px;}
+.sub{font-size:13px;color:#999;margin-bottom:28px;}
+label{display:block;font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.5px;color:#666;margin-bottom:5px;}
+input{
+  width:100%;padding:10px 14px;border:1px solid #e5e5e5;
+  border-radius:8px;font-size:14px;font-family:inherit;
+  outline:none;transition:border-color .15s;margin-bottom:16px;
+}
+input:focus{border-color:#111;}
+.btn{
+  width:100%;padding:12px;border:none;border-radius:8px;
+  background:#111;color:#fff;font-size:14px;font-weight:800;
+  cursor:pointer;transition:opacity .15s;letter-spacing:.2px;
+}
+.btn:hover:not(:disabled){opacity:.85;}
+.btn:disabled{opacity:.5;cursor:not-allowed;}
+.err{
+  background:#fee2e2;color:#b91c1c;border-radius:7px;
+  padding:10px 14px;font-size:12px;font-weight:600;
+  margin-bottom:16px;display:none;
+}
+.err.on{display:block;}
+</style>
+</head>
+<body>
+<div class="card">
+  <div class="logo">
+    <div class="logo-mark">G</div>
+    <div class="logo-text">GPS.X</div>
+  </div>
+  <h1>Entrar</h1>
+  <p class="sub">Funil de Vendas · Acesso restrito</p>
+
+  <div class="err" id="err"></div>
+
+  <label for="email">E-mail</label>
+  <input type="email" id="email" placeholder="seu@email.com" autocomplete="email">
+
+  <label for="pass">Senha</label>
+  <input type="password" id="pass" placeholder="••••••••" autocomplete="current-password">
+
+  <button class="btn" id="btn" onclick="login()">Entrar</button>
+</div>
+
+<script>
+const SUPABASE_URL  = 'https://gmpdcgjsbbyqkuftohce.supabase.co';
+const SUPABASE_ANON = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImdtcGRjZ2pzYmJ5cWt1ZnRvaGNlIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzQ1NTIxOTYsImV4cCI6MjA5MDEyODE5Nn0.5IfKctbsC42fDWlyElqe1d-YuCik_s6kQyipxCDIOIc';
+
+const sb = supabase.createClient(SUPABASE_URL, SUPABASE_ANON);
+
+// Se já logado, redireciona
+sb.auth.getSession().then(({ data: { session } }) => {
+  if (session) window.location.href = '/funil.html';
+});
+
+// Enter key
+document.getElementById('pass').addEventListener('keydown', e => {
+  if (e.key === 'Enter') login();
+});
+
+async function login() {
+  const email = document.getElementById('email').value.trim();
+  const pass  = document.getElementById('pass').value;
+  const btn   = document.getElementById('btn');
+  const err   = document.getElementById('err');
+
+  if (!email || !pass) {
+    err.textContent = 'Preencha e-mail e senha.';
+    err.classList.add('on');
+    return;
+  }
+
+  btn.disabled = true;
+  btn.textContent = 'Entrando...';
+  err.classList.remove('on');
+
+  const { error } = await sb.auth.signInWithPassword({ email, password: pass });
+
+  if (error) {
+    err.textContent = error.message === 'Invalid login credentials'
+      ? 'E-mail ou senha incorretos.'
+      : error.message;
+    err.classList.add('on');
+    btn.disabled = false;
+    btn.textContent = 'Entrar';
+  } else {
+    window.location.href = '/funil.html';
+  }
+}
+</script>
+</body>
+</html>
