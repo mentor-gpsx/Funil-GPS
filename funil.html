@@ -1056,9 +1056,10 @@ canvas.roleta-canvas{border-radius:50%;box-shadow:0 8px 32px rgba(0,0,0,.18);}
   <button class="tb"    id="tb-gabriel" onclick="switchTab('gabriel')">Gabriel <span class="tb-pill" id="pill-gabriel">–</span></button>
   <div class="tab-divider"></div>
   <button class="tb"    id="tb-fechamentos" onclick="switchTab('fechamentos')">Fechamentos <span class="tb-pill" id="pill-fechamentos">–</span></button>
-  <button class="tb"    id="tb-cmp"         onclick="switchTab('cmp')">Comparativo</button>
+  <button class="tb admin-only" id="tb-cmp"     onclick="switchTab('cmp')">Comparativo</button>
   <button class="tb"    id="tb-analise"     onclick="switchTab('analise')">Análise do Funil</button>
   <button class="tb"    id="tb-avaliador"   onclick="switchTab('avaliador')">Avaliador</button>
+  <button class="tb admin-only" id="tb-roletas" onclick="switchTab('roletas')">Roletas</button>
 </nav>
 
 <!-- VIEW: MARIA -->
@@ -1360,9 +1361,11 @@ canvas.roleta-canvas{border-radius:50%;box-shadow:0 8px 32px rgba(0,0,0,.18);}
       <div class="av-context-badge" id="av-context-badge">–</div>
     </div>
 
-    <!-- Ranking do Time -->
-    <div class="sec-head">Ranking do Time</div>
-    <div class="an-section" id="av-ranking" style="margin-bottom:20px"></div>
+    <!-- Ranking do Time (admin-only — sellers não veem dados de outros) -->
+    <div id="av-ranking-section">
+      <div class="sec-head">Ranking do Time</div>
+      <div class="an-section" id="av-ranking" style="margin-bottom:20px"></div>
+    </div>
 
     <!-- Cards individuais -->
     <div class="sec-head">Avaliação Individual</div>
@@ -1406,6 +1409,22 @@ canvas.roleta-canvas{border-radius:50%;box-shadow:0 8px 32px rgba(0,0,0,.18);}
       </div>
     </div>
 
+  </div>
+</div>
+
+<!-- VIEW: ROLETAS (exclusivo admin) -->
+<div class="view" id="view-roletas">
+  <div class="page">
+    <div class="sec-head">Giros Pendentes</div>
+    <div id="ar-queue" style="margin-bottom:28px"></div>
+    <div class="sec-head">Histórico de Prêmios</div>
+    <div class="ctrl-filter-bar">
+      <span class="ctrl-filter-label">Mês:</span>
+      <select id="ar-month" class="ctrl-filter-select" onchange="renderAdminRoletas()">
+        <option value="all">Todos os meses</option>
+      </select>
+    </div>
+    <div id="ar-history"></div>
   </div>
 </div>
 
@@ -2025,8 +2044,17 @@ function toggleAvCriteria() {
 function renderAvaliador() {
   if (!STAGES.length || !Object.keys(data).length) return;
 
+  // Sellers: restringir à própria chave
+  const isSeller = _userProfile?.role === 'seller' && _userProfile?.seller_key;
+  if (isSeller) {
+    const avSel = document.getElementById('av-seller');
+    if (avSel) { avSel.value = _userProfile.seller_key; avSel.disabled = true; }
+    const rankSection = document.getElementById('av-ranking-section');
+    if (rankSection) rankSection.style.display = 'none';
+  }
+
   const period       = document.getElementById('av-period')?.value  || 'this-month';
-  const sellerFilter = document.getElementById('av-seller')?.value  || 'all';
+  const sellerFilter = isSeller ? _userProfile.seller_key : (document.getElementById('av-seller')?.value || 'all');
   const filteredCl   = filterClosingsByPeriod(period);
 
   // Atualiza badge de contexto
@@ -2037,7 +2065,9 @@ function renderAvaliador() {
   if (ctxEl) ctxEl.textContent = `${periodLabel(period)} · ${sellerName}`;
 
   const sellers = Object.keys(CONFIG.SELLERS);
-  const results = sellers.map(k => calcSellerScore(k, filteredCl)).filter(Boolean);
+  const allResults = sellers.map(k => calcSellerScore(k, filteredCl)).filter(Boolean);
+  // Sellers veem apenas o próprio card; admins veem todos
+  const results = isSeller ? allResults.filter(r => r.key === _userProfile.seller_key) : allResults;
   if (results.length === 0) return;
 
   const ranked = [...results].sort((a, b) => b.total - a.total);
@@ -2721,12 +2751,15 @@ function renderComparison() {
 // TAB
 // ================================================================
 function switchTab(key) {
+  // Sellers não podem acessar abas restritas
+  if (_userProfile?.role === 'seller' && ['cmp', 'roletas'].includes(key)) return;
   activeTab = key;
   document.querySelectorAll('.tb').forEach(b => b.classList.remove('on'));
   document.querySelectorAll('.view').forEach(v => v.classList.remove('on'));
   document.getElementById(`tb-${key}`).classList.add('on');
   document.getElementById(`view-${key}`).classList.add('on');
   if (key === 'fechamentos') renderPrizeHistory();
+  if (key === 'roletas')     renderAdminRoletas();
 }
 
 // ================================================================
@@ -2858,21 +2891,27 @@ function roletaInit() {
   if (sel) sel.innerHTML = Object.entries(CONFIG.SELLER_META)
     .map(([k, m]) => `<option value="${k}">${m.name}</option>`).join('');
 
-  // Popular filtro de meses no histórico de roletas
-  const rhSel = document.getElementById('rh-month');
-  if (rhSel && rhSel.options.length <= 1) {
-    const now = new Date();
-    for (let i = 0; i < 6; i++) {
-      const d = new Date(now.getFullYear(), now.getMonth() - i, 1);
-      const y = d.getFullYear();
-      const m = String(d.getMonth() + 1).padStart(2, '0');
-      const label = d.toLocaleDateString('pt-BR', { month: 'long', year: 'numeric' });
-      const opt = document.createElement('option');
-      opt.value = `${y}-${m}`;
-      opt.textContent = label.charAt(0).toUpperCase() + label.slice(1);
-      rhSel.appendChild(opt);
-    }
+  // Popular filtros de meses (Fechamentos + Admin Roletas)
+  const now = new Date();
+  const monthOpts = [];
+  for (let i = 0; i < 6; i++) {
+    const d = new Date(now.getFullYear(), now.getMonth() - i, 1);
+    const y = d.getFullYear();
+    const m = String(d.getMonth() + 1).padStart(2, '0');
+    const label = d.toLocaleDateString('pt-BR', { month: 'long', year: 'numeric' });
+    monthOpts.push({ value: `${y}-${m}`, label: label.charAt(0).toUpperCase() + label.slice(1) });
   }
+  ['rh-month', 'ar-month'].forEach(selId => {
+    const sel = document.getElementById(selId);
+    if (sel && sel.options.length <= 1) {
+      monthOpts.forEach(o => {
+        const opt = document.createElement('option');
+        opt.value = o.value;
+        opt.textContent = o.label;
+        sel.appendChild(opt);
+      });
+    }
+  });
 
   updateRoletaNotif();
 }
@@ -2909,7 +2948,9 @@ function totalSpins(seller) {
 }
 
 function updateRoletaNotif() {
-  const total = Object.keys(CONFIG.SELLERS).reduce((s, k) => s + totalSpins(k), 0);
+  const total = (_userProfile?.role === 'seller' && _userProfile.seller_key)
+    ? totalSpins(_userProfile.seller_key)
+    : Object.keys(CONFIG.SELLERS).reduce((s, k) => s + totalSpins(k), 0);
   const notif = document.getElementById('roleta-notif');
   const txt   = document.getElementById('roleta-notif-text');
   if (total > 0) {
@@ -2922,7 +2963,12 @@ function updateRoletaNotif() {
 
 // ── Abrir roleta ─────────────────────────────────────────────────
 function openRoleta(seller, wheel) {
-  if (!seller) {
+  // Sellers só podem abrir a própria roleta
+  if (_userProfile?.role === 'seller' && _userProfile.seller_key) {
+    if (seller && seller !== _userProfile.seller_key) return;
+    seller = _userProfile.seller_key;
+    if (!wheel) wheel = (pendingSpins[seller]?.alta > 0) ? 'alta' : 'baixa';
+  } else if (!seller) {
     outer: for (const [s, sp] of Object.entries(pendingSpins)) {
       for (const w of ['alta', 'baixa']) {
         if (sp[w] > 0) { seller = s; wheel = w; break outer; }
@@ -3124,6 +3170,98 @@ function grantSpin() {
   renderQueueGrid();
 }
 
+// ── Controle admin de roletas (aba Roletas) ──────────────────────
+async function renderAdminRoletas() {
+  if (_userProfile?.role !== 'admin') return;
+
+  // Giros pendentes por vendedor
+  const queueEl = document.getElementById('ar-queue');
+  if (queueEl) {
+    const cards = Object.entries(CONFIG.SELLER_META).map(([k, m]) => {
+      const a     = pendingSpins[k]?.alta  || 0;
+      const b     = pendingSpins[k]?.baixa || 0;
+      const total = a + b;
+      return `<div style="background:var(--silver);border-radius:var(--r-sm);padding:16px;text-align:center;min-width:130px">
+        <div style="font-size:13px;font-weight:700;margin-bottom:8px">${m.name}</div>
+        <div style="font-size:28px;font-weight:900;color:${total > 0 ? 'var(--green)' : 'var(--muted)'}">${total}</div>
+        <div style="font-size:11px;color:var(--muted);margin-top:6px">
+          <span style="color:#a78bfa;font-weight:600">Alta ${a}</span> &nbsp;·&nbsp;
+          <span style="color:#60a5fa;font-weight:600">Baixa ${b}</span>
+        </div>
+      </div>`;
+    }).join('');
+    queueEl.innerHTML = `<div style="display:flex;gap:12px;flex-wrap:wrap">${cards}</div>`;
+  }
+
+  // Histórico completo
+  const histEl = document.getElementById('ar-history');
+  if (!histEl) return;
+  histEl.innerHTML = '<p style="color:var(--muted);font-size:13px;padding:12px 0">Carregando...</p>';
+
+  let query = _sb.from('prize_history').select('*').order('created_at', { ascending: false }).limit(500);
+  const arMonth = document.getElementById('ar-month')?.value;
+  if (arMonth && arMonth !== 'all') {
+    const [y, m] = arMonth.split('-');
+    const lastDay = new Date(+y, +m, 0).getDate();
+    query = query
+      .gte('created_at', `${y}-${m}-01T00:00:00`)
+      .lte('created_at', `${y}-${m}-${String(lastDay).padStart(2,'0')}T23:59:59`);
+  }
+
+  const { data: hist, error } = await query;
+  if (error) { histEl.innerHTML = '<p style="color:var(--red)">Erro ao carregar histórico.</p>'; return; }
+  if (!hist || hist.length === 0) {
+    histEl.innerHTML = '<p style="color:var(--muted);font-size:13px;padding:12px 0">Nenhum giro registrado ainda.</p>';
+    return;
+  }
+
+  const autoCount   = hist.filter(r => r.source === 'auto').length;
+  const manualCount = hist.filter(r => r.source === 'manual').length;
+
+  const rows = hist.map(r => {
+    const dt  = new Date(r.created_at);
+    const dtS = dt.toLocaleDateString('pt-BR') + ' ' + dt.toLocaleTimeString('pt-BR', { hour:'2-digit', minute:'2-digit' });
+    const whl = r.wheel === 'alta'
+      ? '<span style="color:#a78bfa;font-weight:700">Alta</span>'
+      : '<span style="color:#60a5fa;font-weight:700">Baixa</span>';
+    const src = r.source === 'auto'
+      ? '<span style="background:#dcfce7;color:#15803d;padding:2px 7px;border-radius:4px;font-size:11px;font-weight:700">Auto</span>'
+      : '<span style="background:#fef3c7;color:#92400e;padding:2px 7px;border-radius:4px;font-size:11px;font-weight:700">Manual</span>';
+    return `<tr style="border-bottom:1px solid var(--border)">
+      <td style="padding:9px 12px;color:var(--mid);white-space:nowrap">${dtS}</td>
+      <td style="padding:9px 12px;font-weight:600">${r.seller_name || r.seller_key}</td>
+      <td style="padding:9px 12px">${whl}</td>
+      <td style="padding:9px 12px">
+        <span style="width:10px;height:10px;border-radius:50%;background:${r.prize_color||'#94a3b8'};display:inline-block;margin-right:6px;vertical-align:middle"></span>${r.prize_label}
+      </td>
+      <td style="padding:9px 12px">${src}</td>
+      <td style="padding:9px 12px;color:var(--mid)">${r.closing_name || '—'}</td>
+    </tr>`;
+  }).join('');
+
+  histEl.innerHTML = `
+    <div style="display:flex;gap:10px;margin-bottom:16px;flex-wrap:wrap">
+      <div class="kpi"><div class="kpi-v">${hist.length}</div><div class="kpi-l">Total de Giros</div></div>
+      <div class="kpi"><div class="kpi-v">${autoCount}</div><div class="kpi-l">Automáticos</div></div>
+      <div class="kpi"><div class="kpi-v">${manualCount}</div><div class="kpi-l">Manuais</div></div>
+    </div>
+    <div class="ctrl-card" style="overflow-x:auto">
+      <table style="width:100%;border-collapse:collapse;font-size:13px">
+        <thead>
+          <tr style="border-bottom:2px solid var(--border)">
+            <th style="text-align:left;padding:8px 12px;font-size:11px;color:var(--muted);font-weight:700;white-space:nowrap">DATA</th>
+            <th style="text-align:left;padding:8px 12px;font-size:11px;color:var(--muted);font-weight:700">VENDEDOR</th>
+            <th style="text-align:left;padding:8px 12px;font-size:11px;color:var(--muted);font-weight:700">ROLETA</th>
+            <th style="text-align:left;padding:8px 12px;font-size:11px;color:var(--muted);font-weight:700">PRÊMIO</th>
+            <th style="text-align:left;padding:8px 12px;font-size:11px;color:var(--muted);font-weight:700">ORIGEM</th>
+            <th style="text-align:left;padding:8px 12px;font-size:11px;color:var(--muted);font-weight:700">FECHAMENTO</th>
+          </tr>
+        </thead>
+        <tbody>${rows}</tbody>
+      </table>
+    </div>`;
+}
+
 // ── Histórico de roletas (aba Fechamentos) ───────────────────────
 async function renderPrizeHistory() {
   const el = document.getElementById('rh-list');
@@ -3271,13 +3409,15 @@ async function logout() {
     document.querySelectorAll('.admin-only').forEach(el => { el.classList.remove('admin-only'); });
   }
 
-  // Sellers: travar filtro de responsável nos próprios dados
+  // Sellers: travar filtros nos próprios dados + ir para aba própria
   if (_userProfile.role === 'seller' && _userProfile.seller_key) {
     const sk = _userProfile.seller_key;
-    ['cf-seller', 'cp-seller'].forEach(id => {
+    ['cf-seller', 'cp-seller', 'av-seller'].forEach(id => {
       const sel = document.getElementById(id);
       if (sel) { sel.value = sk; sel.disabled = true; }
     });
+    // Ir direto para a aba do seller
+    if (document.getElementById(`tb-${sk}`)) switchTab(sk);
   }
 
   carregarDadosClickUp(true);
