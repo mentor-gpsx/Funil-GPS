@@ -2783,13 +2783,15 @@ function getPermissions() {
 
 function hasTabPermission(key) {
   if (_userProfile?.role === 'admin') return true;
-  if (key === _userProfile?.seller_key) return true; // aba própria: sempre
+  if (!_userProfile?.seller_key) return false; // seller sem seller_key: acesso bloqueado
+  if (key === _userProfile.seller_key) return true; // aba própria: sempre
   const perms = getPermissions();
   return (perms?.tabs || []).includes(key);
 }
 
 function hasFeaturePermission(feat) {
   if (_userProfile?.role === 'admin') return true;
+  if (!_userProfile?.seller_key) return false; // seller sem seller_key: acesso bloqueado
   const perms = getPermissions();
   return (perms?.features || []).includes(feat);
 }
@@ -3558,10 +3560,12 @@ async function logout() {
   }
 
   // Sellers: aplicar permissões + ocultar abas + travar filtros + ir para aba própria
-  if (_userProfile.role === 'seller' && _userProfile.seller_key) {
-    const sk    = _userProfile.seller_key;
+  // SEMPRE aplicar para sellers, independente de ter seller_key ou não
+  if (_userProfile.role === 'seller') {
+    const sk    = _userProfile.seller_key; // pode ser null
     const perms = getPermissions();
-    const allowedTabs = new Set([sk, ...(perms?.tabs || [])]);
+    // Se seller sem seller_key: nenhuma aba liberada (conta não configurada)
+    const allowedTabs = sk ? new Set([sk, ...(perms?.tabs || [])]) : new Set();
 
     // Ocultar abas sem permissão (sellers individuais + abas gerais restritas)
     const allTabIds = [
@@ -3582,11 +3586,13 @@ async function logout() {
     // Travar filtros de responsável nos próprios dados
     ['cf-seller', 'cp-seller', 'av-seller'].forEach(id => {
       const sel = document.getElementById(id);
-      if (sel) { sel.value = sk; sel.disabled = true; }
+      if (!sel) return;
+      if (sk) { sel.value = sk; sel.disabled = true; }
+      else sel.disabled = true;
     });
 
-    // Ir direto para a aba do seller
-    switchTab(sk);
+    // Ir direto para a aba do seller (se configurado)
+    if (sk) switchTab(sk);
   }
 
   carregarDadosClickUp(true);
