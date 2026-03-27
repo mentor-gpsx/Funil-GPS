@@ -2783,6 +2783,7 @@ function getPermissions() {
 
 function hasTabPermission(key) {
   if (_userProfile?.role === 'admin') return true;
+  if (_userProfile?.permissions?.admin_override) return true; // acesso elevado
   if (!_userProfile?.seller_key) return false; // seller sem seller_key: acesso bloqueado
   if (key === _userProfile.seller_key) return true; // aba própria: sempre
   const perms = getPermissions();
@@ -2791,6 +2792,7 @@ function hasTabPermission(key) {
 
 function hasFeaturePermission(feat) {
   if (_userProfile?.role === 'admin') return true;
+  if (_userProfile?.permissions?.admin_override) return true; // acesso elevado
   if (!_userProfile?.seller_key) return false; // seller sem seller_key: acesso bloqueado
   const perms = getPermissions();
   return (perms?.features || []).includes(feat);
@@ -2826,32 +2828,38 @@ async function renderPermissionsPanel() {
   ];
 
   el.innerHTML = sellers.map(s => {
-    const p        = s.permissions || {};
-    const tabs     = p.tabs     ?? SELLER_DEFAULT_PERMISSIONS.tabs;
-    const features = p.features ?? SELLER_DEFAULT_PERMISSIONS.features;
-    const name     = s.display_name || s.email;
-    const initials = name.split(' ').map(w => w[0]).slice(0,2).join('').toUpperCase();
+    const p           = s.permissions || {};
+    const tabs        = p.tabs     ?? SELLER_DEFAULT_PERMISSIONS.tabs;
+    const features    = p.features ?? SELLER_DEFAULT_PERMISSIONS.features;
+    const adminOvr    = p.admin_override === true;
+    const name        = s.display_name || s.email;
+    const initials    = name.split(' ').map(w => w[0]).slice(0,2).join('').toUpperCase();
+
+    const mkToggle = (isOn, onchange) => `
+      <label style="position:relative;display:inline-block;width:40px;height:22px;cursor:pointer;flex-shrink:0">
+        <input type="checkbox" ${isOn ? 'checked' : ''} onchange="${onchange}"
+          style="opacity:0;width:0;height:0;position:absolute">
+        <span style="position:absolute;inset:0;border-radius:11px;background:${isOn ? '#22c55e' : '#cbd5e1'}"></span>
+        <span style="position:absolute;top:3px;left:${isOn ? '21px' : '3px'};width:16px;height:16px;border-radius:50%;background:#fff;box-shadow:0 1px 3px rgba(0,0,0,.2)"></span>
+      </label>`;
+
+    const adminOvrToggle = `
+      <div style="display:flex;align-items:center;justify-content:space-between;padding:12px 14px;background:${adminOvr ? '#fef3c7' : 'var(--silver)'};border-radius:var(--r-sm);margin-bottom:10px;border:${adminOvr ? '1px solid #f59e0b' : '1px solid transparent'}">
+        <div>
+          <div style="font-size:13px;font-weight:700">👑 Acesso equivalente ao ADMIN</div>
+          <div style="font-size:11px;color:var(--muted);margin-top:2px">Ignora todas as restrições abaixo</div>
+        </div>
+        ${mkToggle(adminOvr, `toggleAdminOverride('${s.id}',this.checked)`)}
+      </div>`;
 
     const items = ALL_PERMISSION_ITEMS.map(item => {
       const isOn = item.category === 'tabs'
         ? tabs.includes(item.key)
         : features.includes(item.key);
       return `
-        <div style="display:flex;align-items:center;justify-content:space-between;padding:10px 14px;background:var(--silver);border-radius:var(--r-sm);margin-bottom:6px">
+        <div style="display:flex;align-items:center;justify-content:space-between;padding:10px 14px;background:var(--silver);border-radius:var(--r-sm);margin-bottom:6px;${adminOvr ? 'opacity:.4;pointer-events:none' : ''}">
           <span style="font-size:13px;font-weight:600">${item.icon} ${item.label}</span>
-          <label style="position:relative;display:inline-block;width:40px;height:22px;cursor:pointer;flex-shrink:0">
-            <input type="checkbox" ${isOn ? 'checked' : ''}
-              onchange="togglePermission('${s.id}','${item.category}','${item.key}',this.checked)"
-              style="opacity:0;width:0;height:0;position:absolute">
-            <span style="
-              position:absolute;inset:0;border-radius:11px;transition:.2s;
-              background:${isOn ? 'var(--green,#22c55e)' : '#cbd5e1'};
-            "></span>
-            <span style="
-              position:absolute;top:3px;left:${isOn ? '21px' : '3px'};
-              width:16px;height:16px;border-radius:50%;background:#fff;transition:.2s;box-shadow:0 1px 3px rgba(0,0,0,.2);
-            "></span>
-          </label>
+          ${mkToggle(isOn, `togglePermission('${s.id}','${item.category}','${item.key}',this.checked)`)}
         </div>`;
     }).join('');
 
@@ -2863,7 +2871,8 @@ async function renderPermissionsPanel() {
           <div style="font-size:11px;color:var(--muted)">${s.email}</div>
         </div>
       </div>
-      <div style="font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.6px;color:var(--muted);margin-bottom:10px">Acessos</div>
+      ${adminOvrToggle}
+      <div style="font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.6px;color:var(--muted);margin-bottom:10px">Acessos individuais</div>
       ${items}
     </div>`;
   }).join('');
@@ -2896,7 +2905,31 @@ async function togglePermission(profileId, category, key, enabled) {
     const err = await patchResp.json().catch(() => ({}));
     console.error('[Permissões] Erro ao salvar:', err.error);
   } else {
-    // Recarregar painel para refletir estado salvo
+    renderPermissionsPanel();
+  }
+}
+
+// Elevar/rebaixar acesso de seller para nível admin-like
+async function toggleAdminOverride(profileId, enabled) {
+  const { data: { session } } = await _sb.auth.getSession();
+  const token = session?.access_token || '';
+
+  const resp = await fetch('/api/permissions', { headers: { Authorization: `Bearer ${token}` } });
+  if (!resp.ok) { console.error('[Permissões] Erro ao buscar perfis'); return; }
+  const sellers = await resp.json();
+  const prof = sellers.find(s => s.id === profileId);
+
+  const perms = prof?.permissions || {};
+  const patchResp = await fetch('/api/permissions', {
+    method: 'PATCH',
+    headers: { Authorization: `Bearer ${token}`, 'Content-Type': 'application/json' },
+    body: JSON.stringify({ profileId, permissions: { ...perms, admin_override: enabled } }),
+  });
+
+  if (!patchResp.ok) {
+    const err = await patchResp.json().catch(() => ({}));
+    console.error('[Permissões] Erro ao elevar acesso:', err.error);
+  } else {
     renderPermissionsPanel();
   }
 }
@@ -3573,14 +3606,15 @@ async function logout() {
   const hdrUser = document.getElementById('hdr-user');
   if (hdrUser) hdrUser.textContent = _userProfile.display_name || session.user.email;
 
-  // Exibir elementos exclusivos de admin
-  if (_userProfile.role === 'admin') {
+  // Exibir elementos exclusivos de admin (inclui sellers com acesso elevado)
+  const isAdminLike = _userProfile.role === 'admin' || _userProfile.permissions?.admin_override;
+  if (isAdminLike) {
     document.querySelectorAll('.admin-only').forEach(el => { el.classList.remove('admin-only'); });
   }
 
   // Sellers: aplicar permissões + ocultar abas + travar filtros + ir para aba própria
-  // SEMPRE aplicar para sellers, independente de ter seller_key ou não
-  if (_userProfile.role === 'seller') {
+  // Sellers com admin_override ficam com acesso total — sem restrições
+  if (_userProfile.role === 'seller' && !_userProfile.permissions?.admin_override) {
     const sk    = _userProfile.seller_key; // pode ser null
     const perms = getPermissions();
     // Se seller sem seller_key: nenhuma aba liberada (conta não configurada)
