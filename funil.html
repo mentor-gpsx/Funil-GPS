@@ -886,6 +886,7 @@ canvas.roleta-canvas{border-radius:50%;box-shadow:0 8px 32px rgba(0,0,0,.18);}
   cursor:pointer;transition:background .15s;
 }
 .roleta-admin-toggle:hover{background:rgba(255,255,255,.2);}
+.admin-only{display:none;}
 .roleta-admin-panel{
   display:none;position:fixed;inset:0;z-index:1001;
   background:rgba(0,0,0,.65);align-items:flex-start;justify-content:center;
@@ -979,7 +980,7 @@ canvas.roleta-canvas{border-radius:50%;box-shadow:0 8px 32px rgba(0,0,0,.18);}
   <div class="hdr-title">Funil de Vendas · Visão Estratégica</div>
   <div style="display:flex;align-items:center;gap:12px">
     <span id="hdr-user" style="font-size:12px;color:#888;"></span>
-    <button class="roleta-admin-toggle" onclick="openAdminPanel()">🎰 Roleta</button>
+    <button class="roleta-admin-toggle admin-only" id="btn-admin-roleta" onclick="openAdminPanel()">🎰 Roleta</button>
     <button class="roleta-admin-toggle" onclick="logout()" style="background:rgba(255,255,255,.07)">Sair</button>
     <div class="hdr-sync">
       <div class="sync-dot" id="syncDot"></div>
@@ -1277,6 +1278,16 @@ canvas.roleta-canvas{border-radius:50%;box-shadow:0 8px 32px rgba(0,0,0,.18);}
 
     <div id="cp-kpis" style="margin-bottom:16px"></div>
     <div id="cp-list"></div>
+
+    <!-- ── HISTÓRICO DE ROLETAS ── -->
+    <div class="sec-head" style="margin-top:32px">Histórico de Roletas</div>
+    <div class="ctrl-filter-bar">
+      <span class="ctrl-filter-label">Mês:</span>
+      <select id="rh-month" class="ctrl-filter-select" onchange="renderPrizeHistory()">
+        <option value="all">Todos os meses</option>
+      </select>
+    </div>
+    <div id="rh-list"></div>
 
   </div>
 </div>
@@ -2715,6 +2726,7 @@ function switchTab(key) {
   document.querySelectorAll('.view').forEach(v => v.classList.remove('on'));
   document.getElementById(`tb-${key}`).classList.add('on');
   document.getElementById(`view-${key}`).classList.add('on');
+  if (key === 'fechamentos') renderPrizeHistory();
 }
 
 // ================================================================
@@ -2814,9 +2826,11 @@ const ROLETA_DEFAULT = {
   ],
 };
 
-let roletaPrizes   = { alta: null, baixa: null };
-let pendingSpins   = {}; // { seller: { alta: N, baixa: N } }
-let prevClosingIds = null;
+let roletaPrizes     = { alta: null, baixa: null };
+let pendingSpins     = {}; // { seller: { alta: N, baixa: N } }
+let pendingSpinsMeta = {}; // { seller: { alta: [{closingId,closingName,closingValor}], baixa: [] } }
+let _userProfile     = null; // carregado do Supabase no init
+let prevClosingIds   = null;
 let roletaCtx      = null; // { seller, wheel }
 let isSpinning     = false;
 let spinAngle      = 0;
@@ -2836,12 +2850,29 @@ function roletaInit() {
   } catch(_) {}
 
   for (const sk of Object.keys(CONFIG.SELLERS)) {
-    if (!pendingSpins[sk]) pendingSpins[sk] = { alta: 0, baixa: 0 };
+    if (!pendingSpins[sk])     pendingSpins[sk]     = { alta: 0, baixa: 0 };
+    if (!pendingSpinsMeta[sk]) pendingSpinsMeta[sk] = { alta: [], baixa: [] };
   }
 
   const sel = document.getElementById('grant-seller');
   if (sel) sel.innerHTML = Object.entries(CONFIG.SELLER_META)
     .map(([k, m]) => `<option value="${k}">${m.name}</option>`).join('');
+
+  // Popular filtro de meses no histórico de roletas
+  const rhSel = document.getElementById('rh-month');
+  if (rhSel && rhSel.options.length <= 1) {
+    const now = new Date();
+    for (let i = 0; i < 6; i++) {
+      const d = new Date(now.getFullYear(), now.getMonth() - i, 1);
+      const y = d.getFullYear();
+      const m = String(d.getMonth() + 1).padStart(2, '0');
+      const label = d.toLocaleDateString('pt-BR', { month: 'long', year: 'numeric' });
+      const opt = document.createElement('option');
+      opt.value = `${y}-${m}`;
+      opt.textContent = label.charAt(0).toUpperCase() + label.slice(1);
+      rhSel.appendChild(opt);
+    }
+  }
 
   updateRoletaNotif();
 }
@@ -2857,8 +2888,10 @@ function detectNewClosings() {
     const entry = closingsData.find(c => c.id === id);
     if (!entry || !entry.seller || entry.seller === 'outros') continue;
     const wheel = (entry.valor && entry.valor >= 9900) ? 'alta' : 'baixa';
-    if (!pendingSpins[entry.seller]) pendingSpins[entry.seller] = { alta: 0, baixa: 0 };
+    if (!pendingSpins[entry.seller])     pendingSpins[entry.seller]     = { alta: 0, baixa: 0 };
+    if (!pendingSpinsMeta[entry.seller]) pendingSpinsMeta[entry.seller] = { alta: [], baixa: [] };
     pendingSpins[entry.seller][wheel]++;
+    pendingSpinsMeta[entry.seller][wheel].push({ closingId: entry.id, closingName: entry.name, closingValor: entry.valor || 0 });
     console.log(`[Roleta] +1 giro ${wheel} para ${entry.seller} (${entry.name})`);
     changed = true;
   }
@@ -3020,6 +3053,24 @@ function spinWheel() {
       saveSpins();
       updateRoletaNotif();
 
+      // Salvar giro no Supabase
+      const _spinMeta = pendingSpinsMeta[seller]?.[wheel]?.shift() || {};
+      _sb.from('prize_history').insert({
+        id:             `${seller}-${wheel}-${Date.now()}`,
+        seller_key:     seller,
+        seller_name:    CONFIG.SELLER_META[seller]?.name || seller,
+        wheel,
+        prize_label:    prizes[winnerIdx].label,
+        prize_color:    prizes[winnerIdx].color || '',
+        closing_id:     _spinMeta.closingId   || null,
+        closing_name:   _spinMeta.closingName || null,
+        closing_valor:  _spinMeta.closingValor != null ? _spinMeta.closingValor : null,
+        source:         _spinMeta.closingId ? 'auto' : 'manual',
+      }).then(({ error }) => {
+        if (error) console.error('[Roleta] Erro ao salvar prêmio:', error.message);
+        else renderPrizeHistory(); // atualizar histórico se a aba estiver aberta
+      });
+
       const left = pendingSpins[seller][wheel];
       updateSpinBadge(left);
       const resEl = document.getElementById('roleta-result');
@@ -3060,14 +3111,87 @@ function renderQueueGrid() {
 }
 
 function grantSpin() {
+  if (_userProfile?.role !== 'admin') return; // apenas admins
   const seller = document.getElementById('grant-seller').value;
   const wheel  = document.getElementById('grant-wheel').value;
   if (!seller || !wheel) return;
-  if (!pendingSpins[seller]) pendingSpins[seller] = { alta: 0, baixa: 0 };
+  if (!pendingSpins[seller])     pendingSpins[seller]     = { alta: 0, baixa: 0 };
+  if (!pendingSpinsMeta[seller]) pendingSpinsMeta[seller] = { alta: [], baixa: [] };
   pendingSpins[seller][wheel]++;
+  pendingSpinsMeta[seller][wheel].push({ closingId: null, closingName: 'Liberação manual', closingValor: null });
   saveSpins();
   updateRoletaNotif();
   renderQueueGrid();
+}
+
+// ── Histórico de roletas (aba Fechamentos) ───────────────────────
+async function renderPrizeHistory() {
+  const el = document.getElementById('rh-list');
+  if (!el) return;
+  el.innerHTML = '<p style="color:var(--muted);font-size:13px;padding:12px 0">Carregando...</p>';
+
+  let query = _sb.from('prize_history').select('*').order('created_at', { ascending: false }).limit(200);
+
+  // Sellers veem apenas os próprios registros
+  if (_userProfile?.role === 'seller' && _userProfile.seller_key) {
+    query = query.eq('seller_key', _userProfile.seller_key);
+  }
+
+  // Filtro de mês
+  const rhMonth = document.getElementById('rh-month')?.value;
+  if (rhMonth && rhMonth !== 'all') {
+    const [y, m] = rhMonth.split('-');
+    const lastDay = new Date(+y, +m, 0).getDate();
+    query = query
+      .gte('created_at', `${y}-${m}-01T00:00:00`)
+      .lte('created_at', `${y}-${m}-${String(lastDay).padStart(2,'0')}T23:59:59`);
+  }
+
+  const { data, error } = await query;
+  if (error) {
+    el.innerHTML = '<p style="color:var(--red);font-size:13px">Erro ao carregar histórico.</p>';
+    return;
+  }
+  if (!data || data.length === 0) {
+    el.innerHTML = '<p style="color:var(--muted);font-size:13px;padding:12px 0">Nenhum giro registrado ainda.</p>';
+    return;
+  }
+
+  const rows = data.map(r => {
+    const dt  = new Date(r.created_at);
+    const dtS = dt.toLocaleDateString('pt-BR') + ' ' + dt.toLocaleTimeString('pt-BR',{hour:'2-digit',minute:'2-digit'});
+    const whl = r.wheel === 'alta'
+      ? '<span style="color:#a78bfa;font-weight:700">Alta</span>'
+      : '<span style="color:#60a5fa;font-weight:700">Baixa</span>';
+    const src = r.source === 'auto'
+      ? '<span style="background:#dcfce7;color:#15803d;padding:2px 7px;border-radius:4px;font-size:11px;font-weight:700">Auto</span>'
+      : '<span style="background:#fef3c7;color:#92400e;padding:2px 7px;border-radius:4px;font-size:11px;font-weight:700">Manual</span>';
+    const dot = `<span style="width:10px;height:10px;border-radius:50%;background:${r.prize_color||'#94a3b8'};display:inline-block;margin-right:6px;vertical-align:middle"></span>`;
+    return `<tr style="border-bottom:1px solid var(--border)">
+      <td style="padding:9px 12px;color:var(--mid);white-space:nowrap">${dtS}</td>
+      <td style="padding:9px 12px;font-weight:600">${r.seller_name || r.seller_key}</td>
+      <td style="padding:9px 12px">${whl}</td>
+      <td style="padding:9px 12px">${dot}${r.prize_label}</td>
+      <td style="padding:9px 12px">${src}</td>
+      <td style="padding:9px 12px;color:var(--mid)">${r.closing_name || '—'}</td>
+    </tr>`;
+  }).join('');
+
+  el.innerHTML = `<div class="ctrl-card" style="overflow-x:auto">
+    <table style="width:100%;border-collapse:collapse;font-size:13px">
+      <thead>
+        <tr style="border-bottom:2px solid var(--border)">
+          <th style="text-align:left;padding:8px 12px;font-size:11px;color:var(--muted);font-weight:700;white-space:nowrap">DATA</th>
+          <th style="text-align:left;padding:8px 12px;font-size:11px;color:var(--muted);font-weight:700">VENDEDOR</th>
+          <th style="text-align:left;padding:8px 12px;font-size:11px;color:var(--muted);font-weight:700">ROLETA</th>
+          <th style="text-align:left;padding:8px 12px;font-size:11px;color:var(--muted);font-weight:700">PRÊMIO</th>
+          <th style="text-align:left;padding:8px 12px;font-size:11px;color:var(--muted);font-weight:700">ORIGEM</th>
+          <th style="text-align:left;padding:8px 12px;font-size:11px;color:var(--muted);font-weight:700">FECHAMENTO</th>
+        </tr>
+      </thead>
+      <tbody>${rows}</tbody>
+    </table>
+  </div>`;
 }
 
 function renderPrizeEditor(wheel) {
@@ -3130,9 +3254,31 @@ async function logout() {
   const { data: { session } } = await _sb.auth.getSession();
   if (!session) { window.location.href = '/login.html'; return; }
 
-  // Exibir email do usuário no header
+  // Carregar perfil do usuário
+  const { data: profile } = await _sb
+    .from('profiles')
+    .select('seller_key, display_name, role')
+    .eq('id', session.user.id)
+    .single();
+  _userProfile = profile || { role: 'seller', seller_key: null };
+
+  // Exibir nome no header
   const hdrUser = document.getElementById('hdr-user');
-  if (hdrUser) hdrUser.textContent = session.user.email;
+  if (hdrUser) hdrUser.textContent = _userProfile.display_name || session.user.email;
+
+  // Exibir elementos exclusivos de admin
+  if (_userProfile.role === 'admin') {
+    document.querySelectorAll('.admin-only').forEach(el => { el.style.display = ''; });
+  }
+
+  // Sellers: travar filtro de responsável nos próprios dados
+  if (_userProfile.role === 'seller' && _userProfile.seller_key) {
+    const sk = _userProfile.seller_key;
+    ['cf-seller', 'cp-seller'].forEach(id => {
+      const sel = document.getElementById(id);
+      if (sel) { sel.value = sk; sel.disabled = true; }
+    });
+  }
 
   carregarDadosClickUp(true);
   setInterval(() => carregarDadosClickUp(false), CONFIG.INTERVAL);
