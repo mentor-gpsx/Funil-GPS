@@ -1425,6 +1425,11 @@ canvas.roleta-canvas{border-radius:50%;box-shadow:0 8px 32px rgba(0,0,0,.18);}
       </select>
     </div>
     <div id="ar-history"></div>
+    <div class="sec-head" style="margin-top:32px">Gerenciar Permissões</div>
+    <p style="font-size:12px;color:var(--muted);margin-bottom:16px">
+      Defina quais abas e funcionalidades cada seller pode acessar. As mudanças são salvas automaticamente.
+    </p>
+    <div id="ar-permissions"></div>
   </div>
 </div>
 
@@ -2748,15 +2753,132 @@ function renderComparison() {
 }
 
 // ================================================================
+// PERMISSIONS
+// ================================================================
+const SELLER_DEFAULT_PERMISSIONS = {
+  tabs:     ['fechamentos', 'avaliador', 'analise'],
+  features: ['roleta'],
+};
+
+// Todas as abas gerenciáveis para sellers
+const ALL_MANAGED_TABS = [
+  { key: 'fechamentos', label: 'Fechamentos'     },
+  { key: 'avaliador',   label: 'Avaliador'       },
+  { key: 'analise',     label: 'Análise do Funil' },
+  { key: 'cmp',         label: 'Comparativo'     },
+];
+const ALL_MANAGED_FEATURES = [
+  { key: 'roleta', label: 'Roleta de Prêmios' },
+];
+
+function getPermissions() {
+  if (_userProfile?.role === 'admin') return null; // admins: acesso total
+  const p = _userProfile?.permissions;
+  if (!p || Object.keys(p).length === 0) return SELLER_DEFAULT_PERMISSIONS;
+  return {
+    tabs:     p.tabs     ?? SELLER_DEFAULT_PERMISSIONS.tabs,
+    features: p.features ?? SELLER_DEFAULT_PERMISSIONS.features,
+  };
+}
+
+function hasTabPermission(key) {
+  if (_userProfile?.role === 'admin') return true;
+  if (key === _userProfile?.seller_key) return true; // aba própria: sempre
+  const perms = getPermissions();
+  return (perms?.tabs || []).includes(key);
+}
+
+function hasFeaturePermission(feat) {
+  if (_userProfile?.role === 'admin') return true;
+  const perms = getPermissions();
+  return (perms?.features || []).includes(feat);
+}
+
+// Painel admin: carregar perfis de sellers e renderizar checkboxes
+async function renderPermissionsPanel() {
+  const el = document.getElementById('ar-permissions');
+  if (!el) return;
+  el.innerHTML = '<p style="color:var(--muted);font-size:13px">Carregando...</p>';
+
+  const { data: sellers, error } = await _sb
+    .from('profiles')
+    .select('id, email, seller_key, display_name, permissions')
+    .eq('role', 'seller')
+    .not('seller_key', 'is', null);
+
+  if (error || !sellers) { el.innerHTML = '<p style="color:var(--red)">Erro ao carregar perfis.</p>'; return; }
+
+  if (sellers.length === 0) {
+    el.innerHTML = '<p style="color:var(--muted);font-size:13px">Nenhum seller cadastrado.</p>';
+    return;
+  }
+
+  el.innerHTML = sellers.map(s => {
+    const p        = s.permissions || {};
+    const tabs     = p.tabs     ?? SELLER_DEFAULT_PERMISSIONS.tabs;
+    const features = p.features ?? SELLER_DEFAULT_PERMISSIONS.features;
+    const name     = s.display_name || s.email;
+
+    const tabChecks = ALL_MANAGED_TABS.map(t => `
+      <label style="display:flex;align-items:center;gap:6px;cursor:pointer;font-size:13px;user-select:none">
+        <input type="checkbox" ${tabs.includes(t.key) ? 'checked' : ''}
+          onchange="togglePermission('${s.id}', 'tabs', '${t.key}', this.checked)">
+        ${t.label}
+      </label>`).join('');
+
+    const featChecks = ALL_MANAGED_FEATURES.map(f => `
+      <label style="display:flex;align-items:center;gap:6px;cursor:pointer;font-size:13px;user-select:none">
+        <input type="checkbox" ${features.includes(f.key) ? 'checked' : ''}
+          onchange="togglePermission('${s.id}', 'features', '${f.key}', this.checked)">
+        ${f.label}
+      </label>`).join('');
+
+    return `<div class="ctrl-card" style="margin-bottom:12px;padding:18px 20px">
+      <div style="font-weight:800;font-size:14px;margin-bottom:14px">${name}
+        <span style="font-size:11px;color:var(--muted);font-weight:400;margin-left:6px">${s.email}</span>
+      </div>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px">
+        <div>
+          <div style="font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.5px;color:var(--muted);margin-bottom:8px">Abas</div>
+          <div style="display:flex;flex-direction:column;gap:6px">${tabChecks}</div>
+        </div>
+        <div>
+          <div style="font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.5px;color:var(--muted);margin-bottom:8px">Funcionalidades</div>
+          <div style="display:flex;flex-direction:column;gap:6px">${featChecks}</div>
+        </div>
+      </div>
+    </div>`;
+  }).join('');
+}
+
+// Salvar alteração de permissão no Supabase
+async function togglePermission(profileId, category, key, enabled) {
+  const { data: prof } = await _sb
+    .from('profiles')
+    .select('permissions')
+    .eq('id', profileId)
+    .single();
+
+  const perms   = prof?.permissions || {};
+  const current = perms[category] ?? SELLER_DEFAULT_PERMISSIONS[category] ?? [];
+  const updated = enabled
+    ? [...new Set([...current, key])]
+    : current.filter(k => k !== key);
+
+  const { error } = await _sb
+    .from('profiles')
+    .update({ permissions: { ...perms, [category]: updated } })
+    .eq('id', profileId);
+
+  if (error) console.error('[Permissões] Erro ao salvar:', error.message);
+}
+
+// ================================================================
 // TAB
 // ================================================================
 function switchTab(key) {
-  // Sellers não podem acessar abas restritas nem funis de outros usuários
-  if (_userProfile?.role === 'seller') {
-    const blockedAdminTabs = ['cmp', 'roletas'];
-    const otherSellerTab   = Object.keys(CONFIG.SELLERS).includes(key) && key !== _userProfile.seller_key;
-    if (blockedAdminTabs.includes(key) || otherSellerTab) return;
-  }
+  // Verificar permissão para a aba
+  if (_userProfile?.role === 'seller' && !hasTabPermission(key)) return;
   activeTab = key;
   document.querySelectorAll('.tb').forEach(b => b.classList.remove('on'));
   document.querySelectorAll('.view').forEach(v => v.classList.remove('on'));
@@ -2952,6 +3074,11 @@ function totalSpins(seller) {
 }
 
 function updateRoletaNotif() {
+  // Seller sem permissão de roleta: esconder notificação
+  if (_userProfile?.role === 'seller' && !hasFeaturePermission('roleta')) {
+    document.getElementById('roleta-notif')?.classList.remove('on');
+    return;
+  }
   let total = 0;
   if (_userProfile?.role === 'seller') {
     total = _userProfile.seller_key ? totalSpins(_userProfile.seller_key) : 0;
@@ -3270,6 +3397,9 @@ async function renderAdminRoletas() {
         <tbody>${rows}</tbody>
       </table>
     </div>`;
+
+  // Carregar painel de permissões após o histórico
+  renderPermissionsPanel();
 }
 
 // ── Histórico de roletas (aba Fechamentos) ───────────────────────
@@ -3405,7 +3535,7 @@ async function logout() {
   // Carregar perfil do usuário
   const { data: profile } = await _sb
     .from('profiles')
-    .select('seller_key, display_name, role')
+    .select('seller_key, display_name, role, permissions')
     .eq('id', session.user.id)
     .single();
   _userProfile = profile || { role: 'seller', seller_key: null };
@@ -3419,15 +3549,25 @@ async function logout() {
     document.querySelectorAll('.admin-only').forEach(el => { el.classList.remove('admin-only'); });
   }
 
-  // Sellers: travar filtros nos próprios dados + ocultar abas de outros + ir para aba própria
+  // Sellers: aplicar permissões + ocultar abas + travar filtros + ir para aba própria
   if (_userProfile.role === 'seller' && _userProfile.seller_key) {
-    const sk = _userProfile.seller_key;
+    const sk    = _userProfile.seller_key;
+    const perms = getPermissions();
+    const allowedTabs = new Set([sk, ...(perms?.tabs || [])]);
 
-    // Ocultar abas de outros sellers (funil individual de cada um)
-    Object.keys(CONFIG.SELLERS).forEach(k => {
-      if (k !== sk) {
-        const tab = document.getElementById(`tb-${k}`);
-        if (tab) tab.style.display = 'none';
+    // Ocultar abas sem permissão (sellers individuais + abas gerais restritas)
+    const allTabIds = [
+      ...Object.keys(CONFIG.SELLERS),
+      'fechamentos', 'cmp', 'analise', 'avaliador', 'roletas',
+    ];
+    allTabIds.forEach(tabKey => {
+      const tab = document.getElementById(`tb-${tabKey}`);
+      if (!tab) return;
+      if (allowedTabs.has(tabKey)) {
+        tab.classList.remove('admin-only');
+        tab.style.display = '';
+      } else {
+        tab.style.display = 'none';
       }
     });
 
@@ -3438,7 +3578,7 @@ async function logout() {
     });
 
     // Ir direto para a aba do seller
-    if (document.getElementById(`tb-${sk}`)) switchTab(sk);
+    switchTab(sk);
   }
 
   carregarDadosClickUp(true);
