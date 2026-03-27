@@ -2751,8 +2751,12 @@ function renderComparison() {
 // TAB
 // ================================================================
 function switchTab(key) {
-  // Sellers não podem acessar abas restritas
-  if (_userProfile?.role === 'seller' && ['cmp', 'roletas'].includes(key)) return;
+  // Sellers não podem acessar abas restritas nem funis de outros usuários
+  if (_userProfile?.role === 'seller') {
+    const blockedAdminTabs = ['cmp', 'roletas'];
+    const otherSellerTab   = Object.keys(CONFIG.SELLERS).includes(key) && key !== _userProfile.seller_key;
+    if (blockedAdminTabs.includes(key) || otherSellerTab) return;
+  }
   activeTab = key;
   document.querySelectorAll('.tb').forEach(b => b.classList.remove('on'));
   document.querySelectorAll('.view').forEach(v => v.classList.remove('on'));
@@ -3415,13 +3419,24 @@ async function logout() {
     document.querySelectorAll('.admin-only').forEach(el => { el.classList.remove('admin-only'); });
   }
 
-  // Sellers: travar filtros nos próprios dados + ir para aba própria
+  // Sellers: travar filtros nos próprios dados + ocultar abas de outros + ir para aba própria
   if (_userProfile.role === 'seller' && _userProfile.seller_key) {
     const sk = _userProfile.seller_key;
+
+    // Ocultar abas de outros sellers (funil individual de cada um)
+    Object.keys(CONFIG.SELLERS).forEach(k => {
+      if (k !== sk) {
+        const tab = document.getElementById(`tb-${k}`);
+        if (tab) tab.style.display = 'none';
+      }
+    });
+
+    // Travar filtros de responsável nos próprios dados
     ['cf-seller', 'cp-seller', 'av-seller'].forEach(id => {
       const sel = document.getElementById(id);
       if (sel) { sel.value = sk; sel.disabled = true; }
     });
+
     // Ir direto para a aba do seller
     if (document.getElementById(`tb-${sk}`)) switchTab(sk);
   }
