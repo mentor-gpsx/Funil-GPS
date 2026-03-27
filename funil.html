@@ -2800,13 +2800,14 @@ async function renderPermissionsPanel() {
   if (!el) return;
   el.innerHTML = '<p style="color:var(--muted);font-size:13px">Carregando...</p>';
 
-  const { data: sellers, error } = await _sb
-    .from('profiles')
-    .select('id, email, seller_key, display_name, permissions')
-    .eq('role', 'seller')
-    .not('seller_key', 'is', null);
+  const { data: { session } } = await _sb.auth.getSession();
+  const token = session?.access_token || '';
+  const resp = await fetch('/api/permissions', { headers: { Authorization: `Bearer ${token}` } });
+  if (!resp.ok) { el.innerHTML = '<p style="color:var(--red)">Erro ao carregar perfis.</p>'; return; }
+  const sellers = await resp.json();
+  const error = null;
 
-  if (error || !sellers) { el.innerHTML = '<p style="color:var(--red)">Erro ao carregar perfis.</p>'; return; }
+  if (!sellers) { el.innerHTML = '<p style="color:var(--red)">Erro ao carregar perfis.</p>'; return; }
 
   if (sellers.length === 0) {
     el.innerHTML = '<p style="color:var(--muted);font-size:13px">Nenhum seller cadastrado.</p>';
@@ -2853,11 +2854,14 @@ async function renderPermissionsPanel() {
 
 // Salvar alteração de permissão no Supabase
 async function togglePermission(profileId, category, key, enabled) {
-  const { data: prof } = await _sb
-    .from('profiles')
-    .select('permissions')
-    .eq('id', profileId)
-    .single();
+  // Buscar permissões atuais do painel (DOM) para evitar outra chamada de rede
+  const { data: { session } } = await _sb.auth.getSession();
+  const token = session?.access_token || '';
+
+  const resp = await fetch('/api/permissions', { headers: { Authorization: `Bearer ${token}` } });
+  if (!resp.ok) { console.error('[Permissões] Erro ao buscar perfis'); return; }
+  const sellers = await resp.json();
+  const prof = sellers.find(s => s.id === profileId);
 
   const perms   = prof?.permissions || {};
   const current = perms[category] ?? SELLER_DEFAULT_PERMISSIONS[category] ?? [];
@@ -2865,12 +2869,16 @@ async function togglePermission(profileId, category, key, enabled) {
     ? [...new Set([...current, key])]
     : current.filter(k => k !== key);
 
-  const { error } = await _sb
-    .from('profiles')
-    .update({ permissions: { ...perms, [category]: updated } })
-    .eq('id', profileId);
+  const patchResp = await fetch('/api/permissions', {
+    method: 'PATCH',
+    headers: { Authorization: `Bearer ${token}`, 'Content-Type': 'application/json' },
+    body: JSON.stringify({ profileId, permissions: { ...perms, [category]: updated } }),
+  });
 
-  if (error) console.error('[Permissões] Erro ao salvar:', error.message);
+  if (!patchResp.ok) {
+    const err = await patchResp.json().catch(() => ({}));
+    console.error('[Permissões] Erro ao salvar:', err.error);
+  }
 }
 
 // ================================================================
