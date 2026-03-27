@@ -2948,9 +2948,12 @@ function totalSpins(seller) {
 }
 
 function updateRoletaNotif() {
-  const total = (_userProfile?.role === 'seller' && _userProfile.seller_key)
-    ? totalSpins(_userProfile.seller_key)
-    : Object.keys(CONFIG.SELLERS).reduce((s, k) => s + totalSpins(k), 0);
+  let total = 0;
+  if (_userProfile?.role === 'seller') {
+    total = _userProfile.seller_key ? totalSpins(_userProfile.seller_key) : 0;
+  } else {
+    total = Object.keys(CONFIG.SELLERS).reduce((s, k) => s + totalSpins(k), 0);
+  }
   const notif = document.getElementById('roleta-notif');
   const txt   = document.getElementById('roleta-notif-text');
   if (total > 0) {
@@ -2963,12 +2966,15 @@ function updateRoletaNotif() {
 
 // ── Abrir roleta ─────────────────────────────────────────────────
 function openRoleta(seller, wheel) {
-  // Sellers só podem abrir a própria roleta
-  if (_userProfile?.role === 'seller' && _userProfile.seller_key) {
+  if (_userProfile?.role === 'seller') {
+    // Seller sem seller_key: não pode girar
+    if (!_userProfile.seller_key) return;
+    // Sellers só podem abrir a própria roleta
     if (seller && seller !== _userProfile.seller_key) return;
     seller = _userProfile.seller_key;
     if (!wheel) wheel = (pendingSpins[seller]?.alta > 0) ? 'alta' : 'baixa';
   } else if (!seller) {
+    // Admin sem seller especificado: abre o primeiro disponível
     outer: for (const [s, sp] of Object.entries(pendingSpins)) {
       for (const w of ['alta', 'baixa']) {
         if (sp[w] > 0) { seller = s; wheel = w; break outer; }
