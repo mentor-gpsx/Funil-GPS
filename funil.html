@@ -2049,8 +2049,10 @@ function toggleAvCriteria() {
 function renderAvaliador() {
   if (!STAGES.length || !Object.keys(data).length) return;
 
-  // Sellers: restringir à própria chave
-  const isSeller = _userProfile?.role === 'seller' && _userProfile?.seller_key;
+  // Sellers sem admin_override: restringir à própria chave
+  const isSeller = _userProfile?.role === 'seller'
+    && !_userProfile?.permissions?.admin_override
+    && _userProfile?.seller_key;
   if (isSeller) {
     const avSel = document.getElementById('av-seller');
     if (avSel) { avSel.value = _userProfile.seller_key; avSel.disabled = true; }
@@ -3141,7 +3143,8 @@ function updateRoletaNotif() {
     return;
   }
   let total = 0;
-  if (_userProfile?.role === 'seller') {
+  const isRestrictedSeller = _userProfile?.role === 'seller' && !_userProfile?.permissions?.admin_override;
+  if (isRestrictedSeller) {
     total = _userProfile.seller_key ? totalSpins(_userProfile.seller_key) : 0;
   } else {
     total = Object.keys(CONFIG.SELLERS).reduce((s, k) => s + totalSpins(k), 0);
@@ -3158,10 +3161,10 @@ function updateRoletaNotif() {
 
 // ── Abrir roleta ─────────────────────────────────────────────────
 function openRoleta(seller, wheel) {
-  if (_userProfile?.role === 'seller') {
+  if (_userProfile?.role === 'seller' && !_userProfile?.permissions?.admin_override) {
     // Seller sem seller_key: não pode girar
     if (!_userProfile.seller_key) return;
-    // Sellers só podem abrir a própria roleta
+    // Sellers restritos só podem abrir a própria roleta
     if (seller && seller !== _userProfile.seller_key) return;
     seller = _userProfile.seller_key;
     if (!wheel) wheel = (pendingSpins[seller]?.alta > 0) ? 'alta' : 'baixa';
@@ -3472,8 +3475,8 @@ async function renderPrizeHistory() {
 
   let query = _sb.from('prize_history').select('*').order('created_at', { ascending: false }).limit(200);
 
-  // Sellers veem apenas os próprios registros
-  if (_userProfile?.role === 'seller' && _userProfile.seller_key) {
+  // Sellers restritos veem apenas os próprios registros
+  if (_userProfile?.role === 'seller' && !_userProfile?.permissions?.admin_override && _userProfile.seller_key) {
     query = query.eq('seller_key', _userProfile.seller_key);
   }
 
