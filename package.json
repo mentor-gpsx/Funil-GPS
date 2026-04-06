@@ -2,6 +2,9 @@
   "name": "funil-gps",
   "version": "1.0.0",
   "private": true,
+  "scripts": {
+    "build": "echo 'Static site — no build required'"
+  },
   "dependencies": {
     "@supabase/supabase-js": "^2.47.0"
   }
