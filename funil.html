@@ -2258,7 +2258,9 @@ function renderMonthlyPoints() {
     ? [_userProfile.seller_key].filter(Boolean)
     : Object.keys(CONFIG.SELLERS);
 
-  if (!sellers.length) { el.innerHTML = ''; return; }
+  // fallback: se seller sem seller_key configurado, mostra todos
+  const activeSellers = sellers.length ? sellers : Object.keys(CONFIG.SELLERS);
+  if (!activeSellers.length) { el.innerHTML = ''; return; }
 
   const PTS_META_M  = 20;
   const SALE_HIGH_M = 4997;
@@ -2274,8 +2276,9 @@ function renderMonthlyPoints() {
   }
 
   const ymSet = new Set();
-  presentationsData.forEach(r => { if (r.date) ymSet.add(toYM(r.date)); });
-  closingsData.forEach(r => { if (r.date) ymSet.add(toYM(r.date)); });
+  const isValidDate = d => d instanceof Date && !isNaN(d);
+  presentationsData.forEach(r => { if (isValidDate(r.date)) ymSet.add(toYM(r.date)); });
+  closingsData.forEach(r => { if (isValidDate(r.date)) ymSet.add(toYM(r.date)); });
 
   if (ymSet.size === 0) {
     el.innerHTML = '<p style="color:var(--muted);font-size:12px;padding:12px 0">Nenhum dado disponível.</p>';
@@ -2300,7 +2303,7 @@ function renderMonthlyPoints() {
   ).join('');
 
   // ── Linhas por vendedor ──
-  const rowsHtml = sellers.map(key => {
+  const rowsHtml = activeSellers.map(key => {
     const meta = CONFIG.SELLER_META[key];
     let rowTotal = 0;
     const cellsHtml = allYMs.map(ym => {
@@ -2335,10 +2338,10 @@ function renderMonthlyPoints() {
 
   // ── Linha de totais por mês ──
   const totalsHtml = allYMs.map(ym => {
-    const total = sellers.reduce((sum, key) => sum + calcPts(key, ym).pts, 0);
+    const total = activeSellers.reduce((sum, key) => sum + calcPts(key, ym).pts, 0);
     return `<td style="font-weight:800">${total}</td>`;
   }).join('');
-  const grandTotal = sellers.reduce((sum, key) =>
+  const grandTotal = activeSellers.reduce((sum, key) =>
     allYMs.reduce((s, ym) => s + calcPts(key, ym).pts, sum), 0);
 
   el.innerHTML = `
@@ -3214,6 +3217,7 @@ function switchTab(key) {
   document.getElementById(`view-${key}`).classList.add('on');
   if (key === 'fechamentos') renderPrizeHistory();
   if (key === 'roletas')     renderAdminRoletas();
+  if (key === 'avaliador')   renderMonthlyPoints();
 }
 
 // ================================================================
