@@ -2445,6 +2445,48 @@ function renderSeller(key) {
       <div class="kpi-l">${k.l}</div>
     </div>`).join('');
 
+  // PONTUAÇÃO DA META — apresentações ×1pt, venda <R$4.997 ×2pt, venda ≥R$4.997 ×3pt
+  const PTS_META_S        = 20;
+  const SALE_HIGH_S       = 4997;
+  const sellerApres       = presentationsData.filter(r => r.seller === key);
+  const sellerClose       = closingsData.filter(r => r.seller === key && isInPeriod(r.date, 'this-month'));
+  const ptsApresS         = sellerApres.filter(r => isInPeriod(r.date, 'this-month')).length;
+  const ptsSalesS         = sellerClose.reduce((s, r) => s + (r.valor == null ? 2 : r.valor >= SALE_HIGH_S ? 3 : 2), 0);
+  const ptsS              = ptsApresS + ptsSalesS;
+  const ptsPctS           = Math.min(Math.round(ptsS / PTS_META_S * 100), 100);
+  const ptsBarColor       = ptsS >= PTS_META_S ? '#22c55e' : ptsPctS >= 70 ? '#3b82f6' : ptsPctS >= 40 ? '#f59e0b' : '#ef4444';
+  const ptsDetailLines    = [
+    ...(ptsApresS > 0 ? [`${ptsApresS} apresentaç${ptsApresS === 1 ? 'ão' : 'ões'} × 1pt = ${ptsApresS}pt`] : []),
+    ...sellerClose.map(r => {
+      const v = r.valor; const p = v == null ? 2 : v >= SALE_HIGH_S ? 3 : 2;
+      return `Venda${v != null ? ' R$'+v.toLocaleString('pt-BR',{minimumFractionDigits:0}) : ''} × ${p}pt`;
+    }),
+  ];
+  const heroEl = document.getElementById(`kpi-${key}`).closest('.hero');
+  let ptsBadge = document.getElementById(`pts-badge-${key}`);
+  if (!ptsBadge) {
+    ptsBadge = document.createElement('div');
+    ptsBadge.id = `pts-badge-${key}`;
+    heroEl.after(ptsBadge);
+  }
+  ptsBadge.innerHTML = `
+    <div style="background:var(--silver);border-radius:var(--r-sm);padding:12px 16px;margin:0 0 20px">
+      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:8px">
+        <span style="font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.5px;color:var(--muted)">🎯 Pontuação do Mês</span>
+        <span style="font-size:16px;font-weight:900;color:${ptsS >= PTS_META_S ? '#22c55e' : 'var(--ink)'}">
+          ${ptsS} <span style="font-size:11px;font-weight:500;color:var(--muted)">/ ${PTS_META_S} pts</span>
+        </span>
+      </div>
+      <div style="height:7px;background:#e2e8f0;border-radius:4px;overflow:hidden;margin-bottom:8px">
+        <div style="height:100%;width:${ptsPctS}%;background:${ptsBarColor};border-radius:4px"></div>
+      </div>
+      <div style="font-size:11px;color:var(--muted);line-height:1.7">
+        ${ptsDetailLines.length > 0
+          ? ptsDetailLines.map(l => `<span style="display:inline-block;margin-right:12px">· ${l}</span>`).join('')
+          : '<span>Nenhuma ação registrada este mês</span>'}
+      </div>
+    </div>`;
+
   // HORIZONTAL BAR FUNNEL
   // Active stages: full visual treatment + conversion rates
   // Passive stages: muted bars, no conv rate, no bottleneck/opportunity highlight
