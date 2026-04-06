@@ -1927,6 +1927,22 @@ function filterClosingsByPeriod(period) {
   });
 }
 
+function filterPresentationsByPeriod(period) {
+  const now = new Date();
+  return presentationsData.filter(r => {
+    if (period === 'all') return true;
+    if (period === 'this-month')
+      return r.date.getFullYear() === now.getFullYear() && r.date.getMonth() === now.getMonth();
+    if (period === 'last-month') {
+      const lm = new Date(now.getFullYear(), now.getMonth() - 1, 1);
+      return r.date.getFullYear() === lm.getFullYear() && r.date.getMonth() === lm.getMonth();
+    }
+    if (period === 'last-3-months')
+      return r.date >= new Date(now.getFullYear(), now.getMonth() - 3, 1);
+    return true;
+  });
+}
+
 // Rótulo legível do período
 function periodLabel(period) {
   const now = new Date();
@@ -1939,7 +1955,7 @@ function periodLabel(period) {
   return 'Todo o período';
 }
 
-function calcSellerScore(key, filteredClosings) {
+function calcSellerScore(key, filteredClosings, filteredPresentations) {
   if (!STAGES.length) return null;
 
   const sellers      = Object.keys(CONFIG.SELLERS);
@@ -2019,6 +2035,28 @@ function calcSellerScore(key, filteredClosings) {
     rec = 'Manter ritmo atual e focar em qualidade dos leads no topo do funil para escalar resultados.';
   }
 
+  // ── Pontuação absoluta (apresentações + vendas por valor) ────────
+  const PTS_META         = 20;
+  const SALE_HIGH_THRESH = 4997;
+  const myApres   = (filteredPresentations || []).filter(r => r.seller === key);
+  const myCloseF  = filteredClosings.filter(r => r.seller === key);
+  const ptsApres  = myApres.length;                                              // 1pt cada
+  const ptsSales  = myCloseF.reduce((s, r) => {
+    if (r.valor == null) return s + 2;                                           // sem valor → 2pts
+    return s + (r.valor >= SALE_HIGH_THRESH ? 3 : 2);
+  }, 0);
+  const pts        = ptsApres + ptsSales;
+  const ptsPct     = Math.min(Math.round(pts / PTS_META * 100), 100);
+  const ptsCls     = pts >= PTS_META ? 'excellent' : pts >= Math.round(PTS_META * 0.7) ? 'good' : pts >= Math.round(PTS_META * 0.4) ? 'attention' : 'critical';
+  const ptsSummary = [
+    `${ptsApres} apresentaç${ptsApres === 1 ? 'ão' : 'ões'} × 1pt`,
+    ...myCloseF.map(r => {
+      const v = r.valor;
+      if (v == null) return `venda s/ valor × 2pts`;
+      return `venda R$${v.toLocaleString('pt-BR', { minimumFractionDigits: 0 })} × ${v >= SALE_HIGH_THRESH ? 3 : 2}pts`;
+    }),
+  ];
+
   // Labels de origem/destino para conversão geral
   const topoLabel = activeStages[0].label;
   const convLabel = `${topoLabel} → Fechamento`;
@@ -2028,6 +2066,7 @@ function calcSellerScore(key, filteredClosings) {
 
   return {
     key, hasData, total, cls, clsLabel, clsIcon,
+    pts, ptsPct, ptsCls, ptsMeta: PTS_META, ptsSummary,
     scores: [
       { label: convLabel,    value: sConv, raw: convRaw,           tooltip: `Conversão geral: ${mine.nClose} fechamentos ÷ ${mine.topo} leads no topo do funil` },
       { label: 'Volume',     value: sVol,  raw: mine.active + ' leads', tooltip: 'Total de leads nas etapas ativas do funil' },
@@ -2063,6 +2102,7 @@ function renderAvaliador() {
   const period       = document.getElementById('av-period')?.value  || 'this-month';
   const sellerFilter = isSeller ? _userProfile.seller_key : (document.getElementById('av-seller')?.value || 'all');
   const filteredCl   = filterClosingsByPeriod(period);
+  const filteredApres = filterPresentationsByPeriod(period);
 
   // Atualiza badge de contexto
   const sellerName = sellerFilter === 'all'
@@ -2072,7 +2112,7 @@ function renderAvaliador() {
   if (ctxEl) ctxEl.textContent = `${periodLabel(period)} · ${sellerName}`;
 
   const sellers = Object.keys(CONFIG.SELLERS);
-  const allResults = sellers.map(k => calcSellerScore(k, filteredCl)).filter(Boolean);
+  const allResults = sellers.map(k => calcSellerScore(k, filteredCl, filteredApres)).filter(Boolean);
   // Sellers veem apenas o próprio card; admins veem todos
   const results = isSeller ? allResults.filter(r => r.key === _userProfile.seller_key) : allResults;
   if (results.length === 0) return;
@@ -2128,6 +2168,22 @@ function renderAvaliador() {
             <div class="av-period-chip">📅 ${pLabel}</div>
           </div>
           <div class="av-score-circle ${s.cls}${circleExtra}">${s.total}</div>
+        </div>
+        <!-- Pontuação absoluta: apresentações + vendas -->
+        <div style="background:var(--silver);border-radius:var(--r-sm);padding:12px 14px;margin-bottom:14px">
+          <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:8px">
+            <span style="font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.5px;color:var(--muted)">🎯 Pontuação da Meta</span>
+            <span style="font-size:13px;font-weight:900;color:${s.pts >= s.ptsMeta ? 'var(--green,#22c55e)' : 'var(--ink)'}">
+              ${s.pts} <span style="font-size:10px;font-weight:500;color:var(--muted)">/ ${s.ptsMeta} pts</span>
+            </span>
+          </div>
+          <div style="height:6px;background:#e2e8f0;border-radius:3px;overflow:hidden;margin-bottom:8px">
+            <div style="height:100%;width:${s.ptsPct}%;background:${s.pts >= s.ptsMeta ? '#22c55e' : s.ptsPct >= 70 ? '#3b82f6' : s.ptsPct >= 40 ? '#f59e0b' : '#ef4444'};border-radius:3px;transition:.3s"></div>
+          </div>
+          <div style="font-size:11px;color:var(--muted);line-height:1.6">
+            ${s.ptsSummary.slice(0, 5).map(l => `<div>· ${l}</div>`).join('')}
+            ${s.ptsSummary.length > 5 ? `<div style="color:var(--muted)">· +${s.ptsSummary.length - 5} outras ações</div>` : ''}
+          </div>
         </div>
         <div style="font-size:10px;color:var(--muted);margin-bottom:10px;display:flex;justify-content:space-between">
           <span>Métrica real</span>
