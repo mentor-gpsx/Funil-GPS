@@ -751,6 +751,44 @@ body{font-family:'Inter',-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;
 .av-rec-text{ font-size:11px; color:var(--ink-3); line-height:1.4; }
 @media(max-width:768px){ .av-seller-grid{ grid-template-columns:1fr; } }
 
+/* ── PONTUAÇÃO MENSAL TABLE ─────────────────────────────────────── */
+.pts-month-wrap{
+  background:var(--white);border:1px solid var(--border);
+  border-radius:var(--r);padding:0;overflow:hidden;
+}
+.pts-month-table{
+  width:100%;border-collapse:collapse;font-size:12px;
+}
+.pts-month-table th{
+  background:var(--silver);font-size:10px;font-weight:700;
+  text-transform:uppercase;letter-spacing:.5px;color:var(--muted);
+  padding:8px 12px;border-bottom:1px solid var(--border);
+  white-space:nowrap;text-align:center;
+}
+.pts-month-table th:first-child{ text-align:left; }
+.pts-month-table td{
+  padding:10px 12px;border-bottom:1px solid var(--border);
+  text-align:center;vertical-align:middle;
+}
+.pts-month-table td:first-child{
+  font-weight:700;font-size:13px;text-align:left;
+  background:var(--silver);white-space:nowrap;
+}
+.pts-month-table tr:last-child td{ border-bottom:none; }
+.pts-month-cell{ display:inline-flex;flex-direction:column;align-items:center;gap:2px; }
+.pts-month-val{
+  font-size:13px;font-weight:900;line-height:1;
+}
+.pts-month-bar{
+  width:36px;height:3px;border-radius:2px;background:#e2e8f0;overflow:hidden;
+}
+.pts-month-bar-fill{ height:100%;border-radius:2px;transition:.3s; }
+.pts-month-empty{ color:var(--muted);font-size:11px; }
+.pts-month-total td{
+  background:var(--silver);font-weight:800;font-size:13px;
+}
+.pts-month-total td:first-child{ color:var(--muted);font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.5px; }
+
 /* ── AVALIADOR — filtros e contexto ───────────────────────────── */
 .av-filter-bar{
   background:var(--white); border:1px solid var(--border);
@@ -1370,6 +1408,12 @@ canvas.roleta-canvas{border-radius:50%;box-shadow:0 8px 32px rgba(0,0,0,.18);}
     <!-- Cards individuais -->
     <div class="sec-head">Avaliação Individual</div>
     <div class="av-seller-grid" id="av-cards"></div>
+
+    <!-- Pontuação Mensal por Vendedor -->
+    <div id="av-monthly-section" style="margin-bottom:28px">
+      <div class="sec-head">Pontuação Mensal por Vendedor</div>
+      <div id="av-monthly-pts"></div>
+    </div>
 
     <!-- Critérios de avaliação -->
     <div class="av-criteria-wrap">
@@ -2135,6 +2179,9 @@ function renderAvaliador() {
       </div>`;
   }).join('');
 
+  // Tabela mensal (leitura pura dos arrays, sem alterar lógica)
+  renderMonthlyPoints();
+
   // Cards individuais
   document.getElementById('av-cards').innerHTML = results.map(s => {
     const meta      = CONFIG.SELLER_META[s.key];
@@ -2197,6 +2244,126 @@ function renderAvaliador() {
         </div>
       </div>`;
   }).join('');
+}
+
+// ================================================================
+// PONTUAÇÃO MENSAL — Tabela cruzada vendedor × mês
+// ================================================================
+function renderMonthlyPoints() {
+  const el = document.getElementById('av-monthly-pts');
+  if (!el) return;
+
+  const isSeller  = _userProfile?.role === 'seller' && !_userProfile?.permissions?.admin_override;
+  const sellers   = isSeller
+    ? [_userProfile.seller_key].filter(Boolean)
+    : Object.keys(CONFIG.SELLERS);
+
+  if (!sellers.length) { el.innerHTML = ''; return; }
+
+  const PTS_META_M  = 20;
+  const SALE_HIGH_M = 4997;
+
+  // ── Coletar todos os meses presentes nos dados ──
+  function toYM(date) {
+    return date.getFullYear() + '-' + String(date.getMonth() + 1).padStart(2, '0');
+  }
+  function ymLabel(ym) {
+    const [y, m] = ym.split('-');
+    const MONTHS = ['Jan','Fev','Mar','Abr','Mai','Jun','Jul','Ago','Set','Out','Nov','Dez'];
+    return MONTHS[parseInt(m) - 1] + '/' + String(y).slice(2);
+  }
+
+  const ymSet = new Set();
+  presentationsData.forEach(r => { if (r.date) ymSet.add(toYM(r.date)); });
+  closingsData.forEach(r => { if (r.date) ymSet.add(toYM(r.date)); });
+
+  if (ymSet.size === 0) {
+    el.innerHTML = '<p style="color:var(--muted);font-size:12px;padding:12px 0">Nenhum dado disponível.</p>';
+    return;
+  }
+
+  // Últimos 6 meses para não sobrecarregar a tabela; Todo período = todos
+  const allYMs = [...ymSet].sort().reverse(); // mais recente primeiro
+
+  // ── Calcular pontos por (seller, mês) ──
+  function calcPts(sellerKey, ym) {
+    const apres = presentationsData.filter(r => r.seller === sellerKey && r.date && toYM(r.date) === ym).length;
+    const sales = closingsData
+      .filter(r => r.seller === sellerKey && r.date && toYM(r.date) === ym)
+      .reduce((sum, r) => sum + (r.valor == null ? 2 : r.valor >= SALE_HIGH_M ? 3 : 2), 0);
+    return { pts: apres + sales, apres, sales };
+  }
+
+  // ── Cabeçalho ──
+  const thsHtml = allYMs.map(ym =>
+    `<th>${ymLabel(ym)}</th>`
+  ).join('');
+
+  // ── Linhas por vendedor ──
+  const rowsHtml = sellers.map(key => {
+    const meta = CONFIG.SELLER_META[key];
+    let rowTotal = 0;
+    const cellsHtml = allYMs.map(ym => {
+      const { pts, apres, sales } = calcPts(key, ym);
+      if (pts === 0) {
+        rowTotal += 0;
+        return `<td><span class="pts-month-empty">—</span></td>`;
+      }
+      rowTotal += pts;
+      const pct      = Math.min(Math.round(pts / PTS_META_M * 100), 100);
+      const color    = pts >= PTS_META_M ? '#22c55e' : pct >= 70 ? '#3b82f6' : pct >= 40 ? '#f59e0b' : '#ef4444';
+      const title    = `${apres} apres. × 1pt + ${sales}pt em vendas = ${pts}pt`;
+      return `
+        <td title="${title}">
+          <div class="pts-month-cell">
+            <span class="pts-month-val" style="color:${color}">${pts}</span>
+            <div class="pts-month-bar">
+              <div class="pts-month-bar-fill" style="width:${pct}%;background:${color}"></div>
+            </div>
+          </div>
+        </td>`;
+    }).join('');
+
+    const totalColor = rowTotal >= PTS_META_M ? '#22c55e' : '#111';
+    return `
+      <tr>
+        <td>${meta?.name || key}</td>
+        ${cellsHtml}
+        <td style="font-weight:900;font-size:14px;color:${totalColor}">${rowTotal}</td>
+      </tr>`;
+  }).join('');
+
+  // ── Linha de totais por mês ──
+  const totalsHtml = allYMs.map(ym => {
+    const total = sellers.reduce((sum, key) => sum + calcPts(key, ym).pts, 0);
+    return `<td style="font-weight:800">${total}</td>`;
+  }).join('');
+  const grandTotal = sellers.reduce((sum, key) =>
+    allYMs.reduce((s, ym) => s + calcPts(key, ym).pts, sum), 0);
+
+  el.innerHTML = `
+    <div class="pts-month-wrap">
+      <table class="pts-month-table">
+        <thead>
+          <tr>
+            <th>Vendedor</th>
+            ${thsHtml}
+            <th>Total</th>
+          </tr>
+        </thead>
+        <tbody>
+          ${rowsHtml}
+          <tr class="pts-month-total">
+            <td>Time</td>
+            ${totalsHtml}
+            <td style="font-weight:900">${grandTotal}</td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+    <div style="font-size:10px;color:var(--muted);margin-top:6px;padding:0 2px">
+      Meta mensal: ${PTS_META_M}pts · Apresentação=1pt · Venda&lt;R$4.997=2pt · Venda≥R$4.997=3pt · Referência: data de apresentação
+    </div>`;
 }
 
 // ================================================================
