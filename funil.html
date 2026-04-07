@@ -1113,6 +1113,7 @@ canvas.roleta-canvas{border-radius:50%;box-shadow:0 8px 32px rgba(0,0,0,.18);}
   <button class="tb admin-only" id="tb-cmp"     onclick="switchTab('cmp')">Comparativo</button>
   <button class="tb"    id="tb-analise"     onclick="switchTab('analise')">Análise do Funil</button>
   <button class="tb"    id="tb-avaliador"   onclick="switchTab('avaliador')">Avaliador</button>
+  <button class="tb"    id="tb-crmscore"    onclick="switchTab('crmscore')">CRM Score <span class="tb-pill" id="pill-crmscore">–</span></button>
   <button class="tb admin-only" id="tb-roletas" onclick="switchTab('roletas')">Roletas</button>
 </nav>
 
@@ -1469,6 +1470,13 @@ canvas.roleta-canvas{border-radius:50%;box-shadow:0 8px 32px rgba(0,0,0,.18);}
       </div>
     </div>
 
+  </div>
+</div>
+
+<!-- VIEW: CRM SCORE -->
+<div class="view" id="view-crmscore">
+  <div class="page">
+    <div id="cs-root"></div>
   </div>
 </div>
 
@@ -2260,6 +2268,252 @@ function renderAvaliador() {
         </div>
       </div>`;
   }).join('');
+}
+
+// ================================================================
+// CRM SCORE — Nova aba: clientes do CRM com pontuação por vendedor
+// ================================================================
+function setCsRange(mode) {
+  const today = new Date();
+  let from, to;
+  if (mode === 'week') {
+    const mon = new Date(today);
+    const day = mon.getDay();
+    mon.setDate(mon.getDate() + (day === 0 ? -6 : 1 - day));
+    mon.setHours(0,0,0,0);
+    const sun = new Date(mon); sun.setDate(sun.getDate() + 6);
+    from = mon.toISOString().slice(0,10);
+    to   = sun.toISOString().slice(0,10);
+  } else if (mode === 'month') {
+    from = today.getFullYear() + '-' + String(today.getMonth()+1).padStart(2,'0') + '-01';
+    const last = new Date(today.getFullYear(), today.getMonth()+1, 0);
+    to = last.toISOString().slice(0,10);
+  } else {
+    const d30 = new Date(today); d30.setDate(d30.getDate() - 29);
+    from = d30.toISOString().slice(0,10);
+    to   = today.toISOString().slice(0,10);
+  }
+  const f = document.getElementById('cs-from');
+  const t = document.getElementById('cs-to');
+  if (f) f.value = from;
+  if (t) t.value = to;
+  renderCrmScore();
+}
+
+function renderCrmScore() {
+  const el = document.getElementById('cs-root');
+  if (!el) return;
+
+  const SALE_HIGH   = 4997;
+  const isValidDate = d => d instanceof Date && !isNaN(d);
+  const isSeller    = _userProfile?.role === 'seller' && !_userProfile?.permissions?.admin_override;
+  const mySk        = _userProfile?.seller_key;
+
+  // ── Defaults: semana atual ──
+  const today      = new Date();
+  const mon0       = new Date(today);
+  const dy         = mon0.getDay();
+  mon0.setDate(mon0.getDate() + (dy === 0 ? -6 : 1 - dy));
+  mon0.setHours(0,0,0,0);
+  const sun0       = new Date(mon0); sun0.setDate(sun0.getDate() + 6);
+  const defaultFrom = mon0.toISOString().slice(0,10);
+  const defaultTo   = sun0.toISOString().slice(0,10);
+
+  const fromInput  = document.getElementById('cs-from');
+  const toInput    = document.getElementById('cs-to');
+  const sellerSel  = document.getElementById('cs-seller');
+  const eventSel   = document.getElementById('cs-event');
+
+  const fromStr  = fromInput?.value || defaultFrom;
+  const toStr    = toInput?.value   || defaultTo;
+  const sellerF  = isSeller ? (mySk || '') : (sellerSel?.value || 'all');
+  const eventF   = eventSel?.value || 'all';
+  const dateFrom = new Date(fromStr + 'T00:00:00');
+  const dateTo   = new Date(toStr   + 'T23:59:59');
+
+  // ── Construir lista unificada de eventos (leitura das fontes existentes) ──
+  const allEvents = [];
+  presentationsData.forEach(r => {
+    if (!isValidDate(r.date)) return;
+    allEvents.push({ name: r.name, seller: r.seller, date: r.date, type: 'apres', pts: 1, valor: null });
+  });
+  closingsData.forEach(r => {
+    if (!isValidDate(r.date)) return;
+    const pts = r.valor == null ? 2 : r.valor >= SALE_HIGH ? 3 : 2;
+    allEvents.push({ name: r.name, seller: r.seller, date: r.date, type: 'venda', pts, valor: r.valor });
+  });
+
+  // ── Filtrar ──
+  const filtered = allEvents.filter(ev => {
+    if (ev.date < dateFrom || ev.date > dateTo) return false;
+    if (sellerF !== 'all' && ev.seller !== sellerF) return false;
+    if (eventF  !== 'all' && ev.type   !== eventF)  return false;
+    return true;
+  });
+
+  // ── Agrupar por vendedor ──
+  const sellerKeys = isSeller && mySk ? [mySk] : Object.keys(CONFIG.SELLERS);
+  const byS = sellerKeys.map(key => {
+    const evs     = filtered.filter(ev => ev.seller === key).sort((a,b) => b.date - a.date);
+    const totalPts = evs.reduce((s,ev) => s + ev.pts, 0);
+    const apres    = evs.filter(ev => ev.type === 'apres').length;
+    const sales    = evs.filter(ev => ev.type === 'venda').length;
+    const revenue  = evs.filter(ev => ev.type === 'venda').reduce((s,ev) => s + (ev.valor||0), 0);
+    return { key, meta: CONFIG.SELLER_META[key], evs, totalPts, apres, sales, revenue };
+  }).sort((a,b) => b.totalPts - a.totalPts);
+
+  // ── KPIs globais ──
+  const kpiPts   = filtered.reduce((s,ev) => s + ev.pts, 0);
+  const kpiApres = filtered.filter(ev => ev.type === 'apres').length;
+  const kpiSales = filtered.filter(ev => ev.type === 'venda').length;
+  const kpiRev   = filtered.filter(ev => ev.type === 'venda').reduce((s,ev) => s + (ev.valor||0), 0);
+
+  // ── Helpers visuais ──
+  const maxPts = Math.max(...byS.map(s => s.totalPts), 1);
+  function csColor(pts) {
+    const p = Math.min(Math.round(pts / maxPts * 100), 100);
+    return pts === 0 ? '#cbd5e1' : p >= 80 ? '#22c55e' : p >= 50 ? '#3b82f6' : p >= 25 ? '#f59e0b' : '#ef4444';
+  }
+  function fmtDate(d) {
+    return String(d.getDate()).padStart(2,'0') + '/' + String(d.getMonth()+1).padStart(2,'0') + '/' + String(d.getFullYear()).slice(2);
+  }
+  function fmtR(v) {
+    if (!v) return '—';
+    return 'R$' + v.toLocaleString('pt-BR', { minimumFractionDigits:0, maximumFractionDigits:0 });
+  }
+  const periodLabel = fromStr === toStr
+    ? fromStr
+    : `${fromStr.slice(8,10)}/${fromStr.slice(5,7)} – ${toStr.slice(8,10)}/${toStr.slice(5,7)}`;
+
+  // ── Accordion por vendedor ──
+  const accordionHtml = byS.map((s, i) => {
+    const pct   = Math.min(Math.round(s.totalPts / maxPts * 100), 100);
+    const color = csColor(s.totalPts);
+    const rank  = ['🥇','🥈','🥉'][i] || `<span style="font-size:11px;font-weight:800;color:var(--muted)">#${i+1}</span>`;
+
+    const rowsHtml = s.evs.map(ev => {
+      const typeLabel = ev.type === 'apres'
+        ? `<span style="color:#3b82f6;font-size:10px;font-weight:700">📋 Apresentação</span>`
+        : `<span style="color:#22c55e;font-size:10px;font-weight:700">💰 Venda</span>`;
+      const rule = ev.type === 'apres' ? '×1pt'
+        : ev.valor == null ? 'sem valor ×2pt'
+        : ev.valor >= SALE_HIGH ? '≥R$4.997 ×3pt' : '&lt;R$4.997 ×2pt';
+      const ptColor = ev.pts >= 3 ? '#22c55e' : ev.pts >= 2 ? '#3b82f6' : '#94a3b8';
+      return `<div style="display:grid;grid-template-columns:80px 1fr 120px 90px 50px;align-items:center;gap:8px;padding:7px 16px;border-bottom:1px solid var(--border);font-size:11px">
+        <span style="color:var(--muted);font-weight:700;white-space:nowrap">${fmtDate(ev.date)}</span>
+        <span style="font-weight:600;color:var(--ink);overflow:hidden;text-overflow:ellipsis;white-space:nowrap" title="${(ev.name||'').replace(/"/g,'&quot;')}">${ev.name || '–'}</span>
+        ${typeLabel}
+        <span style="color:var(--muted);font-size:9px;white-space:nowrap">${rule}</span>
+        <span style="font-weight:900;font-size:12px;text-align:right;color:${ptColor}">+${ev.pts}pt</span>
+      </div>`;
+    }).join('');
+
+    const subtotal = `<div style="padding:7px 16px;background:#f8fafc;font-size:10px;color:var(--muted);text-align:right;border-top:1px solid var(--border)">
+      ${s.evs.length} evento${s.evs.length!==1?'s':''} &nbsp;·&nbsp; Total: <strong style="color:${color}">${s.totalPts}pts</strong>${s.revenue>0?` &nbsp;·&nbsp; Receita: <strong>${fmtR(s.revenue)}</strong>`:''}
+    </div>`;
+
+    return `
+    <details style="border:1px solid var(--border);border-radius:var(--r);margin-bottom:8px;overflow:hidden;box-shadow:var(--sh)" ${i===0?'open':''}>
+      <summary style="cursor:pointer;display:grid;grid-template-columns:36px 1fr auto 60px;align-items:center;gap:12px;padding:14px 16px;background:var(--white);list-style:none">
+        <span style="font-size:18px;text-align:center;line-height:1">${rank}</span>
+        <div>
+          <div style="font-size:13px;font-weight:800;margin-bottom:5px">${s.meta?.name || s.key}</div>
+          <div style="height:5px;background:#e2e8f0;border-radius:3px;overflow:hidden;max-width:260px">
+            <div style="height:100%;width:${pct}%;background:${color};border-radius:3px;transition:.3s"></div>
+          </div>
+          <div style="font-size:9px;color:var(--muted);margin-top:3px">${s.apres} apres. · ${s.sales} venda${s.sales!==1?'s':''}${s.revenue>0?' · '+fmtR(s.revenue):''}</div>
+        </div>
+        <span style="font-size:20px;font-weight:900;color:${color}">${s.totalPts}pts</span>
+        <span style="font-size:9px;color:var(--muted);text-align:right;line-height:1.6">${s.evs.length} ev.</span>
+      </summary>
+      ${s.evs.length > 0 ? `
+      <div style="border-top:1px solid var(--border)">
+        <div style="display:grid;grid-template-columns:80px 1fr 120px 90px 50px;gap:8px;padding:5px 16px;background:#f8fafc;font-size:9px;font-weight:700;text-transform:uppercase;letter-spacing:.4px;color:var(--muted);border-bottom:1px solid var(--border)">
+          <span>Data</span><span>Cliente / Lead</span><span>Evento</span><span>Regra</span><span style="text-align:right">Pts</span>
+        </div>
+        ${rowsHtml}
+        ${subtotal}
+      </div>` : `<div style="padding:14px 16px;color:var(--muted);font-size:12px">Sem atividade no período.</div>`}
+    </details>`;
+  }).join('');
+
+  // ── Opções de vendedor para o select ──
+  const sellerOptions = Object.entries(CONFIG.SELLER_META)
+    .map(([k,m]) => `<option value="${k}"${sellerF===k?' selected':''}>${m.name}</option>`)
+    .join('');
+
+  // ── Render ──
+  el.innerHTML = `
+    <!-- FILTROS -->
+    <div style="background:var(--white);border:1px solid var(--border);border-radius:var(--r);padding:14px 18px;margin-bottom:20px;box-shadow:var(--sh);display:flex;align-items:flex-end;gap:14px;flex-wrap:wrap">
+      <div>
+        <div style="font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.5px;color:var(--muted);margin-bottom:5px">De</div>
+        <input id="cs-from" type="date" value="${fromStr}" onchange="renderCrmScore()"
+          style="border:1px solid var(--border);border-radius:var(--r-xs);padding:6px 10px;font-size:13px;font-weight:700;color:var(--ink);background:var(--canvas);cursor:pointer;outline:none">
+      </div>
+      <div>
+        <div style="font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.5px;color:var(--muted);margin-bottom:5px">Até</div>
+        <input id="cs-to" type="date" value="${toStr}" onchange="renderCrmScore()"
+          style="border:1px solid var(--border);border-radius:var(--r-xs);padding:6px 10px;font-size:13px;font-weight:700;color:var(--ink);background:var(--canvas);cursor:pointer;outline:none">
+      </div>
+      ${!isSeller ? `<div>
+        <div style="font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.5px;color:var(--muted);margin-bottom:5px">Vendedor</div>
+        <select id="cs-seller" onchange="renderCrmScore()"
+          style="border:1px solid var(--border);border-radius:var(--r-xs);padding:6px 10px;font-size:12px;font-weight:700;color:var(--ink);background:var(--canvas);cursor:pointer;outline:none">
+          <option value="all"${sellerF==='all'?' selected':''}>Todos</option>
+          ${sellerOptions}
+        </select>
+      </div>` : ''}
+      <div>
+        <div style="font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.5px;color:var(--muted);margin-bottom:5px">Evento</div>
+        <select id="cs-event" onchange="renderCrmScore()"
+          style="border:1px solid var(--border);border-radius:var(--r-xs);padding:6px 10px;font-size:12px;font-weight:700;color:var(--ink);background:var(--canvas);cursor:pointer;outline:none">
+          <option value="all"${eventF==='all'?' selected':''}>Todos</option>
+          <option value="apres"${eventF==='apres'?' selected':''}>Apresentações</option>
+          <option value="venda"${eventF==='venda'?' selected':''}>Vendas</option>
+        </select>
+      </div>
+      <div style="display:flex;gap:6px;padding-bottom:1px">
+        <button onclick="setCsRange('week')"  style="border:1px solid var(--border);border-radius:var(--r-xs);padding:6px 11px;font-size:11px;font-weight:700;cursor:pointer;background:var(--silver);color:var(--ink)">Esta sem.</button>
+        <button onclick="setCsRange('month')" style="border:1px solid var(--border);border-radius:var(--r-xs);padding:6px 11px;font-size:11px;font-weight:700;cursor:pointer;background:var(--silver);color:var(--ink)">Este mês</button>
+        <button onclick="setCsRange('30d')"   style="border:1px solid var(--border);border-radius:var(--r-xs);padding:6px 11px;font-size:11px;font-weight:700;cursor:pointer;background:var(--silver);color:var(--ink)">30 dias</button>
+      </div>
+      <div style="flex:1;text-align:right;padding-bottom:1px;min-width:140px">
+        <div style="font-size:10px;color:var(--muted);margin-bottom:2px">${filtered.length} evento${filtered.length!==1?'s':''} · ${periodLabel}</div>
+        <div style="font-size:12px;font-weight:800">Time: ${kpiPts}pts</div>
+      </div>
+    </div>
+
+    <!-- KPI STRIP -->
+    <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:12px;margin-bottom:20px">
+      ${[
+        { label:'Total de Pontos',  val: kpiPts + 'pts', color:'#111' },
+        { label:'Apresentações',    val: kpiApres,        color:'#3b82f6' },
+        { label:'Vendas',           val: kpiSales,        color:'#22c55e' },
+        { label:'Receita',          val: fmtR(kpiRev),    color:'#f59e0b' },
+      ].map(k => `<div style="background:var(--white);border:1px solid var(--border);border-radius:var(--r);padding:14px 16px;box-shadow:var(--sh)">
+        <div style="font-size:10px;color:var(--muted);font-weight:600;text-transform:uppercase;letter-spacing:.4px;margin-bottom:6px">${k.label}</div>
+        <div style="font-size:22px;font-weight:900;color:${k.color}">${k.val}</div>
+      </div>`).join('')}
+    </div>
+
+    <!-- RANKING COM ACCORDION -->
+    <div style="font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.5px;color:var(--muted);margin-bottom:10px">
+      Ranking · clique para expandir clientes do período
+    </div>
+    ${byS.some(s => s.evs.length > 0)
+      ? accordionHtml
+      : `<div style="padding:32px;text-align:center;color:var(--muted);font-size:13px;background:var(--white);border:1px solid var(--border);border-radius:var(--r)">
+          Nenhum dado encontrado para o período selecionado.
+        </div>`}
+
+    <div style="font-size:10px;color:var(--muted);padding-top:12px;border-top:1px solid var(--border)">
+      Fonte: campo "Data de Apresentação" (apresentações) + campo "Data de Pagamento" (vendas) do ClickUp · Regras: Apresentação=1pt · Venda&lt;R$4.997=2pt · Venda≥R$4.997=3pt
+    </div>`;
+
+  // Atualizar pill da aba
+  const pill = document.getElementById('pill-crmscore');
+  if (pill) pill.textContent = filtered.length || '–';
 }
 
 // ================================================================
@@ -3370,6 +3624,7 @@ function switchTab(key) {
   if (key === 'fechamentos') renderPrizeHistory();
   if (key === 'roletas')     renderAdminRoletas();
   if (key === 'avaliador')   renderMonthlyPoints();
+  if (key === 'crmscore')    renderCrmScore();
 }
 
 // ================================================================
@@ -3436,6 +3691,7 @@ async function carregarDadosClickUp(isFirst = false) {
     renderFechamentos();
     renderAnalise();
     renderAvaliador();
+    if (document.getElementById('view-crmscore')?.classList.contains('on')) renderCrmScore();
 
     const t = new Date().toLocaleTimeString('pt-BR',{hour:'2-digit',minute:'2-digit',second:'2-digit'});
     setSyncStatus('ok', `Atualizado ${t}`);
@@ -4047,7 +4303,7 @@ async function logout() {
     // Ocultar abas sem permissão (sellers individuais + abas gerais restritas)
     const allTabIds = [
       ...Object.keys(CONFIG.SELLERS),
-      'fechamentos', 'cmp', 'analise', 'avaliador', 'roletas',
+      'fechamentos', 'cmp', 'analise', 'avaliador', 'crmscore', 'roletas',
     ];
     allTabIds.forEach(tabKey => {
       const tab = document.getElementById(`tb-${tabKey}`);
