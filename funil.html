@@ -789,6 +789,22 @@ body{font-family:'Inter',-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;
 }
 .pts-month-total td:first-child{ color:var(--muted);font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.5px; }
 
+/* ── DRILL-DOWN ROWS ────────────────────────────────────────────── */
+.pts-drill-row{
+  display:grid;grid-template-columns:40px 1fr 160px 44px 1fr;
+  align-items:center;gap:8px;
+  padding:6px 12px;border-bottom:1px solid var(--border);font-size:11px;
+}
+.pts-drill-row:last-child{border-bottom:none;}
+.pts-drill-date{color:var(--muted);font-weight:700;white-space:nowrap;}
+.pts-drill-name{font-weight:600;color:var(--ink);overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
+.pts-drill-type{color:var(--mid);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+.pts-drill-pts{font-weight:900;font-size:12px;text-align:right;white-space:nowrap;}
+.pts-drill-rule{color:var(--muted);font-size:10px;}
+details > summary::-webkit-details-marker{display:none;}
+details[open] > summary .pts-drill-arrow{transform:rotate(90deg);}
+.pts-drill-arrow{display:inline-block;transition:transform .15s;font-size:10px;}
+
 /* ── AVALIADOR — filtros e contexto ───────────────────────────── */
 .av-filter-bar{
   background:var(--white); border:1px solid var(--border);
@@ -2404,6 +2420,81 @@ function renderMonthlyPoints() {
 
     <div style="font-size:10px;color:var(--muted);margin-top:8px">
       Apresentação=1pt &nbsp;·&nbsp; Venda&lt;R$4.997=2pt &nbsp;·&nbsp; Venda≥R$4.997=3pt &nbsp;·&nbsp; Base: data de apresentação
+    </div>
+
+    <!-- BLOCO 3: DETALHAMENTO POR VENDEDOR -->
+    <div style="margin-top:28px">
+      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:12px">
+        <span style="font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.5px;color:var(--muted)">Rastreabilidade dos Pontos</span>
+        <span style="font-size:10px;color:var(--muted)">Clique no vendedor ou semana para expandir</span>
+      </div>
+      ${activeSellers.map(key => {
+        const meta = CONFIG.SELLER_META[key];
+        const sellerWks = allWKs.filter(wk => calcWkPts(key, wk).pts > 0);
+        const wkDetailsHtml = sellerWks.map(wk => {
+          const { pts } = calcWkPts(key, wk);
+          const pct   = Math.min(Math.round(pts / PTS_META_W * 100), 100);
+          const color = pts >= PTS_META_W ? '#22c55e' : pct >= 70 ? '#3b82f6' : pct >= 40 ? '#f59e0b' : '#ef4444';
+          const events = [];
+          presentationsData
+            .filter(r => r.seller === key && isValidDate(r.date) && toWK(r.date) === wk)
+            .forEach(r => events.push({ date: r.date, name: r.name, type: 'apres', pts: 1 }));
+          closingsData
+            .filter(r => r.seller === key && isValidDate(r.date) && toWK(r.date) === wk)
+            .forEach(r => {
+              const p = r.valor == null ? 2 : r.valor >= SALE_HIGH ? 3 : 2;
+              events.push({ date: r.date, name: r.name, type: 'venda', pts: p, valor: r.valor });
+            });
+          events.sort((a, b) => a.date - b.date);
+          const evRows = events.map(ev => {
+            const d = ev.date;
+            const ds = String(d.getDate()).padStart(2,'0') + '/' + String(d.getMonth()+1).padStart(2,'0');
+            if (ev.type === 'apres') {
+              return `<div class="pts-drill-row">
+                <span class="pts-drill-date">${ds}</span>
+                <span class="pts-drill-name">${ev.name || '–'}</span>
+                <span class="pts-drill-type">📋 Apresentação</span>
+                <span class="pts-drill-pts" style="color:#3b82f6">+1pt</span>
+                <span class="pts-drill-rule">1 apres. × 1pt</span>
+              </div>`;
+            }
+            const vStr = ev.valor != null ? 'R$'+ev.valor.toLocaleString('pt-BR',{minimumFractionDigits:0}) : 's/ valor';
+            const rule = ev.valor == null ? 'sem valor → 2pt' : ev.valor >= SALE_HIGH ? '≥R$4.997 → 3pt' : '<R$4.997 → 2pt';
+            return `<div class="pts-drill-row">
+              <span class="pts-drill-date">${ds}</span>
+              <span class="pts-drill-name">${ev.name || '–'}</span>
+              <span class="pts-drill-type">💰 Venda ${vStr}</span>
+              <span class="pts-drill-pts" style="color:#22c55e">+${ev.pts}pt</span>
+              <span class="pts-drill-rule">${rule}</span>
+            </div>`;
+          }).join('');
+          return `<details style="margin-bottom:4px">
+            <summary style="cursor:pointer;padding:8px 12px;background:var(--silver);border-radius:var(--r-xs);display:flex;align-items:center;gap:8px;list-style:none">
+              <span class="pts-drill-arrow">▶</span>
+              <span style="font-size:11px;font-weight:700;flex:1;color:var(--ink)">${wkLabel(wk)}</span>
+              <span style="font-size:12px;font-weight:900;color:${color}">${pts}pts</span>
+              <span style="font-size:9px;font-weight:700;padding:2px 7px;border-radius:20px;background:${pts>=PTS_META_W?'#dcfce7':'#fee2e2'};color:${pts>=PTS_META_W?'#15803d':'#b91c1c'}">${pts>=PTS_META_W?'✓ META':pct+'%'}</span>
+            </summary>
+            <div style="background:var(--white);border:1px solid var(--border);border-top:none;border-radius:0 0 var(--r-xs) var(--r-xs)">
+              <div style="display:grid;grid-template-columns:40px 1fr 160px 44px 1fr;gap:8px;padding:5px 12px;background:var(--silver);font-size:9px;font-weight:700;text-transform:uppercase;letter-spacing:.4px;color:var(--muted)">
+                <span>Data</span><span>Lead</span><span>Ação</span><span style="text-align:right">Pts</span><span>Regra</span>
+              </div>
+              ${evRows || '<div style="padding:10px 12px;color:var(--muted);font-size:11px">Sem registros</div>'}
+              <div style="padding:6px 12px;background:var(--silver);font-size:10px;font-weight:700;text-align:right;color:var(--ink)">Total: ${pts}pts de ${events.length} registro${events.length!==1?'s':''}</div>
+            </div>
+          </details>`;
+        }).join('');
+        return `<details style="margin-bottom:10px">
+          <summary style="cursor:pointer;padding:10px 14px;background:var(--ink-2);color:var(--white);border-radius:var(--r-sm);display:flex;align-items:center;gap:10px;list-style:none">
+            <span class="pts-drill-arrow" style="color:var(--white)">▶</span>
+            <span style="font-size:13px;font-weight:800;flex:1">${meta?.name || key}</span>
+            <span style="font-size:10px;opacity:.6">${sellerWks.length} semana${sellerWks.length!==1?'s':''} com atividade</span>
+          </summary>
+          <div style="padding:10px 0 0 0">
+            ${wkDetailsHtml || '<div style="padding:10px 12px;color:var(--muted);font-size:11px">Nenhuma atividade registrada.</div>'}
+          </div>
+        </details>`;
+      }).join('')}
     </div>`;
 }
 
