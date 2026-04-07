@@ -2247,125 +2247,163 @@ function renderAvaliador() {
 }
 
 // ================================================================
-// PONTUAÇÃO MENSAL — Tabela cruzada vendedor × mês
+// PONTUAÇÃO SEMANAL/MENSAL — Tabela cruzada vendedor × semana/mês
 // ================================================================
 function renderMonthlyPoints() {
   const el = document.getElementById('av-monthly-pts');
   if (!el) return;
 
-  const isSeller  = _userProfile?.role === 'seller' && !_userProfile?.permissions?.admin_override;
-  const sellers   = isSeller
-    ? [_userProfile.seller_key].filter(Boolean)
-    : Object.keys(CONFIG.SELLERS);
-
-  // fallback: se seller sem seller_key configurado, mostra todos
+  const PTS_META_W  = 20;   // meta é SEMANAL
+  const SALE_HIGH   = 4997;
+  const isSeller    = _userProfile?.role === 'seller' && !_userProfile?.permissions?.admin_override;
+  const sellers     = isSeller ? [_userProfile.seller_key].filter(Boolean) : Object.keys(CONFIG.SELLERS);
   const activeSellers = sellers.length ? sellers : Object.keys(CONFIG.SELLERS);
   if (!activeSellers.length) { el.innerHTML = ''; return; }
 
-  const PTS_META_M  = 20;
-  const SALE_HIGH_M = 4997;
+  const isValidDate = d => d instanceof Date && !isNaN(d);
 
-  // ── Coletar todos os meses presentes nos dados ──
-  function toYM(date) {
-    return date.getFullYear() + '-' + String(date.getMonth() + 1).padStart(2, '0');
+  // ── Helpers de semana (segunda a domingo) ──
+  function getWeekStart(date) {
+    const d = new Date(date);
+    const day = d.getDay();
+    d.setDate(d.getDate() + (day === 0 ? -6 : 1 - day));
+    d.setHours(0, 0, 0, 0);
+    return d;
   }
+  function toWK(date) {
+    const m = getWeekStart(date);
+    return m.getFullYear() + '-' + String(m.getMonth()+1).padStart(2,'0') + '-' + String(m.getDate()).padStart(2,'0');
+  }
+  function wkLabel(wk) {
+    const mon = new Date(wk + 'T12:00:00');
+    const sun = new Date(mon); sun.setDate(sun.getDate() + 6);
+    const M = ['Jan','Fev','Mar','Abr','Mai','Jun','Jul','Ago','Set','Out','Nov','Dez'];
+    return mon.getMonth() === sun.getMonth()
+      ? `${mon.getDate()}–${sun.getDate()} ${M[mon.getMonth()]}`
+      : `${mon.getDate()} ${M[mon.getMonth()]}–${sun.getDate()} ${M[sun.getMonth()]}`;
+  }
+  function wkToYM(wk) { return wk.slice(0, 7); }
   function ymLabel(ym) {
     const [y, m] = ym.split('-');
-    const MONTHS = ['Jan','Fev','Mar','Abr','Mai','Jun','Jul','Ago','Set','Out','Nov','Dez'];
-    return MONTHS[parseInt(m) - 1] + '/' + String(y).slice(2);
+    const M = ['Janeiro','Fevereiro','Março','Abril','Maio','Junho','Julho','Agosto','Setembro','Outubro','Novembro','Dezembro'];
+    return M[parseInt(m)-1] + '/' + String(y).slice(2);
   }
 
-  const ymSet = new Set();
-  const isValidDate = d => d instanceof Date && !isNaN(d);
-  presentationsData.forEach(r => { if (isValidDate(r.date)) ymSet.add(toYM(r.date)); });
-  closingsData.forEach(r => { if (isValidDate(r.date)) ymSet.add(toYM(r.date)); });
+  // ── Coletar semanas com dados ──
+  const wkSet = new Set();
+  presentationsData.forEach(r => { if (isValidDate(r.date)) wkSet.add(toWK(r.date)); });
+  closingsData.forEach(r => { if (isValidDate(r.date)) wkSet.add(toWK(r.date)); });
 
-  if (ymSet.size === 0) {
-    el.innerHTML = '<p style="color:var(--muted);font-size:12px;padding:12px 0">Nenhum dado disponível.</p>';
+  if (wkSet.size === 0) {
+    el.innerHTML = '<p style="color:var(--muted);font-size:12px;padding:12px 0">Nenhum dado disponível. Preencha o campo "Data de Apresentação" no ClickUp.</p>';
     return;
   }
 
-  // Últimos 6 meses para não sobrecarregar a tabela; Todo período = todos
-  const allYMs = [...ymSet].sort().reverse(); // mais recente primeiro
+  const allWKs = [...wkSet].sort().reverse();
 
-  // ── Calcular pontos por (seller, mês) ──
-  function calcPts(sellerKey, ym) {
-    const apres = presentationsData.filter(r => r.seller === sellerKey && r.date && toYM(r.date) === ym).length;
+  // ── Calcular pontos por (seller, semana) ──
+  function calcWkPts(key, wk) {
+    const apres = presentationsData.filter(r => r.seller === key && isValidDate(r.date) && toWK(r.date) === wk).length;
     const sales = closingsData
-      .filter(r => r.seller === sellerKey && r.date && toYM(r.date) === ym)
-      .reduce((sum, r) => sum + (r.valor == null ? 2 : r.valor >= SALE_HIGH_M ? 3 : 2), 0);
+      .filter(r => r.seller === key && isValidDate(r.date) && toWK(r.date) === wk)
+      .reduce((sum, r) => sum + (r.valor == null ? 2 : r.valor >= SALE_HIGH ? 3 : 2), 0);
     return { pts: apres + sales, apres, sales };
   }
 
-  // ── Cabeçalho ──
-  const thsHtml = allYMs.map(ym =>
-    `<th>${ymLabel(ym)}</th>`
-  ).join('');
+  // ══ BLOCO 1: VISÃO SEMANAL ══════════════════════════════════════
+  const wkThsHtml = allWKs.map(wk => `<th style="white-space:nowrap;font-size:10px">${wkLabel(wk)}</th>`).join('');
 
-  // ── Linhas por vendedor ──
-  const rowsHtml = activeSellers.map(key => {
+  const wkRowsHtml = activeSellers.map(key => {
     const meta = CONFIG.SELLER_META[key];
     let rowTotal = 0;
-    const cellsHtml = allYMs.map(ym => {
-      const { pts, apres, sales } = calcPts(key, ym);
-      if (pts === 0) {
-        rowTotal += 0;
-        return `<td><span class="pts-month-empty">—</span></td>`;
-      }
+    const cells = allWKs.map(wk => {
+      const { pts, apres, sales } = calcWkPts(key, wk);
+      if (pts === 0) return `<td><span class="pts-month-empty">—</span></td>`;
       rowTotal += pts;
-      const pct      = Math.min(Math.round(pts / PTS_META_M * 100), 100);
-      const color    = pts >= PTS_META_M ? '#22c55e' : pct >= 70 ? '#3b82f6' : pct >= 40 ? '#f59e0b' : '#ef4444';
-      const title    = `${apres} apres. × 1pt + ${sales}pt em vendas = ${pts}pt`;
-      return `
-        <td title="${title}">
-          <div class="pts-month-cell">
-            <span class="pts-month-val" style="color:${color}">${pts}</span>
-            <div class="pts-month-bar">
-              <div class="pts-month-bar-fill" style="width:${pct}%;background:${color}"></div>
-            </div>
-          </div>
-        </td>`;
+      const pct   = Math.min(Math.round(pts / PTS_META_W * 100), 100);
+      const color = pts >= PTS_META_W ? '#22c55e' : pct >= 70 ? '#3b82f6' : pct >= 40 ? '#f59e0b' : '#ef4444';
+      const badge = pts >= PTS_META_W ? '✓ META' : pct + '%';
+      return `<td title="${apres} apres. + ${sales}pt vendas = ${pts}pt">
+        <div class="pts-month-cell">
+          <span class="pts-month-val" style="color:${color}">${pts}</span>
+          <div class="pts-month-bar"><div class="pts-month-bar-fill" style="width:${pct}%;background:${color}"></div></div>
+          <span style="font-size:9px;color:${color};font-weight:700">${badge}</span>
+        </div></td>`;
     }).join('');
-
-    const totalColor = rowTotal >= PTS_META_M ? '#22c55e' : '#111';
-    return `
-      <tr>
-        <td>${meta?.name || key}</td>
-        ${cellsHtml}
-        <td style="font-weight:900;font-size:14px;color:${totalColor}">${rowTotal}</td>
-      </tr>`;
+    return `<tr><td>${meta?.name || key}</td>${cells}<td style="font-weight:900;font-size:13px">${rowTotal}</td></tr>`;
   }).join('');
 
-  // ── Linha de totais por mês ──
-  const totalsHtml = allYMs.map(ym => {
-    const total = activeSellers.reduce((sum, key) => sum + calcPts(key, ym).pts, 0);
-    return `<td style="font-weight:800">${total}</td>`;
+  const wkTotalsHtml = allWKs.map(wk => {
+    const t = activeSellers.reduce((s, k) => s + calcWkPts(k, wk).pts, 0);
+    return `<td style="font-weight:800">${t || '—'}</td>`;
   }).join('');
-  const grandTotal = activeSellers.reduce((sum, key) =>
-    allYMs.reduce((s, ym) => s + calcPts(key, ym).pts, sum), 0);
+  const wkGrand = activeSellers.reduce((s, k) => allWKs.reduce((ss, wk) => ss + calcWkPts(k, wk).pts, s), 0);
+
+  // ══ BLOCO 2: VISÃO MENSAL ═══════════════════════════════════════
+  const allYMs = [...new Set(allWKs.map(wkToYM))].sort().reverse();
+
+  const monthRowsHtml = activeSellers.map(key => {
+    const meta = CONFIG.SELLER_META[key];
+    const cells = allYMs.map(ym => {
+      const monthWks   = allWKs.filter(wk => wkToYM(wk) === ym);
+      const wkPts      = monthWks.map(wk => calcWkPts(key, wk).pts);
+      const totalPts   = wkPts.reduce((s, p) => s + p, 0);
+      const metaCount  = wkPts.filter(p => p >= PTS_META_W).length;
+      const avgPts     = monthWks.length ? Math.round(totalPts / monthWks.length) : 0;
+      if (totalPts === 0) return `<td><span class="pts-month-empty">—</span></td>`;
+      const pct   = Math.min(Math.round(avgPts / PTS_META_W * 100), 100);
+      const color = metaCount === monthWks.length ? '#22c55e' : metaCount > 0 ? '#3b82f6' : '#ef4444';
+      return `<td title="${totalPts}pts · ${metaCount}/${monthWks.length} semanas na meta · média ${avgPts}pts/sem">
+        <div class="pts-month-cell">
+          <span class="pts-month-val" style="color:${color}">${totalPts}</span>
+          <div class="pts-month-bar"><div class="pts-month-bar-fill" style="width:${pct}%;background:${color}"></div></div>
+          <span style="font-size:9px;color:var(--muted)">${metaCount}/${monthWks.length} sem · ⌀${avgPts}</span>
+        </div></td>`;
+    }).join('');
+    return `<tr><td>${meta?.name || key}</td>${cells}<td></td></tr>`;
+  }).join('');
+
+  const monthTotalsHtml = allYMs.map(ym => {
+    const monthWks = allWKs.filter(wk => wkToYM(wk) === ym);
+    const t = activeSellers.reduce((s, k) => monthWks.reduce((ss, wk) => ss + calcWkPts(k, wk).pts, s), 0);
+    return `<td style="font-weight:800">${t || '—'}</td>`;
+  }).join('');
 
   el.innerHTML = `
-    <div class="pts-month-wrap">
-      <table class="pts-month-table">
-        <thead>
-          <tr>
-            <th>Vendedor</th>
-            ${thsHtml}
-            <th>Total</th>
-          </tr>
-        </thead>
-        <tbody>
-          ${rowsHtml}
-          <tr class="pts-month-total">
-            <td>Time</td>
-            ${totalsHtml}
-            <td style="font-weight:900">${grandTotal}</td>
-          </tr>
-        </tbody>
-      </table>
+    <div style="margin-bottom:4px">
+      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:8px">
+        <span style="font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.5px;color:var(--muted)">Visão Semanal</span>
+        <span style="font-size:10px;color:var(--muted)">Meta: ${PTS_META_W}pts/semana &nbsp;·&nbsp; ✓ META = semana batida</span>
+      </div>
+      <div class="pts-month-wrap" style="overflow-x:auto">
+        <table class="pts-month-table">
+          <thead><tr><th>Vendedor</th>${wkThsHtml}<th>Total</th></tr></thead>
+          <tbody>
+            ${wkRowsHtml}
+            <tr class="pts-month-total"><td>Time</td>${wkTotalsHtml}<td style="font-weight:900">${wkGrand}</td></tr>
+          </tbody>
+        </table>
+      </div>
     </div>
-    <div style="font-size:10px;color:var(--muted);margin-top:6px;padding:0 2px">
-      Meta mensal: ${PTS_META_M}pts · Apresentação=1pt · Venda&lt;R$4.997=2pt · Venda≥R$4.997=3pt · Referência: data de apresentação
+
+    <div style="margin-top:24px;margin-bottom:4px">
+      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:8px">
+        <span style="font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.5px;color:var(--muted)">Visão Mensal</span>
+        <span style="font-size:10px;color:var(--muted)">Total pts &nbsp;·&nbsp; X/Y sem na meta &nbsp;·&nbsp; ⌀ média/semana</span>
+      </div>
+      <div class="pts-month-wrap" style="overflow-x:auto">
+        <table class="pts-month-table">
+          <thead><tr><th>Vendedor</th>${allYMs.map(ym => `<th>${ymLabel(ym)}</th>`).join('')}<th></th></tr></thead>
+          <tbody>
+            ${monthRowsHtml}
+            <tr class="pts-month-total"><td>Time</td>${monthTotalsHtml}<td></td></tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+
+    <div style="font-size:10px;color:var(--muted);margin-top:8px">
+      Apresentação=1pt &nbsp;·&nbsp; Venda&lt;R$4.997=2pt &nbsp;·&nbsp; Venda≥R$4.997=3pt &nbsp;·&nbsp; Base: data de apresentação
     </div>`;
 }
 
