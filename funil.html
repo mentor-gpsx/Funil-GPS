@@ -2263,13 +2263,13 @@ function renderAvaliador() {
 }
 
 // ================================================================
-// PONTUAÇÃO SEMANAL/MENSAL — Tabela cruzada vendedor × semana/mês
+// PONTUAÇÃO — Dashboard Semanal · Mensal · Rastreabilidade
 // ================================================================
 function renderMonthlyPoints() {
   const el = document.getElementById('av-monthly-pts');
   if (!el) return;
 
-  const PTS_META_W  = 20;   // meta é SEMANAL
+  const PTS_META_W  = 20;
   const SALE_HIGH   = 4997;
   const isSeller    = _userProfile?.role === 'seller' && !_userProfile?.permissions?.admin_override;
   const sellers     = isSeller ? [_userProfile.seller_key].filter(Boolean) : Object.keys(CONFIG.SELLERS);
@@ -2326,175 +2326,260 @@ function renderMonthlyPoints() {
     return { pts: apres + sales, apres, sales };
   }
 
-  // ══ BLOCO 1: VISÃO SEMANAL ══════════════════════════════════════
-  const wkThsHtml = allWKs.map(wk => `<th style="white-space:nowrap;font-size:10px">${wkLabel(wk)}</th>`).join('');
+  // ── Semana atual ──
+  const currentWK   = toWK(new Date());
+  const allYMs      = [...new Set(allWKs.map(wkToYM))].sort().reverse();
 
-  const wkRowsHtml = activeSellers.map(key => {
-    const meta = CONFIG.SELLER_META[key];
-    let rowTotal = 0;
-    const cells = allWKs.map(wk => {
-      const { pts, apres, sales } = calcWkPts(key, wk);
-      if (pts === 0) return `<td><span class="pts-month-empty">—</span></td>`;
-      rowTotal += pts;
-      const pct   = Math.min(Math.round(pts / PTS_META_W * 100), 100);
-      const color = pts >= PTS_META_W ? '#22c55e' : pct >= 70 ? '#3b82f6' : pct >= 40 ? '#f59e0b' : '#ef4444';
-      const badge = pts >= PTS_META_W ? '✓ META' : pct + '%';
-      return `<td title="${apres} apres. + ${sales}pt vendas = ${pts}pt">
-        <div class="pts-month-cell">
-          <span class="pts-month-val" style="color:${color}">${pts}</span>
-          <div class="pts-month-bar"><div class="pts-month-bar-fill" style="width:${pct}%;background:${color}"></div></div>
-          <span style="font-size:9px;color:${color};font-weight:700">${badge}</span>
-        </div></td>`;
+  // ── Helper: gerar events de uma semana por seller ──
+  function getEvents(key, wk) {
+    const evs = [];
+    presentationsData
+      .filter(r => r.seller === key && isValidDate(r.date) && toWK(r.date) === wk)
+      .forEach(r => evs.push({ date: r.date, name: r.name, type: 'apres', pts: 1 }));
+    closingsData
+      .filter(r => r.seller === key && isValidDate(r.date) && toWK(r.date) === wk)
+      .forEach(r => evs.push({ date: r.date, name: r.name, type: 'venda',
+        pts: r.valor == null ? 2 : r.valor >= SALE_HIGH ? 3 : 2, valor: r.valor }));
+    return evs.sort((a, b) => a.date - b.date);
+  }
+
+  // ── Cor / status ──
+  function ptsColor(pts, meta) {
+    const p = Math.min(Math.round(pts / meta * 100), 100);
+    return pts >= meta ? '#22c55e' : p >= 70 ? '#3b82f6' : p >= 40 ? '#f59e0b' : '#ef4444';
+  }
+  function statusBadge(pts) {
+    return pts >= PTS_META_W
+      ? `<span style="background:#dcfce7;color:#15803d;font-size:9px;font-weight:700;padding:2px 8px;border-radius:20px">✓ META</span>`
+      : `<span style="background:#fee2e2;color:#b91c1c;font-size:9px;font-weight:700;padding:2px 8px;border-radius:20px">${Math.min(Math.round(pts/PTS_META_W*100),100)}%</span>`;
+  }
+
+  // ════════════════════════════════════════════════
+  // BLOCO 1 — VISÃO SEMANAL
+  // Semana atual em destaque + histórico em acordeão
+  // ════════════════════════════════════════════════
+
+  // Ranking semana atual (ordenado por pts DESC)
+  const curRanked = [...activeSellers]
+    .map(k => ({ key: k, ...calcWkPts(k, currentWK), meta: CONFIG.SELLER_META[k] }))
+    .sort((a, b) => b.pts - a.pts);
+
+  const curHeroHtml = curRanked.map((s, i) => {
+    const pct   = Math.min(Math.round(s.pts / PTS_META_W * 100), 100);
+    const color = ptsColor(s.pts, PTS_META_W);
+    const rank  = ['🥇','🥈','🥉'][i] || `#${i+1}`;
+    return `
+      <div style="display:grid;grid-template-columns:32px 1fr 48px 70px;align-items:center;gap:10px;padding:10px 14px;border-bottom:1px solid var(--border)">
+        <span style="font-size:16px;text-align:center">${rank}</span>
+        <div>
+          <div style="font-size:13px;font-weight:800;margin-bottom:4px">${s.meta?.name || s.key}</div>
+          <div style="height:6px;background:#e2e8f0;border-radius:3px;overflow:hidden">
+            <div style="height:100%;width:${pct}%;background:${color};border-radius:3px;transition:.3s"></div>
+          </div>
+        </div>
+        <span style="font-size:18px;font-weight:900;color:${color};text-align:right">${s.pts}</span>
+        ${statusBadge(s.pts)}
+      </div>`;
+  }).join('');
+
+  // Semanas anteriores (excluindo a atual)
+  const prevWKs = allWKs.filter(wk => wk !== currentWK);
+  const prevAccHtml = prevWKs.map(wk => {
+    const ranked = [...activeSellers]
+      .map(k => ({ key: k, ...calcWkPts(k, wk), meta: CONFIG.SELLER_META[k] }))
+      .sort((a, b) => b.pts - a.pts);
+    const summaryLine = ranked.map(s => {
+      const c = ptsColor(s.pts, PTS_META_W);
+      return `<span style="font-size:11px;font-weight:700;color:${c}">${s.meta?.name?.split(' ')[0]}: ${s.pts}</span>`;
+    }).join('<span style="color:var(--border);margin:0 6px">|</span>');
+    const teamTotal = ranked.reduce((s, r) => s + r.pts, 0);
+    const rowsHtml = ranked.map(s => {
+      const pct = Math.min(Math.round(s.pts / PTS_META_W * 100), 100);
+      const color = ptsColor(s.pts, PTS_META_W);
+      return `<div style="display:grid;grid-template-columns:28px 1fr 44px 70px;align-items:center;gap:8px;padding:8px 14px;border-bottom:1px solid var(--border)">
+        <span style="font-size:11px;color:var(--muted);font-weight:700">#${ranked.indexOf(s)+1}</span>
+        <div>
+          <div style="font-size:12px;font-weight:700;margin-bottom:3px">${s.meta?.name || s.key}</div>
+          <div style="height:4px;background:#e2e8f0;border-radius:2px;overflow:hidden">
+            <div style="height:100%;width:${pct}%;background:${color};border-radius:2px"></div>
+          </div>
+        </div>
+        <span style="font-size:13px;font-weight:900;color:${color};text-align:right">${s.pts || '—'}</span>
+        ${statusBadge(s.pts)}
+      </div>`;
     }).join('');
-    return `<tr><td>${meta?.name || key}</td>${cells}<td style="font-weight:900;font-size:13px">${rowTotal}</td></tr>`;
+    return `<details style="border:1px solid var(--border);border-radius:var(--r-sm);margin-bottom:6px;overflow:hidden">
+      <summary style="cursor:pointer;padding:10px 14px;background:var(--silver);display:flex;align-items:center;gap:10px;list-style:none">
+        <span class="pts-drill-arrow" style="color:var(--muted);font-size:10px">▶</span>
+        <span style="font-size:11px;font-weight:700;color:var(--muted);min-width:110px">${wkLabel(wk)}</span>
+        <span style="flex:1;display:flex;gap:10px;flex-wrap:wrap">${summaryLine}</span>
+        <span style="font-size:10px;color:var(--muted);white-space:nowrap">Time: ${teamTotal}pts</span>
+      </summary>
+      <div>${rowsHtml}</div>
+    </details>`;
   }).join('');
 
-  const wkTotalsHtml = allWKs.map(wk => {
-    const t = activeSellers.reduce((s, k) => s + calcWkPts(k, wk).pts, 0);
-    return `<td style="font-weight:800">${t || '—'}</td>`;
-  }).join('');
-  const wkGrand = activeSellers.reduce((s, k) => allWKs.reduce((ss, wk) => ss + calcWkPts(k, wk).pts, s), 0);
-
-  // ══ BLOCO 2: VISÃO MENSAL ═══════════════════════════════════════
-  const allYMs = [...new Set(allWKs.map(wkToYM))].sort().reverse();
-
+  // ════════════════════════════════════════════════
+  // BLOCO 2 — VISÃO MENSAL
+  // ════════════════════════════════════════════════
   const monthRowsHtml = activeSellers.map(key => {
     const meta = CONFIG.SELLER_META[key];
-    const cells = allYMs.map(ym => {
-      const monthWks   = allWKs.filter(wk => wkToYM(wk) === ym);
-      const wkPts      = monthWks.map(wk => calcWkPts(key, wk).pts);
-      const totalPts   = wkPts.reduce((s, p) => s + p, 0);
-      const metaCount  = wkPts.filter(p => p >= PTS_META_W).length;
-      const avgPts     = monthWks.length ? Math.round(totalPts / monthWks.length) : 0;
-      if (totalPts === 0) return `<td><span class="pts-month-empty">—</span></td>`;
-      const pct   = Math.min(Math.round(avgPts / PTS_META_W * 100), 100);
-      const color = metaCount === monthWks.length ? '#22c55e' : metaCount > 0 ? '#3b82f6' : '#ef4444';
-      return `<td title="${totalPts}pts · ${metaCount}/${monthWks.length} semanas na meta · média ${avgPts}pts/sem">
-        <div class="pts-month-cell">
-          <span class="pts-month-val" style="color:${color}">${totalPts}</span>
-          <div class="pts-month-bar"><div class="pts-month-bar-fill" style="width:${pct}%;background:${color}"></div></div>
-          <span style="font-size:9px;color:var(--muted)">${metaCount}/${monthWks.length} sem · ⌀${avgPts}</span>
-        </div></td>`;
+    return `<tr>
+      <td style="font-weight:700">${meta?.name || key}</td>
+      ${allYMs.map(ym => {
+        const mWks     = allWKs.filter(wk => wkToYM(wk) === ym);
+        const wkPts    = mWks.map(wk => calcWkPts(key, wk).pts);
+        const total    = wkPts.reduce((s,p) => s+p, 0);
+        const metaHit  = wkPts.filter(p => p >= PTS_META_W).length;
+        const avg      = mWks.length ? Math.round(total / mWks.length) : 0;
+        if (total === 0) return `<td><span class="pts-month-empty">—</span></td>`;
+        const pct   = Math.min(Math.round(avg / PTS_META_W * 100), 100);
+        const color = metaHit === mWks.length ? '#22c55e' : metaHit > 0 ? '#3b82f6' : '#ef4444';
+        return `<td title="${total}pts · ${metaHit}/${mWks.length} sem. na meta · média ${avg}pts/sem">
+          <div class="pts-month-cell">
+            <span style="font-size:14px;font-weight:900;color:${color}">${total}</span>
+            <div class="pts-month-bar"><div class="pts-month-bar-fill" style="width:${pct}%;background:${color}"></div></div>
+            <span style="font-size:9px;color:var(--muted)">${metaHit}/${mWks.length} sem · ⌀${avg}</span>
+          </div>
+        </td>`;
+      }).join('')}
+    </tr>`;
+  }).join('');
+
+  const monthFootHtml = allYMs.map(ym => {
+    const mWks = allWKs.filter(wk => wkToYM(wk) === ym);
+    const t = activeSellers.reduce((s,k) => mWks.reduce((ss,wk) => ss+calcWkPts(k,wk).pts, s), 0);
+    return `<td style="font-weight:800">${t||'—'}</td>`;
+  }).join('');
+
+  // ════════════════════════════════════════════════
+  // BLOCO 3 — RASTREABILIDADE (DRILL-DOWN)
+  // ════════════════════════════════════════════════
+  const drillHtml = activeSellers.map(key => {
+    const meta     = CONFIG.SELLER_META[key];
+    const actWks   = allWKs.filter(wk => calcWkPts(key, wk).pts > 0);
+    const totalPts = actWks.reduce((s, wk) => s + calcWkPts(key, wk).pts, 0);
+    const metaWks  = actWks.filter(wk => calcWkPts(key, wk).pts >= PTS_META_W).length;
+
+    const wkExtrato = actWks.map(wk => {
+      const { pts } = calcWkPts(key, wk);
+      const pct   = Math.min(Math.round(pts / PTS_META_W * 100), 100);
+      const color = ptsColor(pts, PTS_META_W);
+      const evs   = getEvents(key, wk);
+
+      const rows = evs.map(ev => {
+        const ds = String(ev.date.getDate()).padStart(2,'0') + '/' + String(ev.date.getMonth()+1).padStart(2,'0');
+        if (ev.type === 'apres') return `<div class="pts-drill-row">
+          <span class="pts-drill-date">${ds}</span>
+          <span class="pts-drill-name">${ev.name || '–'}</span>
+          <span class="pts-drill-type">📋 Apresentação</span>
+          <span class="pts-drill-pts" style="color:#3b82f6">+1pt</span>
+          <span class="pts-drill-rule">Apres. × 1pt</span>
+        </div>`;
+        const vStr = ev.valor != null ? 'R$'+ev.valor.toLocaleString('pt-BR',{minimumFractionDigits:0}) : 's/ valor';
+        const rule = ev.valor == null ? 'Sem valor → 2pt' : ev.valor >= SALE_HIGH ? '≥R$4.997 → 3pt' : '<R$4.997 → 2pt';
+        return `<div class="pts-drill-row">
+          <span class="pts-drill-date">${ds}</span>
+          <span class="pts-drill-name">${ev.name || '–'}</span>
+          <span class="pts-drill-type">💰 Venda ${vStr}</span>
+          <span class="pts-drill-pts" style="color:#22c55e">+${ev.pts}pt</span>
+          <span class="pts-drill-rule">${rule}</span>
+        </div>`;
+      }).join('');
+
+      return `<details style="margin-bottom:4px;border:1px solid var(--border);border-radius:var(--r-xs);overflow:hidden">
+        <summary style="cursor:pointer;padding:8px 14px;display:flex;align-items:center;gap:10px;list-style:none;background:var(--silver)">
+          <span class="pts-drill-arrow" style="font-size:10px;color:var(--muted)">▶</span>
+          <span style="font-size:11px;font-weight:700;flex:1">${wkLabel(wk)}</span>
+          <span style="font-size:13px;font-weight:900;color:${color}">${pts}pts</span>
+          <div style="height:4px;width:60px;background:#e2e8f0;border-radius:2px;overflow:hidden">
+            <div style="height:100%;width:${pct}%;background:${color}"></div>
+          </div>
+          ${statusBadge(pts)}
+        </summary>
+        <div style="background:var(--white)">
+          <div style="display:grid;grid-template-columns:40px 1fr 160px 44px 1fr;gap:8px;padding:5px 14px;background:#f8fafc;font-size:9px;font-weight:700;text-transform:uppercase;letter-spacing:.4px;color:var(--muted);border-bottom:1px solid var(--border)">
+            <span>Data</span><span>Lead / Cliente</span><span>Ação</span><span style="text-align:right">Pts</span><span>Regra aplicada</span>
+          </div>
+          ${rows || `<div style="padding:10px 14px;color:var(--muted);font-size:11px">Sem registros nesta semana</div>`}
+          <div style="padding:6px 14px;background:#f8fafc;border-top:1px solid var(--border);font-size:10px;font-weight:700;text-align:right;color:var(--ink-3)">
+            ${evs.length} registro${evs.length!==1?'s':''} &nbsp;·&nbsp; Total: <strong>${pts}pts</strong>
+          </div>
+        </div>
+      </details>`;
     }).join('');
-    return `<tr><td>${meta?.name || key}</td>${cells}<td></td></tr>`;
+
+    return `<details style="margin-bottom:12px;border-radius:var(--r-sm);overflow:hidden;box-shadow:var(--sh)">
+      <summary style="cursor:pointer;padding:12px 16px;background:var(--ink-2);color:var(--white);display:flex;align-items:center;gap:12px;list-style:none">
+        <span class="pts-drill-arrow" style="color:rgba(255,255,255,.5);font-size:11px">▶</span>
+        <span style="font-size:14px;font-weight:800;flex:1">${meta?.name || key}</span>
+        <div style="text-align:right">
+          <div style="font-size:16px;font-weight:900">${totalPts}pts</div>
+          <div style="font-size:10px;opacity:.6">${metaWks}/${actWks.length} sem na meta</div>
+        </div>
+      </summary>
+      <div style="padding:12px;background:var(--canvas)">
+        ${wkExtrato || `<div style="padding:10px;color:var(--muted);font-size:12px">Nenhuma atividade registrada.</div>`}
+      </div>
+    </details>`;
   }).join('');
 
-  const monthTotalsHtml = allYMs.map(ym => {
-    const monthWks = allWKs.filter(wk => wkToYM(wk) === ym);
-    const t = activeSellers.reduce((s, k) => monthWks.reduce((ss, wk) => ss + calcWkPts(k, wk).pts, s), 0);
-    return `<td style="font-weight:800">${t || '—'}</td>`;
-  }).join('');
-
+  // ── Render final ──
   el.innerHTML = `
-    <div style="margin-bottom:4px">
-      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:8px">
-        <span style="font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.5px;color:var(--muted)">Visão Semanal</span>
-        <span style="font-size:10px;color:var(--muted)">Meta: ${PTS_META_W}pts/semana &nbsp;·&nbsp; ✓ META = semana batida</span>
+    <!-- ── BLOCO 1: VISÃO SEMANAL ── -->
+    <div style="margin-bottom:28px">
+      <div style="display:flex;align-items:baseline;justify-content:space-between;margin-bottom:10px">
+        <span style="font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.6px;color:var(--muted)">🔹 Visão Semanal</span>
+        <span style="font-size:10px;color:var(--muted)">Meta: ${PTS_META_W}pts/semana</span>
       </div>
-      <div class="pts-month-wrap" style="overflow-x:auto">
-        <table class="pts-month-table">
-          <thead><tr><th>Vendedor</th>${wkThsHtml}<th>Total</th></tr></thead>
-          <tbody>
-            ${wkRowsHtml}
-            <tr class="pts-month-total"><td>Time</td>${wkTotalsHtml}<td style="font-weight:900">${wkGrand}</td></tr>
-          </tbody>
-        </table>
+
+      <!-- Semana atual -->
+      <div style="background:var(--white);border:1px solid var(--border);border-radius:var(--r);overflow:hidden;margin-bottom:12px;box-shadow:var(--sh)">
+        <div style="padding:10px 14px;background:var(--ink-2);color:var(--white);display:flex;align-items:center;justify-content:space-between">
+          <span style="font-size:12px;font-weight:700">Semana Atual — ${wkLabel(currentWK)}</span>
+          <span style="font-size:10px;opacity:.6">Meta: ${PTS_META_W}pts</span>
+        </div>
+        ${curHeroHtml || `<div style="padding:16px;color:var(--muted);font-size:12px;text-align:center">Sem atividade registrada nesta semana.</div>`}
+        <div style="padding:8px 14px;background:var(--silver);font-size:10px;color:var(--muted);text-align:right">
+          Time: <strong>${curRanked.reduce((s,r)=>s+r.pts,0)}pts</strong> esta semana
+        </div>
       </div>
+
+      <!-- Semanas anteriores -->
+      ${prevWKs.length ? `
+        <div style="font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.4px;color:var(--muted);margin-bottom:6px">Semanas Anteriores</div>
+        ${prevAccHtml}
+      ` : ''}
     </div>
 
-    <div style="margin-top:24px;margin-bottom:4px">
-      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:8px">
-        <span style="font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.5px;color:var(--muted)">Visão Mensal</span>
-        <span style="font-size:10px;color:var(--muted)">Total pts &nbsp;·&nbsp; X/Y sem na meta &nbsp;·&nbsp; ⌀ média/semana</span>
+    <!-- ── BLOCO 2: VISÃO MENSAL ── -->
+    <div style="margin-bottom:28px">
+      <div style="display:flex;align-items:baseline;justify-content:space-between;margin-bottom:10px">
+        <span style="font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.6px;color:var(--muted)">🔹 Visão Mensal</span>
+        <span style="font-size:10px;color:var(--muted)">Total pts · semanas na meta · média semanal</span>
       </div>
-      <div class="pts-month-wrap" style="overflow-x:auto">
+      <div class="pts-month-wrap" style="overflow-x:auto;box-shadow:var(--sh)">
         <table class="pts-month-table">
-          <thead><tr><th>Vendedor</th>${allYMs.map(ym => `<th>${ymLabel(ym)}</th>`).join('')}<th></th></tr></thead>
+          <thead><tr><th>Vendedor</th>${allYMs.map(ym=>`<th>${ymLabel(ym)}</th>`).join('')}</tr></thead>
           <tbody>
             ${monthRowsHtml}
-            <tr class="pts-month-total"><td>Time</td>${monthTotalsHtml}<td></td></tr>
+            <tr class="pts-month-total"><td>Time</td>${monthFootHtml}</tr>
           </tbody>
         </table>
       </div>
     </div>
 
-    <div style="font-size:10px;color:var(--muted);margin-top:8px">
-      Apresentação=1pt &nbsp;·&nbsp; Venda&lt;R$4.997=2pt &nbsp;·&nbsp; Venda≥R$4.997=3pt &nbsp;·&nbsp; Base: data de apresentação
+    <!-- ── BLOCO 3: RASTREABILIDADE ── -->
+    <div>
+      <div style="display:flex;align-items:baseline;justify-content:space-between;margin-bottom:10px">
+        <span style="font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.6px;color:var(--muted)">🔹 Rastreabilidade dos Pontos</span>
+        <span style="font-size:10px;color:var(--muted)">Clique para expandir vendedor → semana → extrato</span>
+      </div>
+      ${drillHtml}
     </div>
 
-    <!-- BLOCO 3: DETALHAMENTO POR VENDEDOR -->
-    <div style="margin-top:28px">
-      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:12px">
-        <span style="font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.5px;color:var(--muted)">Rastreabilidade dos Pontos</span>
-        <span style="font-size:10px;color:var(--muted)">Clique no vendedor ou semana para expandir</span>
-      </div>
-      ${activeSellers.map(key => {
-        const meta = CONFIG.SELLER_META[key];
-        const sellerWks = allWKs.filter(wk => calcWkPts(key, wk).pts > 0);
-        const wkDetailsHtml = sellerWks.map(wk => {
-          const { pts } = calcWkPts(key, wk);
-          const pct   = Math.min(Math.round(pts / PTS_META_W * 100), 100);
-          const color = pts >= PTS_META_W ? '#22c55e' : pct >= 70 ? '#3b82f6' : pct >= 40 ? '#f59e0b' : '#ef4444';
-          const events = [];
-          presentationsData
-            .filter(r => r.seller === key && isValidDate(r.date) && toWK(r.date) === wk)
-            .forEach(r => events.push({ date: r.date, name: r.name, type: 'apres', pts: 1 }));
-          closingsData
-            .filter(r => r.seller === key && isValidDate(r.date) && toWK(r.date) === wk)
-            .forEach(r => {
-              const p = r.valor == null ? 2 : r.valor >= SALE_HIGH ? 3 : 2;
-              events.push({ date: r.date, name: r.name, type: 'venda', pts: p, valor: r.valor });
-            });
-          events.sort((a, b) => a.date - b.date);
-          const evRows = events.map(ev => {
-            const d = ev.date;
-            const ds = String(d.getDate()).padStart(2,'0') + '/' + String(d.getMonth()+1).padStart(2,'0');
-            if (ev.type === 'apres') {
-              return `<div class="pts-drill-row">
-                <span class="pts-drill-date">${ds}</span>
-                <span class="pts-drill-name">${ev.name || '–'}</span>
-                <span class="pts-drill-type">📋 Apresentação</span>
-                <span class="pts-drill-pts" style="color:#3b82f6">+1pt</span>
-                <span class="pts-drill-rule">1 apres. × 1pt</span>
-              </div>`;
-            }
-            const vStr = ev.valor != null ? 'R$'+ev.valor.toLocaleString('pt-BR',{minimumFractionDigits:0}) : 's/ valor';
-            const rule = ev.valor == null ? 'sem valor → 2pt' : ev.valor >= SALE_HIGH ? '≥R$4.997 → 3pt' : '<R$4.997 → 2pt';
-            return `<div class="pts-drill-row">
-              <span class="pts-drill-date">${ds}</span>
-              <span class="pts-drill-name">${ev.name || '–'}</span>
-              <span class="pts-drill-type">💰 Venda ${vStr}</span>
-              <span class="pts-drill-pts" style="color:#22c55e">+${ev.pts}pt</span>
-              <span class="pts-drill-rule">${rule}</span>
-            </div>`;
-          }).join('');
-          return `<details style="margin-bottom:4px">
-            <summary style="cursor:pointer;padding:8px 12px;background:var(--silver);border-radius:var(--r-xs);display:flex;align-items:center;gap:8px;list-style:none">
-              <span class="pts-drill-arrow">▶</span>
-              <span style="font-size:11px;font-weight:700;flex:1;color:var(--ink)">${wkLabel(wk)}</span>
-              <span style="font-size:12px;font-weight:900;color:${color}">${pts}pts</span>
-              <span style="font-size:9px;font-weight:700;padding:2px 7px;border-radius:20px;background:${pts>=PTS_META_W?'#dcfce7':'#fee2e2'};color:${pts>=PTS_META_W?'#15803d':'#b91c1c'}">${pts>=PTS_META_W?'✓ META':pct+'%'}</span>
-            </summary>
-            <div style="background:var(--white);border:1px solid var(--border);border-top:none;border-radius:0 0 var(--r-xs) var(--r-xs)">
-              <div style="display:grid;grid-template-columns:40px 1fr 160px 44px 1fr;gap:8px;padding:5px 12px;background:var(--silver);font-size:9px;font-weight:700;text-transform:uppercase;letter-spacing:.4px;color:var(--muted)">
-                <span>Data</span><span>Lead</span><span>Ação</span><span style="text-align:right">Pts</span><span>Regra</span>
-              </div>
-              ${evRows || '<div style="padding:10px 12px;color:var(--muted);font-size:11px">Sem registros</div>'}
-              <div style="padding:6px 12px;background:var(--silver);font-size:10px;font-weight:700;text-align:right;color:var(--ink)">Total: ${pts}pts de ${events.length} registro${events.length!==1?'s':''}</div>
-            </div>
-          </details>`;
-        }).join('');
-        return `<details style="margin-bottom:10px">
-          <summary style="cursor:pointer;padding:10px 14px;background:var(--ink-2);color:var(--white);border-radius:var(--r-sm);display:flex;align-items:center;gap:10px;list-style:none">
-            <span class="pts-drill-arrow" style="color:var(--white)">▶</span>
-            <span style="font-size:13px;font-weight:800;flex:1">${meta?.name || key}</span>
-            <span style="font-size:10px;opacity:.6">${sellerWks.length} semana${sellerWks.length!==1?'s':''} com atividade</span>
-          </summary>
-          <div style="padding:10px 0 0 0">
-            ${wkDetailsHtml || '<div style="padding:10px 12px;color:var(--muted);font-size:11px">Nenhuma atividade registrada.</div>'}
-          </div>
-        </details>`;
-      }).join('')}
+    <div style="font-size:10px;color:var(--muted);margin-top:16px;padding-top:12px;border-top:1px solid var(--border)">
+      Regras: Apresentação=1pt &nbsp;·&nbsp; Venda&lt;R$4.997=2pt &nbsp;·&nbsp; Venda≥R$4.997=3pt &nbsp;·&nbsp; Base: data de apresentação &nbsp;·&nbsp; Meta semanal: ${PTS_META_W}pts
     </div>`;
 }
 
