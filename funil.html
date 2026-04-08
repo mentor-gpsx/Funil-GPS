@@ -38,13 +38,13 @@
 /* ── DARK MODE THEME ───────────────────────────────────────────── */
 html.dark-mode{
   --ink:     #ffffff;
-  --ink-2:   #1a1a1a;
-  --ink-3:   #2d2d2d;
-  --mid:     #999999;
-  --muted:   #666666;
-  --border:  #333333;
-  --silver:  #2d2d2d;
-  --canvas:  #0d0d0d;
+  --ink-2:   #0f0f0f;
+  --ink-3:   #e0e0e0;
+  --mid:     #b0b0b0;
+  --muted:   #808080;
+  --border:  #404040;
+  --silver:  #1f1f1f;
+  --canvas:  #0a0a0a;
   --white:   #1a1a1a;
   --green:   #4ade80;
   --green-b: #15803d;
@@ -1024,6 +1024,13 @@ canvas.roleta-canvas{border-radius:50%;box-shadow:0 8px 32px rgba(0,0,0,.18);}
   border-radius:50%;transition:transform .2s;
 }
 .roleta-seller-control-toggle.off::after{transform:translateX(-22px);}
+.roleta-seller-control-actions{display:flex;gap:6px;align-items:center;}
+.roleta-seller-remove-btn{
+  padding:4px 10px;background:var(--red);color:var(--white);
+  border:none;border-radius:var(--r-xs);font-size:11px;font-weight:700;
+  cursor:pointer;transition:opacity .2s;
+}
+.roleta-seller-remove-btn:hover{opacity:.8;}
 .roleta-prize-list{display:flex;flex-direction:column;gap:5px;margin-bottom:8px;}
 .roleta-prize-item{
   display:flex;align-items:center;gap:8px;padding:7px 10px;
@@ -1564,10 +1571,10 @@ const CONFIG = {
   },
   // Metadados de exibição por vendedor
   SELLER_META: {
-    maria:   { name: 'Maria Eduarda', init: 'M', roleta_ativa: true },
-    nicolas: { name: 'Nicolas',       init: 'N', roleta_ativa: true },
-    kennyd:  { name: 'Kennyd',        init: 'K', roleta_ativa: true },
-    gabriel: { name: 'Gabriel',       init: 'Gb', roleta_ativa: true },
+    maria:   { name: 'Maria Eduarda', init: 'M', roleta_ativa: true, roleta_existe: true },
+    nicolas: { name: 'Nicolas',       init: 'N', roleta_ativa: true, roleta_existe: true },
+    kennyd:  { name: 'Kennyd',        init: 'K', roleta_ativa: true, roleta_existe: true },
+    gabriel: { name: 'Gabriel',       init: 'Gb', roleta_ativa: true, roleta_existe: true },
   }
 };
 // NOTA: Para produção, mova API_KEY para proxy backend.
@@ -4351,20 +4358,70 @@ function renderSellerRoletaControls() {
   if (!container) return;
 
   container.innerHTML = Object.entries(CONFIG.SELLER_META).map(([key, meta]) => {
-    const isActive = meta.roleta_ativa !== false; // padrão: true
+    const isActive = meta.roleta_ativa !== false;
+    const exists = meta.roleta_existe !== false;
+    const statusText = !exists ? '(removida)' : isActive ? '(ativa)' : '(inativa)';
+
+    if (!exists) {
+      // Se roleta foi removida, mostrar botão de restaurar
+      return `<div class="roleta-seller-control-item" style="opacity:.6;">
+        <span class="roleta-seller-control-name">${meta.name} ${statusText}</span>
+        <button class="roleta-seller-remove-btn" style="background:var(--green);"
+          onclick="restoreSellerRoleta('${key}')"
+          title="Restaurar roleta">
+          ↺ Restaurar
+        </button>
+      </div>`;
+    }
+
     return `<div class="roleta-seller-control-item">
-      <span class="roleta-seller-control-name">${meta.name}</span>
-      <button class="roleta-seller-control-toggle ${isActive ? '' : 'off'}"
-        onclick="toggleSellerRoleta('${key}')"
-        title="${isActive ? 'Roleta ativa' : 'Roleta inativa'}">
-      </button>
+      <span class="roleta-seller-control-name">${meta.name} ${statusText}</span>
+      <div class="roleta-seller-control-actions">
+        <button class="roleta-seller-control-toggle ${isActive ? '' : 'off'}"
+          onclick="toggleSellerRoleta('${key}')"
+          title="${isActive ? 'Roleta ativa' : 'Roleta inativa'}">
+        </button>
+        <button class="roleta-seller-remove-btn"
+          onclick="removeSellerRoleta('${key}')"
+          title="Remover roleta permanentemente">
+          🗑️ Remover
+        </button>
+      </div>
     </div>`;
   }).join('');
 }
 
 function toggleSellerRoleta(sellerKey) {
   if (_userProfile?.role !== 'admin') return;
+  if (!CONFIG.SELLER_META[sellerKey].roleta_existe) return; // não pode ativar se removida
   CONFIG.SELLER_META[sellerKey].roleta_ativa = !CONFIG.SELLER_META[sellerKey].roleta_ativa;
+  saveSellerRoletaConfig();
+  renderSellerRoletaControls();
+}
+
+function removeSellerRoleta(sellerKey) {
+  if (_userProfile?.role !== 'admin') return;
+  const meta = CONFIG.SELLER_META[sellerKey];
+  if (!meta || !meta.roleta_existe) return;
+
+  // Confirmação
+  if (!confirm(`Tem certeza que deseja remover a roleta de ${meta.name}? Esta ação é permanente.`)) {
+    return;
+  }
+
+  CONFIG.SELLER_META[sellerKey].roleta_existe = false;
+  CONFIG.SELLER_META[sellerKey].roleta_ativa = false;
+  saveSellerRoletaConfig();
+  renderSellerRoletaControls();
+}
+
+function restoreSellerRoleta(sellerKey) {
+  if (_userProfile?.role !== 'admin') return;
+  const meta = CONFIG.SELLER_META[sellerKey];
+  if (!meta || meta.roleta_existe) return;
+
+  CONFIG.SELLER_META[sellerKey].roleta_existe = true;
+  CONFIG.SELLER_META[sellerKey].roleta_ativa = true;
   saveSellerRoletaConfig();
   renderSellerRoletaControls();
 }
@@ -4382,7 +4439,10 @@ function loadSellerRoletaConfig() {
 }
 
 function isRoletaActive(sellerKey) {
-  return CONFIG.SELLER_META[sellerKey]?.roleta_ativa !== false;
+  const meta = CONFIG.SELLER_META[sellerKey];
+  if (!meta) return false;
+  // Roleta só está ativa se existe E está ativada
+  return meta.roleta_existe !== false && meta.roleta_ativa !== false;
 }
 
 // ================================================================
