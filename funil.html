@@ -35,6 +35,27 @@
   --sh-lg: 0 12px 40px rgba(0,0,0,.13);
 }
 
+/* ── DARK MODE THEME ───────────────────────────────────────────── */
+html.dark-mode{
+  --ink:     #ffffff;
+  --ink-2:   #1a1a1a;
+  --ink-3:   #2d2d2d;
+  --mid:     #999999;
+  --muted:   #666666;
+  --border:  #333333;
+  --silver:  #2d2d2d;
+  --canvas:  #0d0d0d;
+  --white:   #1a1a1a;
+  --green:   #4ade80;
+  --green-b: #15803d;
+  --red:     #ef4444;
+  --red-b:   #7f1d1d;
+  --amber:   #fbbf24;
+  --amber-b: #78350f;
+  --blue:    #60a5fa;
+  --blue-b:  #1e3a8a;
+}
+
 /* ── BASE ──────────────────────────────────────────────────────── */
 body{font-family:'Inter',-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;
   background:var(--canvas);color:var(--ink);font-size:14px;line-height:1.5;}
@@ -985,6 +1006,24 @@ canvas.roleta-canvas{border-radius:50%;box-shadow:0 8px 32px rgba(0,0,0,.18);}
   background:var(--green);color:var(--white);
 }
 .roleta-grant-btn:hover{opacity:.85;}
+.roleta-seller-controls{display:flex;flex-direction:column;gap:8px;}
+.roleta-seller-control-item{
+  display:flex;align-items:center;justify-content:space-between;
+  padding:10px 12px;background:var(--silver);border-radius:var(--r-xs);
+  border:1px solid var(--border);
+}
+.roleta-seller-control-name{font-weight:600;font-size:12px;}
+.roleta-seller-control-toggle{
+  width:44px;height:24px;background:var(--green);border:none;
+  border-radius:12px;cursor:pointer;position:relative;
+  transition:background .2s;display:flex;align-items:center;padding:0 2px;
+}
+.roleta-seller-control-toggle.off{background:var(--muted);}
+.roleta-seller-control-toggle::after{
+  content:'';width:20px;height:20px;background:var(--white);
+  border-radius:50%;transition:transform .2s;
+}
+.roleta-seller-control-toggle.off::after{transform:translateX(-22px);}
 .roleta-prize-list{display:flex;flex-direction:column;gap:5px;margin-bottom:8px;}
 .roleta-prize-item{
   display:flex;align-items:center;gap:8px;padding:7px 10px;
@@ -1035,6 +1074,7 @@ canvas.roleta-canvas{border-radius:50%;box-shadow:0 8px 32px rgba(0,0,0,.18);}
   <div style="display:flex;align-items:center;gap:12px">
     <span id="hdr-user" style="font-size:12px;color:#888;"></span>
     <button class="roleta-admin-toggle admin-only" id="btn-admin-roleta" onclick="openAdminPanel()">🎰 Roleta</button>
+    <button class="roleta-admin-toggle" id="btn-dark-mode" onclick="toggleDarkMode()" title="Alternar tema escuro">🌙</button>
     <button class="roleta-admin-toggle" onclick="logout()" style="background:rgba(255,255,255,.07)">Sair</button>
     <div class="hdr-sync">
       <div class="sync-dot" id="syncDot"></div>
@@ -1098,6 +1138,10 @@ canvas.roleta-canvas{border-radius:50%;box-shadow:0 8px 32px rgba(0,0,0,.18);}
       <div class="roleta-prize-list" id="prizes-baixa-list"></div>
       <button class="roleta-add-btn" onclick="addPrize('baixa')">+ Adicionar prêmio</button>
       <button class="roleta-save-btn" onclick="savePrizes('baixa')">Salvar</button>
+    </div>
+    <div class="roleta-admin-sec">
+      <div class="roleta-admin-sec-title">🎯 Controle de Roleta por Vendedor</div>
+      <div class="roleta-seller-controls" id="roleta-seller-controls"></div>
     </div>
   </div>
 </div>
@@ -1520,10 +1564,10 @@ const CONFIG = {
   },
   // Metadados de exibição por vendedor
   SELLER_META: {
-    maria:   { name: 'Maria Eduarda', init: 'M' },
-    nicolas: { name: 'Nicolas',       init: 'N' },
-    kennyd:  { name: 'Kennyd',        init: 'K' },
-    gabriel: { name: 'Gabriel',       init: 'Gb' },
+    maria:   { name: 'Maria Eduarda', init: 'M', roleta_ativa: true },
+    nicolas: { name: 'Nicolas',       init: 'N', roleta_ativa: true },
+    kennyd:  { name: 'Kennyd',        init: 'K', roleta_ativa: true },
+    gabriel: { name: 'Gabriel',       init: 'Gb', roleta_ativa: true },
   }
 };
 // NOTA: Para produção, mova API_KEY para proxy backend.
@@ -3824,8 +3868,17 @@ function updateRoletaNotif() {
     document.getElementById('roleta-notif')?.classList.remove('on');
     return;
   }
-  let total = 0;
+
+  // Admin verificar se roleta está ativa para este seller
   const isRestrictedSeller = _userProfile?.role === 'seller' && !_userProfile?.permissions?.admin_override;
+  if (isRestrictedSeller && _userProfile.seller_key) {
+    if (!isRoletaActive(_userProfile.seller_key)) {
+      document.getElementById('roleta-notif')?.classList.remove('on');
+      return;
+    }
+  }
+
+  let total = 0;
   if (isRestrictedSeller) {
     total = _userProfile.seller_key ? totalSpins(_userProfile.seller_key) : 0;
   } else {
@@ -3846,6 +3899,8 @@ function openRoleta(seller, wheel) {
   if (_userProfile?.role === 'seller' && !_userProfile?.permissions?.admin_override) {
     // Seller sem seller_key: não pode girar
     if (!_userProfile.seller_key) return;
+    // Verificar se roleta está ativa para este vendedor
+    if (!isRoletaActive(_userProfile.seller_key)) return;
     // Sellers restritos só podem abrir a própria roleta
     if (seller && seller !== _userProfile.seller_key) return;
     seller = _userProfile.seller_key;
@@ -4016,6 +4071,7 @@ function openAdminPanel() {
   renderQueueGrid();
   renderPrizeEditor('alta');
   renderPrizeEditor('baixa');
+  renderSellerRoletaControls();
   document.getElementById('roleta-admin-panel').classList.add('on');
 }
 
@@ -4261,6 +4317,75 @@ function savePrizes(wheel) {
 }
 
 // ================================================================
+// DARK MODE
+// ================================================================
+function toggleDarkMode() {
+  const isDark = document.documentElement.classList.toggle('dark-mode');
+  localStorage.setItem('dark-mode', isDark ? 'on' : 'off');
+  updateDarkModeButton();
+}
+
+function updateDarkModeButton() {
+  const btn = document.getElementById('btn-dark-mode');
+  if (!btn) return;
+  const isDark = document.documentElement.classList.contains('dark-mode');
+  btn.textContent = isDark ? '☀️' : '🌙';
+}
+
+function loadDarkModePreference() {
+  const pref = localStorage.getItem('dark-mode');
+  if (pref === 'on') {
+    document.documentElement.classList.add('dark-mode');
+  } else {
+    document.documentElement.classList.remove('dark-mode');
+  }
+  updateDarkModeButton();
+}
+
+// ================================================================
+// CONTROLE DE ROLETA POR VENDEDOR
+// ================================================================
+function renderSellerRoletaControls() {
+  if (_userProfile?.role !== 'admin') return;
+  const container = document.getElementById('roleta-seller-controls');
+  if (!container) return;
+
+  container.innerHTML = Object.entries(CONFIG.SELLER_META).map(([key, meta]) => {
+    const isActive = meta.roleta_ativa !== false; // padrão: true
+    return `<div class="roleta-seller-control-item">
+      <span class="roleta-seller-control-name">${meta.name}</span>
+      <button class="roleta-seller-control-toggle ${isActive ? '' : 'off'}"
+        onclick="toggleSellerRoleta('${key}')"
+        title="${isActive ? 'Roleta ativa' : 'Roleta inativa'}">
+      </button>
+    </div>`;
+  }).join('');
+}
+
+function toggleSellerRoleta(sellerKey) {
+  if (_userProfile?.role !== 'admin') return;
+  CONFIG.SELLER_META[sellerKey].roleta_ativa = !CONFIG.SELLER_META[sellerKey].roleta_ativa;
+  saveSellerRoletaConfig();
+  renderSellerRoletaControls();
+}
+
+function saveSellerRoletaConfig() {
+  localStorage.setItem('seller-roleta-config', JSON.stringify(CONFIG.SELLER_META));
+}
+
+function loadSellerRoletaConfig() {
+  const saved = localStorage.getItem('seller-roleta-config');
+  if (saved) {
+    const config = JSON.parse(saved);
+    Object.assign(CONFIG.SELLER_META, config);
+  }
+}
+
+function isRoletaActive(sellerKey) {
+  return CONFIG.SELLER_META[sellerKey]?.roleta_ativa !== false;
+}
+
+// ================================================================
 // AUTH
 // ================================================================
 const _SUPA_URL  = 'https://gmpdcgjsbbyqkuftohce.supabase.co';
@@ -4332,6 +4457,12 @@ async function logout() {
     // Ir direto para a aba do seller (se configurado)
     if (sk) switchTab(sk);
   }
+
+  // Inicializar dark mode
+  loadDarkModePreference();
+
+  // Inicializar configuração de roleta por vendedor
+  loadSellerRoletaConfig();
 
   carregarDadosClickUp(true);
   setInterval(() => carregarDadosClickUp(false), CONFIG.INTERVAL);
