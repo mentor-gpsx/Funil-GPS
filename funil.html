@@ -995,10 +995,19 @@ canvas.roleta-canvas{border-radius:50%;box-shadow:0 8px 32px rgba(0,0,0,.18);}
   display:grid;grid-template-columns:repeat(auto-fill,minmax(110px,1fr));gap:8px;
 }
 .roleta-queue-item{
-  background:var(--silver);border-radius:var(--r-sm);padding:10px 12px;text-align:center;
+  background:var(--silver);border-radius:var(--r-sm);padding:10px 12px;
+  display:flex;align-items:center;justify-content:space-between;gap:8px;
 }
+.roleta-queue-info{flex:1;}
 .roleta-queue-name{font-size:11px;font-weight:700;color:var(--muted);margin-bottom:4px;}
-.roleta-queue-counts{font-size:12px;font-weight:800;line-height:1.6;}
+.roleta-queue-counts{font-size:12px;font-weight:800;line-height:1.6;text-align:left;}
+.roleta-queue-actions{display:flex;gap:3px;flex-shrink:0;}
+.roleta-remove-spin-btn{
+  padding:3px 6px;font-size:9px;font-weight:700;
+  background:var(--red);color:var(--white);border:none;
+  border-radius:var(--r-xs);cursor:pointer;transition:opacity .2s;
+}
+.roleta-remove-spin-btn:hover{opacity:.8;}
 .roleta-grant-row{display:flex;gap:8px;align-items:center;flex-wrap:wrap;}
 .roleta-grant-sel{
   padding:6px 10px;border:1px solid var(--border);border-radius:var(--r-xs);
@@ -4097,13 +4106,31 @@ function renderQueueGrid() {
     const a = pendingSpins[k]?.alta  || 0;
     const b = pendingSpins[k]?.baixa || 0;
     return `<div class="roleta-queue-item">
-      <div class="roleta-queue-name">${m.name}</div>
-      <div class="roleta-queue-counts">
-        <span style="color:#a78bfa">Alta: ${a}</span><br>
-        <span style="color:#60a5fa">Baixa: ${b}</span>
+      <div class="roleta-queue-info">
+        <div class="roleta-queue-name">${m.name}</div>
+        <div class="roleta-queue-counts">
+          <span style="color:#a78bfa">Alta: ${a}</span><br>
+          <span style="color:#60a5fa">Baixa: ${b}</span>
+        </div>
+      </div>
+      <div class="roleta-queue-actions">
+        ${a > 0 ? `<button class="roleta-remove-spin-btn" onclick="removeSpinGrant('${k}','alta')" title="Remover giro Alta">-A</button>` : ''}
+        ${b > 0 ? `<button class="roleta-remove-spin-btn" onclick="removeSpinGrant('${k}','baixa')" title="Remover giro Baixa">-B</button>` : ''}
       </div>
     </div>`;
   }).join('');
+}
+
+function removeSpinGrant(seller, wheel) {
+  if (_userProfile?.role !== 'admin') return; // apenas admins
+  if (!seller || !wheel) return;
+  if (!pendingSpins[seller]) pendingSpins[seller] = { alta: 0, baixa: 0 };
+  if (pendingSpins[seller][wheel] > 0) {
+    pendingSpins[seller][wheel]--;
+    saveSpins();
+    renderQueueGrid();
+    updateRoletaNotif();
+  }
 }
 
 function grantSpin() {
