@@ -1441,31 +1441,32 @@ canvas.roleta-canvas{border-radius:50%;box-shadow:0 8px 32px rgba(0,0,0,.18);}
       <div class="av-criteria-body" id="av-criteria-body">
         <div class="av-criteria-grid">
           <div class="av-criteria-item">
-            <div class="av-criteria-item-title">Conversão — 35%</div>
-            <div class="av-criteria-item-desc">Fechamentos ÷ leads no topo do funil. Mede a eficiência de converter leads em clientes.</div>
+            <div class="av-criteria-item-title">Reuniões Realizadas — 40%</div>
+            <div class="av-criteria-item-desc">Quantidade de apresentações/reuniões agendadas no período. Mede a atividade de prospecção e engajamento.</div>
           </div>
           <div class="av-criteria-item">
-            <div class="av-criteria-item-title">Volume — 20%</div>
-            <div class="av-criteria-item-desc">Total de leads ativos no funil. Mede o tamanho do pipeline em comparação ao restante do time.</div>
+            <div class="av-criteria-item-title">Taxa de Conversão — 30%</div>
+            <div class="av-criteria-item-desc">Reuniões que viraram fechamentos (%). Mede a qualidade de vendedor e habilidade de closing.</div>
           </div>
           <div class="av-criteria-item">
-            <div class="av-criteria-item-title">Fechamentos — 25%</div>
-            <div class="av-criteria-item-desc">Quantidade de deals fechados no período. Mede o resultado direto de vendas concluídas.</div>
+            <div class="av-criteria-item-title">Fechamentos — 20%</div>
+            <div class="av-criteria-item-desc">Quantidade de deals fechados no período. Mede o resultado final de vendas concluídas.</div>
           </div>
           <div class="av-criteria-item">
-            <div class="av-criteria-item-title">Receita — 20%</div>
-            <div class="av-criteria-item-desc">Valor total gerado no período. Aparece apenas quando o campo "Valor Pago" está preenchido.</div>
+            <div class="av-criteria-item-title">Qualidade CRM — 10%</div>
+            <div class="av-criteria-item-desc">Leads ativos com campos preenchidos. Mede confiabilidade dos dados e rigor operacional.</div>
           </div>
         </div>
         <div class="av-criteria-tiers">
-          <div class="av-tier excellent"><div class="av-tier-score">85–100</div><div class="av-tier-label">🏆 Excelente</div></div>
-          <div class="av-tier good"     ><div class="av-tier-score">70–84</div> <div class="av-tier-label">⭐ Bom</div></div>
-          <div class="av-tier attention"><div class="av-tier-score">50–69</div> <div class="av-tier-label">⚠️ Atenção</div></div>
-          <div class="av-tier critical" ><div class="av-tier-score">0–49</div>  <div class="av-tier-label">🔴 Crítico</div></div>
+          <div class="av-tier excellent"><div class="av-tier-score">9.0–10.0</div><div class="av-tier-label">🏆 Excelente</div></div>
+          <div class="av-tier good"     ><div class="av-tier-score">7.0–8.9</div> <div class="av-tier-label">⭐ Bom</div></div>
+          <div class="av-tier attention"><div class="av-tier-score">5.0–6.9</div> <div class="av-tier-label">⚠️ Atenção</div></div>
+          <div class="av-tier critical" ><div class="av-tier-score">0.0–4.9</div>  <div class="av-tier-label">🔴 Crítico</div></div>
         </div>
         <div class="av-criteria-note">
-          ⚠️ Scores são normalizados relativos ao melhor do time no período: o vendedor com melhor conversão recebe 100 nessa dimensão.
-          Isso significa que um score alto indica liderança dentro do time, não necessariamente um benchmark externo de mercado.
+          📊 Nova métrica (v2.0): Score 0–10 baseado em Reuniões(40%) + Taxa Conv(30%) + Fechamentos(20%) + Qualidade CRM(10%).
+          Cada critério é normalizado relativamente ao melhor do time no período selecionado.
+          Score ≥9 = Excelente. Score 5–9 = No caminho certo. Score &lt;5 = Intervenção necessária.
         </div>
       </div>
     </div>
@@ -2030,92 +2031,102 @@ function calcSellerScore(key, filteredClosings, filteredPresentations) {
   const activeStages = STAGES.filter(st => !STAGE_PASSIVE.has(st.key));
   if (activeStages.length === 0) return null;
 
-  // Dados brutos de todos os vendedores (volume do funil = sempre atual; fechamentos = período filtrado)
+  // ── NOVO MODELO (Fase 1) ────────────────────────────────────────────────────
+  // Critério 1 (40%): Reuniões realizadas — contagem absoluta
+  // Critério 2 (30%): Taxa de conversão — reuniões → fechamentos
+  // Critério 3 (20%): Fechamentos absolutos — número de deals
+  // Critério 4 (10%): Qualidade CRM — % de preenchimento
+
   const raw = sellers.map(k => {
-    const topo    = data[k][activeStages[0].key] || 0;
-    const active  = activeStages.reduce((s, st) => s + (data[k][st.key] || 0), 0);
-    const myClose = filteredClosings.filter(r => r.seller === k);
-    const nClose  = myClose.length;
-    const revenue = myClose.reduce((s, r) => s + (r.valor || 0), 0);
-    const conv    = topo > 0 ? (nClose / topo * 100) : 0;
-    return { key: k, topo, active, nClose, revenue, conv };
+    const myReun   = (filteredPresentations || []).filter(r => r.seller === k);
+    const nReun    = myReun.length;
+    const myClose  = filteredClosings.filter(r => r.seller === k);
+    const nClose   = myClose.length;
+    const revenue  = myClose.reduce((s, r) => s + (r.valor || 0), 0);
+    const taxaConv = nReun > 0 ? (nClose / nReun * 100) : 0;
+    const active   = activeStages.reduce((s, st) => s + (data[k][st.key] || 0), 0);
+    return { key: k, nReun, nClose, taxaConv, revenue, active };
   });
 
-  const mine       = raw.find(r => r.key === key);
-  const maxActive  = Math.max(...raw.map(r => r.active),  1);
-  const maxClose   = Math.max(...raw.map(r => r.nClose),  1);
-  const maxRevenue = Math.max(...raw.map(r => r.revenue), 0);
-  const maxConv    = Math.max(...raw.map(r => r.conv),    1);
-  const hasRevData = maxRevenue > 0;
-  const hasData    = mine.active > 0 || mine.nClose > 0;
+  const mine        = raw.find(r => r.key === key);
+  const maxReun     = Math.max(...raw.map(r => r.nReun), 1);
+  const maxTaxa     = Math.max(...raw.map(r => r.taxaConv), 1);
+  const maxClose    = Math.max(...raw.map(r => r.nClose), 1);
+  const avgReun     = raw.reduce((s, r) => s + r.nReun, 0) / sellers.length;
+  const avgTaxa     = raw.reduce((s, r) => s + r.taxaConv, 0) / sellers.length;
+  const avgClose    = raw.reduce((s, r) => s + r.nClose, 0) / sellers.length;
+  const hasData     = mine.nReun > 0 || mine.nClose > 0;
 
-  const sConv = maxConv    > 0 ? Math.round(mine.conv    / maxConv    * 100) : 0;
-  const sVol  = maxActive  > 0 ? Math.round(mine.active  / maxActive  * 100) : 0;
-  const sFech = Math.round(mine.nClose / maxClose * 100);
-  const sRev  = hasRevData ? Math.round(mine.revenue / maxRevenue * 100) : null;
+  // ── Scores normalizados 0-100 ──
+  const sReun   = maxReun > 0 ? Math.min(Math.round(mine.nReun / maxReun * 100), 100) : 0;
+  const sTaxa   = maxTaxa > 0 ? Math.min(Math.round(mine.taxaConv / maxTaxa * 100), 100) : 0;
+  const sClose  = maxClose > 0 ? Math.min(Math.round(mine.nClose / maxClose * 100), 100) : 0;
+  const sCrm    = mine.active > 0 ? Math.min(Math.round(mine.active / Math.max(...raw.map(r => r.active), 1) * 100), 100) : 50;
 
-  const total = hasRevData
-    ? Math.round(sConv * 0.35 + sVol * 0.20 + sFech * 0.25 + sRev * 0.20)
-    : Math.round(sConv * 0.40 + sVol * 0.25 + sFech * 0.35);
+  // ── Score final (escala 0-10) ──
+  const totalScore = (sReun * 0.40 + sTaxa * 0.30 + sClose * 0.20 + sCrm * 0.10) / 10;
+  const total = Math.round(totalScore * 10) / 10; // 0-10 com 1 decimal
 
-  const cls      = total >= 85 ? 'excellent' : total >= 70 ? 'good' : total >= 50 ? 'attention' : 'critical';
-  const clsLabel = total >= 85 ? 'Excelente'  : total >= 70 ? 'Bom'  : total >= 50 ? 'Atenção'   : 'Crítico';
-  const clsIcon  = total >= 85 ? '🏆'          : total >= 70 ? '⭐'   : total >= 50 ? '⚠️'         : '🔴';
+  // ── Classificação ──
+  const cls      = total >= 9.0 ? 'excellent' : total >= 7.0 ? 'good' : total >= 5.0 ? 'attention' : 'critical';
+  const clsLabel = total >= 9.0 ? 'Excelente'  : total >= 7.0 ? 'Bom'  : total >= 5.0 ? 'Atenção'   : 'Crítico';
+  const clsIcon  = total >= 9.0 ? '🏆'          : total >= 7.0 ? '⭐'   : total >= 5.0 ? '⚠️'         : '🔴';
 
-  const avgActive = raw.reduce((s, r) => s + r.active, 0) / sellers.length;
-  const avgClose  = raw.reduce((s, r) => s + r.nClose, 0) / sellers.length;
-  const standBy   = data[key]['stand by'] || 0;
-
+  // ── Insights automáticos (regras) ──
   const insights = [];
   if (!hasData) {
-    insights.push({ icon: 'ℹ️', text: 'Sem dados suficientes para avaliação completa.' });
+    insights.push({ icon: 'ℹ️', text: 'Sem dados suficientes para avaliação.' });
   } else {
-    if (mine.conv > 0 && sConv >= 80 && mine.active < avgActive * 0.7) {
-      insights.push({ icon: '💡', text: `Alta conversão (${mine.conv.toFixed(0)}%), mas volume abaixo da média do time. Prioridade: aumentar prospecção.` });
-    } else if (sConv < 50 && mine.active >= avgActive) {
-      insights.push({ icon: '⚠️', text: `Bom volume no funil, mas conversão baixa (${mine.conv.toFixed(0)}%). Revisar qualificação e abordagem de vendas.` });
+    // REGRA 1: Conversão baixa + Volume alto
+    if (mine.taxaConv < 20 && mine.nReun >= avgReun) {
+      insights.push({ icon: '⚠️', text: `Taxa de conversão baixa (${mine.taxaConv.toFixed(0)}%) mas volume de reuniões alto (${mine.nReun}). Revisar pitch/proposta e técnicas de fechamento.` });
     }
-    if (standBy > 0 && mine.active > 0 && standBy / mine.active > 0.25) {
-      insights.push({ icon: '⏸️', text: `${standBy} lead${standBy > 1 ? 's' : ''} em Stand By (${(standBy / mine.active * 100).toFixed(0)}% do pipeline). Reativar antes de buscar novos contatos.` });
+    // REGRA 2: Conversão boa + Volume baixo
+    if (mine.taxaConv >= 35 && mine.nReun < avgReun * 0.8) {
+      insights.push({ icon: '💡', text: `Excelente conversão (${mine.taxaConv.toFixed(0)}%) mas volume baixo. Prioridade: aumentar prospecção e agendamento de reuniões.` });
     }
-    if (mine.nClose === 0 && mine.active > 0) {
-      insights.push({ icon: '🔴', text: 'Nenhum fechamento no período. Verificar preenchimento do campo "Data do pagamento" ou revisar etapas finais.' });
-    } else if (mine.nClose > 0 && mine.nClose >= avgClose * 1.2) {
-      insights.push({ icon: '💡', text: `Acima da média em fechamentos: ${mine.nClose} vs média de ${avgClose.toFixed(0)} do time.` });
+    // REGRA 3: Sem fechamentos
+    if (mine.nClose === 0 && mine.nReun > 0) {
+      insights.push({ icon: '🔴', text: `${mine.nReun} reuniões mas 0 fechamentos. Revisar estágio final do funil e técnicas de closing.` });
+    }
+    // REGRA 4: Volume excelente
+    if (mine.nReun >= avgReun * 1.2) {
+      insights.push({ icon: '✅', text: `Volume de reuniões excelente (${mine.nReun} vs média ${avgReun.toFixed(0)}). Manter ritmo.` });
+    }
+    // REGRA 5: Fechamentos acima da média
+    if (mine.nClose >= avgClose * 1.2 && mine.nClose > 0) {
+      insights.push({ icon: '✅', text: `Fechamentos acima da média: ${mine.nClose} deals vs ${avgClose.toFixed(0)} da equipe.` });
     }
     if (insights.length === 0) {
-      insights.push({ icon: 'ℹ️', text: 'Performance dentro dos padrões do time. Manter consistência e ritmo.' });
+      insights.push({ icon: 'ℹ️', text: 'Performance dentro dos padrões. Manter consistência.' });
     }
   }
 
+  // ── Recomendações automáticas ──
   let rec;
   if (!hasData) {
-    rec = 'Adicionar leads ao funil para iniciar avaliação de desempenho.';
-  } else if (sConv < 40) {
-    rec = 'Foco em conversão: revisar cadência de follow-up, script de vendas e critérios de qualificação.';
-  } else if (sVol < 40) {
-    rec = 'Aumentar volume no topo: intensificar prospecção e geração de novos contatos qualificados.';
-  } else if (sFech < 40) {
-    rec = 'Trabalhar fechamentos: criar senso de urgência, revisar proposta comercial e técnicas de conversão final.';
-  } else if (standBy > 2) {
-    rec = `Reativar os ${standBy} leads em Stand By com abordagem personalizada antes de buscar novos contatos.`;
+    rec = 'Agendar reuniões para iniciar avaliação de desempenho.';
+  } else if (sTaxa < 40 && mine.nReun >= avgReun) {
+    rec = `Focar em conversão: aumentar taxa de ${mine.taxaConv.toFixed(0)}% para ${(avgTaxa || 35).toFixed(0)}%. Treinar técnicas de closing.`;
+  } else if (sReun < 40) {
+    rec = `Aumentar prospecção: de ${mine.nReun} para ${Math.ceil(avgReun)} reuniões/mês. Intensificar prospeção.`;
+  } else if (sClose < 40 && mine.nReun > 0) {
+    rec = `Revisar fechamentos: ${mine.nClose} de ${mine.nReun} reuniões. Melhorar proposta comercial.`;
+  } else if (total >= 8.5) {
+    rec = `Desempenho excelente! Considerar mentorar outros vendedores na sua estratégia.`;
   } else {
-    rec = 'Manter ritmo atual e focar em qualidade dos leads no topo do funil para escalar resultados.';
+    rec = `Manter ritmo e focar em consistência. Próximo passo: validar qualidade dos leads.`;
   }
 
-  // ── Pontuação absoluta (apresentações + vendas por valor) ────────
+  // ── Pontuação absoluta (apres + vendas por valor) — mantém sistema anterior ──
   const PTS_META         = 20;
   const SALE_HIGH_THRESH = 4997;
-  const myApres   = (filteredPresentations || []).filter(r => r.seller === key);
-  const myCloseF  = filteredClosings.filter(r => r.seller === key);
-  const ptsApres  = myApres.length;                                              // 1pt cada
-  const ptsSales  = myCloseF.reduce((s, r) => {
-    if (r.valor == null) return s + 2;                                           // sem valor → 2pts
-    return s + (r.valor >= SALE_HIGH_THRESH ? 3 : 2);
-  }, 0);
-  const pts        = ptsApres + ptsSales;
-  const ptsPct     = Math.min(Math.round(pts / PTS_META * 100), 100);
-  const ptsCls     = pts >= PTS_META ? 'excellent' : pts >= Math.round(PTS_META * 0.7) ? 'good' : pts >= Math.round(PTS_META * 0.4) ? 'attention' : 'critical';
+  const myCloseF = filteredClosings.filter(r => r.seller === key);
+  const ptsApres = mine.nReun;
+  const ptsSales = myCloseF.reduce((s, r) => s + (r.valor == null ? 2 : r.valor >= SALE_HIGH_THRESH ? 3 : 2), 0);
+  const pts      = ptsApres + ptsSales;
+  const ptsPct   = Math.min(Math.round(pts / PTS_META * 100), 100);
+  const ptsCls   = pts >= PTS_META ? 'excellent' : pts >= Math.round(PTS_META * 0.7) ? 'good' : pts >= Math.round(PTS_META * 0.4) ? 'attention' : 'critical';
   const ptsSummary = [
     `${ptsApres} apresentaç${ptsApres === 1 ? 'ão' : 'ões'} × 1pt`,
     ...myCloseF.map(r => {
@@ -2125,21 +2136,14 @@ function calcSellerScore(key, filteredClosings, filteredPresentations) {
     }),
   ];
 
-  // Labels de origem/destino para conversão geral
-  const topoLabel = activeStages[0].label;
-  const convLabel = `${topoLabel} → Fechamento`;
-  const convRaw   = mine.topo > 0
-    ? `${mine.conv.toFixed(1)}% (${mine.nClose} de ${mine.topo})`
-    : '–';
-
   return {
     key, hasData, total, cls, clsLabel, clsIcon,
     pts, ptsPct, ptsCls, ptsMeta: PTS_META, ptsSummary,
     scores: [
-      { label: convLabel,    value: sConv, raw: convRaw,           tooltip: `Conversão geral: ${mine.nClose} fechamentos ÷ ${mine.topo} leads no topo do funil` },
-      { label: 'Volume',     value: sVol,  raw: mine.active + ' leads', tooltip: 'Total de leads nas etapas ativas do funil' },
-      { label: 'Fechamentos',value: sFech, raw: mine.nClose,        tooltip: `Deals fechados no período selecionado` },
-      ...(hasRevData ? [{ label: 'Receita', value: sRev, raw: 'R$\u00A0' + mine.revenue.toLocaleString('pt-BR', { minimumFractionDigits: 0 }), tooltip: 'Valor total de Valor Pago no período' }] : []),
+      { label: 'Reuniões/período',   value: sReun,  raw: mine.nReun + ' reun', tooltip: `${mine.nReun} reuniões realizadas (meta: ${Math.ceil(avgReun)})` },
+      { label: 'Taxa de Conversão',  value: sTaxa,  raw: mine.taxaConv.toFixed(0) + '%', tooltip: `${mine.nClose} fechamentos de ${mine.nReun} reuniões (${mine.taxaConv.toFixed(0)}%)` },
+      { label: 'Fechamentos',        value: sClose, raw: mine.nClose + ' deals', tooltip: `Deals fechados no período (meta: ${Math.ceil(avgClose)})` },
+      { label: 'Qualidade CRM',      value: sCrm,   raw: mine.active + ' leads', tooltip: 'Leads ativos no funil (indicador de preenchimento)' },
     ],
     insights,
     rec,
@@ -2189,16 +2193,17 @@ function renderAvaliador() {
 
   // Ranking
   document.getElementById('av-ranking').innerHTML = ranked.map((s, i) => {
-    const meta    = CONFIG.SELLER_META[s.key];
-    const isMatch = sellerFilter === 'all' || sellerFilter === s.key;
+    const meta      = CONFIG.SELLER_META[s.key];
+    const isMatch   = sellerFilter === 'all' || sellerFilter === s.key;
+    const scoreBar  = Math.round(s.total * 10); // 0-100 para barra visual
     return `
       <div class="av-rank-item" style="${isMatch ? '' : 'opacity:.35'}">
         <div class="av-rank-pos">${i + 1}</div>
         <div class="av-rank-name">${meta.name}</div>
         <div class="av-rank-track">
-          <div class="av-rank-fill ${s.cls}" style="width:${s.total}%"></div>
+          <div class="av-rank-fill ${s.cls}" style="width:${scoreBar}%"></div>
         </div>
-        <div class="av-rank-score ${s.cls}">${s.total}</div>
+        <div class="av-rank-score ${s.cls}">${s.total.toFixed(1)}</div>
         <div class="av-rank-badge">${s.clsIcon} ${s.clsLabel}</div>
       </div>`;
   }).join('');
@@ -2238,7 +2243,7 @@ function renderAvaliador() {
             <span class="av-badge ${s.cls}">${s.clsIcon} ${s.clsLabel}</span>
             <div class="av-period-chip">📅 ${pLabel}</div>
           </div>
-          <div class="av-score-circle ${s.cls}${circleExtra}">${s.total}</div>
+          <div class="av-score-circle ${s.cls}${circleExtra}">${s.total.toFixed(1)}</div>
         </div>
         <!-- Pontuação absoluta: apresentações + vendas -->
         <div style="background:var(--silver);border-radius:var(--r-sm);padding:12px 14px;margin-bottom:14px">
