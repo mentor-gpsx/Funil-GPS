@@ -3883,15 +3883,10 @@ function totalSpins(seller) {
 }
 
 function updateRoletaNotif() {
-  // Seller sem permissão de roleta: esconder notificação
-  if (_userProfile?.role === 'seller' && !hasFeaturePermission('roleta')) {
-    document.getElementById('roleta-notif')?.classList.remove('on');
-    return;
-  }
-
-  // Admin verificar se roleta está ativa para este seller
+  // Verificar se roleta está ativa para este seller (desacoplado de permissões de feature)
   const isRestrictedSeller = _userProfile?.role === 'seller' && !_userProfile?.permissions?.admin_override;
   if (isRestrictedSeller && _userProfile.seller_key) {
+    // Seller: só mostra se roleta existe E está ativa
     if (!isRoletaActive(_userProfile.seller_key)) {
       document.getElementById('roleta-notif')?.classList.remove('on');
       return;
@@ -4121,19 +4116,32 @@ function renderQueueGrid() {
   }).join('');
 }
 
-function removeSpinGrant(seller, wheel) {
+async function removeSpinGrant(seller, wheel) {
   if (_userProfile?.role !== 'admin') return; // apenas admins
   if (!seller || !wheel) return;
   if (!pendingSpins[seller]) pendingSpins[seller] = { alta: 0, baixa: 0 };
   if (pendingSpins[seller][wheel] > 0) {
     pendingSpins[seller][wheel]--;
     saveSpins();
+
+    // Sincronizar remoção com Supabase
+    try {
+      const { data: { session } } = await _sb.auth.getSession();
+      if (session?.access_token) {
+        await fetch('/api/roleta/revoke', {
+          method: 'POST',
+          headers: { Authorization: `Bearer ${session.access_token}`, 'Content-Type': 'application/json' },
+          body: JSON.stringify({ seller, wheel, timestamp: new Date().toISOString() }),
+        });
+      }
+    } catch(e) { console.error('[Roleta] Erro ao sincronizar revoke:', e); }
+
     renderQueueGrid();
     updateRoletaNotif();
   }
 }
 
-function grantSpin() {
+async function grantSpin() {
   if (_userProfile?.role !== 'admin') return; // apenas admins
   const seller = document.getElementById('grant-seller').value;
   const wheel  = document.getElementById('grant-wheel').value;
@@ -4143,6 +4151,19 @@ function grantSpin() {
   pendingSpins[seller][wheel]++;
   pendingSpinsMeta[seller][wheel].push({ closingId: null, closingName: 'Liberação manual', closingValor: null });
   saveSpins();
+
+  // Sincronizar com Supabase (novo giro liberado)
+  try {
+    const { data: { session } } = await _sb.auth.getSession();
+    if (session?.access_token) {
+      await fetch('/api/roleta/grant', {
+        method: 'POST',
+        headers: { Authorization: `Bearer ${session.access_token}`, 'Content-Type': 'application/json' },
+        body: JSON.stringify({ seller, wheel, timestamp: new Date().toISOString() }),
+      });
+    }
+  } catch(e) { console.error('[Roleta] Erro ao sincronizar grant:', e); }
+
   updateRoletaNotif();
   renderQueueGrid();
 }
