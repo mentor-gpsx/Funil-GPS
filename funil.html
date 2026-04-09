@@ -3694,6 +3694,8 @@ function switchTab(key) {
   if (key === 'roletas')     renderAdminRoletas();
   if (key === 'avaliador')   renderMonthlyPoints();
   if (key === 'crmscore')    renderCrmScore();
+  // Recarregar perfil para sync de permissões em tempo real
+  reloadUserProfile();
 }
 
 // ================================================================
@@ -4373,6 +4375,32 @@ function savePrizes(wheel) {
   const orig = btn.textContent;
   btn.textContent = '✓ Salvo!';
   setTimeout(() => btn.textContent = orig, 1500);
+}
+
+// ================================================================
+// RECARREGAR PERFIL DO USUÁRIO (SYNC EM TEMPO REAL)
+// ================================================================
+async function reloadUserProfile() {
+  try {
+    const { data: { session } } = await _sb.auth.getSession();
+    if (!session) return;
+
+    const { data: profile } = await _sb
+      .from('profiles')
+      .select('seller_key, display_name, role, permissions')
+      .eq('id', session.user.id)
+      .single();
+
+    if (profile) {
+      _userProfile = profile;
+      // Atualizar UI após recarregar
+      const hdrUser = document.getElementById('hdr-user');
+      if (hdrUser) hdrUser.textContent = _userProfile.display_name || session.user.email;
+      updateRoletaNotif();
+    }
+  } catch(e) {
+    console.error('[Sync] Erro ao recarregar perfil:', e);
+  }
 }
 
 // ================================================================
