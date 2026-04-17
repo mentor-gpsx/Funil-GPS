@@ -1179,6 +1179,8 @@ canvas.roleta-canvas{border-radius:50%;box-shadow:0 8px 32px rgba(0,0,0,.18);}
   <button class="tb"    id="tb-avaliador"   onclick="switchTab('avaliador')">Avaliador</button>
   <button class="tb"    id="tb-crmscore"    onclick="switchTab('crmscore')">CRM Score <span class="tb-pill" id="pill-crmscore">–</span></button>
   <button class="tb admin-only" id="tb-roletas" onclick="switchTab('roletas')">Roletas</button>
+  <button class="tb" id="tb-distribuicao" onclick="switchTab('distribuicao')">📊 Distribuição do Funil</button>
+  <button class="tb admin-only" id="tb-perms" onclick="switchTab('perms')">⚙️ Gerenciar Permissões</button>
 </nav>
 
 <!-- VIEW: MARIA -->
@@ -1563,6 +1565,60 @@ canvas.roleta-canvas{border-radius:50%;box-shadow:0 8px 32px rgba(0,0,0,.18);}
       Defina quais abas e funcionalidades cada seller pode acessar. As mudanças são salvas automaticamente.
     </p>
     <div id="ar-permissions"></div>
+  </div>
+</div>
+
+<!-- NEW: Distribuição do Funil (Story 1) -->
+<div class="view" id="view-distribuicao">
+  <div class="page">
+    <div class="sec-head">📊 Distribuição do Funil</div>
+    <p style="font-size:12px;color:var(--muted);margin-bottom:16px">
+      Visualize todos os clientes organizados por etapa do funil. Sincronizado em tempo real com ClickUp.
+    </p>
+
+    <!-- Status de sincronização -->
+    <div id="dist-sync-status" style="display:flex;align-items:center;gap:8px;margin-bottom:20px;font-size:12px;color:var(--muted)">
+      <span class="sync-dot" id="dist-sync-dot"></span>
+      <span>Sincronizando com ClickUp...</span>
+    </div>
+
+    <!-- Etapas do funil com accordion -->
+    <div id="distribuicao-container" style="display:flex;flex-direction:column;gap:12px">
+      <!-- Será preenchido por JavaScript -->
+    </div>
+  </div>
+</div>
+
+<!-- NEW: Gerenciar Permissões (Story 2) - Admin Only -->
+<div class="view admin-only" id="view-perms">
+  <div class="page">
+    <div class="sec-head">⚙️ Gerenciar Permissões</div>
+    <p style="font-size:12px;color:var(--muted);margin-bottom:20px">
+      Controle qual abas cada usuário pode acessar. Apenas administradores podem modificar essas configurações.
+    </p>
+
+    <!-- Filtro de usuários -->
+    <div class="ctrl-filter-bar" style="margin-bottom:20px">
+      <span class="ctrl-filter-label">Filtrar por role:</span>
+      <select id="perm-role-filter" class="ctrl-filter-select" onchange="filterPermissions()">
+        <option value="">Todos</option>
+        <option value="admin">Admin</option>
+        <option value="user">Usuário</option>
+      </select>
+    </div>
+
+    <!-- Tabela de permissões -->
+    <div id="permissions-table-container" style="overflow-x:auto">
+      <!-- Será preenchido por JavaScript -->
+    </div>
+
+    <!-- Auditoria (log) -->
+    <div style="margin-top:32px">
+      <div class="sec-head">📋 Histórico de Alterações</div>
+      <div id="permission-audit-log" style="font-size:12px;color:var(--muted)">
+        <!-- Será preenchido por JavaScript -->
+      </div>
+    </div>
   </div>
 </div>
 
@@ -4266,6 +4322,173 @@ async function renderAdminRoletas() {
     </div>`;
 }
 
+// ── NOVO: Distribuição do Funil (Story 1) ──────────────────────────
+
+async function loadDistribuicaoFunil() {
+  const container = document.getElementById('distribuicao-container');
+  const statusEl = document.getElementById('dist-sync-status');
+  const dotEl = document.getElementById('dist-sync-dot');
+
+  if (!container) return; // Aba não foi renderizada
+
+  try {
+    // Atualizar status
+    dotEl?.classList.add('loading');
+    statusEl.style.color = 'var(--amber)';
+    statusEl.innerHTML = '<span class="sync-dot loading"></span><span>Sincronizando com ClickUp...</span>';
+
+    // Fetch distribuição
+    const response = await fetch('/api/distribuicao');
+    if (!response.ok) throw new Error(`HTTP ${response.status}`);
+
+    const data = await response.json();
+    const { etapas, distribuicao, total_clientes } = data;
+
+    // Renderizar acordeões
+    container.innerHTML = '';
+    etapas.forEach((etapa, idx) => {
+      const clientes = distribuicao[etapa] || [];
+      const count = clientes.length;
+
+      const details = document.createElement('details');
+      details.style.cssText = 'background:var(--silver);border-radius:var(--r-sm);padding:0;overflow:hidden;border:1px solid var(--border)';
+
+      const summary = document.createElement('summary');
+      summary.style.cssText = 'cursor:pointer;padding:12px 16px;display:flex;justify-content:space-between;align-items:center;user-select:none;transition:background .2s';
+      summary.innerHTML = `
+        <span style="font-weight:600;font-size:14px">${etapa}</span>
+        <span style="background:var(--blue-b);color:var(--blue);padding:4px 10px;border-radius:var(--r-xs);font-size:12px;font-weight:600">${count}</span>
+      `;
+
+      // Hover effect
+      summary.onmouseover = () => { details.style.background = 'var(--white)'; };
+      summary.onmouseout = () => { details.style.background = 'var(--silver)'; };
+
+      // Conteúdo (clientes)
+      const content = document.createElement('div');
+      content.style.cssText = 'padding:12px 16px;border-top:1px solid var(--border);background:var(--white)';
+
+      if (count === 0) {
+        content.innerHTML = '<p style="font-size:12px;color:var(--muted);margin:0">Nenhum cliente nesta etapa</p>';
+      } else {
+        content.innerHTML = `<div style="display:grid;gap:8px">
+          ${clientes.map(c => `
+            <div style="padding:8px 12px;background:var(--silver);border-radius:var(--r-xs);font-size:13px">
+              <div style="font-weight:600;margin-bottom:4px">${c.nome}</div>
+              <div style="color:var(--muted);font-size:11px">
+                ${c.email ? `📧 ${c.email}` : ''}
+                ${c.valor ? ` • 💰 R$ ${(c.valor/1000).toFixed(1)}K` : ''}
+              </div>
+            </div>
+          `).join('')}
+        </div>`;
+      }
+
+      details.appendChild(summary);
+      details.appendChild(content);
+      container.appendChild(details);
+    });
+
+    // Status OK
+    dotEl?.classList.remove('loading');
+    statusEl.style.color = 'var(--green)';
+    statusEl.innerHTML = `<span class="sync-dot"></span><span>Sincronizado • ${total_clientes} clientes • ${new Date().toLocaleTimeString()}</span>`;
+  } catch (error) {
+    console.error('[Distribuição] Erro:', error.message);
+    dotEl?.classList.remove('loading');
+    statusEl.style.color = 'var(--red)';
+    statusEl.innerHTML = `<span class="sync-dot error"></span><span>Erro na sincronização</span>`;
+  }
+}
+
+// ── NOVO: Gerenciar Permissões (Story 2) ────────────────────────────
+
+async function loadPermissions() {
+  try {
+    const { data: { session } } = await _sb.auth.getSession();
+    if (!session?.access_token) return;
+
+    const response = await fetch('/api/tab-permissions', {
+      headers: { 'Authorization': `Bearer ${session.access_token}` },
+    });
+
+    if (!response.ok) throw new Error(`HTTP ${response.status}`);
+
+    const permissionsData = await response.json();
+    renderPermissionsTable(permissionsData);
+  } catch (error) {
+    console.error('[Permissões] Erro:', error.message);
+    const container = document.getElementById('permissions-table-container');
+    if (container) {
+      container.innerHTML = `<p style="color:var(--red);font-size:12px">Erro ao carregar permissões: ${error.message}</p>`;
+    }
+  }
+}
+
+async function renderPermissionsTable(permissionsData) {
+  const container = document.getElementById('permissions-table-container');
+  if (!container) return;
+
+  // Agrupar por usuário
+  const byUser = {};
+  permissionsData.forEach(p => {
+    if (!byUser[p.user_id]) byUser[p.user_id] = {};
+    byUser[p.user_id][p.tab_key] = p.has_access;
+  });
+
+  // Renderizar tabela
+  let html = `<table style="width:100%;border-collapse:collapse;font-size:12px">
+    <thead style="background:var(--silver);border-bottom:1px solid var(--border)">
+      <tr>
+        <th style="text-align:left;padding:12px;font-weight:600;border-right:1px solid var(--border)">Usuário</th>
+        ${['Fechamentos', 'Comparativos', 'Análise Funil', 'CRM Score', 'Distribuição'].map(tab => `<th style="text-align:center;padding:12px;font-weight:600">${tab}</th>`).join('')}
+      </tr>
+    </thead>
+    <tbody>`;
+
+  Object.entries(byUser).forEach(([userId, perms], idx) => {
+    const bg = idx % 2 === 0 ? 'var(--white)' : 'var(--silver)';
+    html += `<tr style="background:${bg};border-bottom:1px solid var(--border)">
+      <td style="padding:12px;border-right:1px solid var(--border)">Usuário ${userId.slice(0, 8)}</td>
+      ${['fechamentos', 'comparativos', 'analise', 'crm-score', 'distribuicao'].map(key => `
+        <td style="text-align:center;padding:12px">
+          <input type="checkbox" ${perms[key] ? 'checked' : ''} onchange="updateTabPermission('${userId}', '${key}', this.checked)">
+        </td>
+      `).join('')}
+    </tr>`;
+  });
+
+  html += `</tbody></table>`;
+  container.innerHTML = html;
+}
+
+async function updateTabPermission(userId, tabKey, hasAccess) {
+  try {
+    const { data: { session } } = await _sb.auth.getSession();
+    if (!session?.access_token) return;
+
+    const response = await fetch('/api/tab-permissions', {
+      method: 'PATCH',
+      headers: {
+        'Authorization': `Bearer ${session.access_token}`,
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({ userId, tabKey, hasAccess }),
+    });
+
+    if (!response.ok) throw new Error(`HTTP ${response.status}`);
+    console.log(`✅ Permissão atualizada: ${tabKey} para ${userId} = ${hasAccess}`);
+  } catch (error) {
+    console.error('[Permissões] Erro ao atualizar:', error.message);
+    alert('Erro ao atualizar permissão: ' + error.message);
+  }
+}
+
+function filterPermissions() {
+  // Implementar filtro por role se necessário
+  loadPermissions();
+}
+
 // ── Histórico de roletas (aba Fechamentos) ───────────────────────
 async function renderPrizeHistory() {
   const el = document.getElementById('rh-list');
@@ -4607,6 +4830,15 @@ async function logout() {
   carregarDadosClickUp(true);
   setInterval(() => carregarDadosClickUp(false), CONFIG.INTERVAL);
   roletaInit();
+
+  // NEW: Inicializar Distribuição do Funil
+  loadDistribuicaoFunil();
+  setInterval(loadDistribuicaoFunil, 5 * 60 * 1000); // Sync a cada 5 min
+
+  // NEW: Inicializar Gerenciar Permissões
+  if (_userProfile?.role === 'admin') {
+    loadPermissions();
+  }
 })();
 </script>
 </body>

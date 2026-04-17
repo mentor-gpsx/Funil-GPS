@@ -78,6 +78,18 @@ const server = http.createServer(async (req, res) => {
     return res.end(JSON.stringify({ ok: true }));
   }
 
+  // NEW: Distribuição do Funil (ClickUp sync)
+  if (pathname === '/api/distribuicao' && req.method === 'GET') {
+    const distribuicaoHandler = require('./api/distribuicao');
+    return distribuicaoHandler(req, res);
+  }
+
+  // NEW: Tab Permissions (Gerenciar Permissões)
+  if (pathname === '/api/tab-permissions') {
+    const tabPermissionsHandler = require('./api/tab-permissions');
+    return tabPermissionsHandler(req, res);
+  }
+
   // Serve static files
   let filePath = path.join(__dirname, pathname === '/' ? 'funil.html' : pathname);
 
