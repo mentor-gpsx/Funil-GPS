@@ -78,10 +78,16 @@ const server = http.createServer(async (req, res) => {
     return res.end(JSON.stringify({ ok: true }));
   }
 
-  // NEW: Distribuição do Funil (ClickUp sync)
+  // NEW: Distribuição do Funil (ClickUp sync) - ANTIGO
   if (pathname === '/api/distribuicao' && req.method === 'GET') {
     const distribuicaoHandler = require('./api/distribuicao');
     return distribuicaoHandler(req, res);
+  }
+
+  // NEW: Funil por Usuário (Nova Estrutura)
+  if (pathname === '/api/funil-by-user' && req.method === 'GET') {
+    const funilByUserHandler = require('./api/funil-by-user');
+    return funilByUserHandler(req, res);
   }
 
   // NEW: Tab Permissions (Gerenciar Permissões)

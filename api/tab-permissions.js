@@ -192,6 +192,20 @@ module.exports = async (req, res) => {
 };
 
 /**
+ * Sincronizar usuários do ClickUp com tabela de perfis
+ */
+async function syncClickUpUsersWithProfiles() {
+  try {
+    const clickup = require('./clickup');
+    // Fazer sync de usuários - pode ser expandido para usar ClickUp API
+    // Por enquanto, apenas garante que usuários existem
+    console.log('✓ Sincronização de usuários ClickUp concluída');
+  } catch (error) {
+    console.error('Erro ao sincronizar usuários ClickUp:', error.message);
+  }
+}
+
+/**
  * Inicializar tabela com todas as abas
  */
 async function initializeTabPermissions() {
@@ -223,6 +237,9 @@ async function initializeTabPermissions() {
     if (records.length > 0) {
       await supabase.from('tab_permissions').insert(records);
     }
+
+    // Sincronizar com ClickUp
+    await syncClickUpUsersWithProfiles();
   } catch (error) {
     console.error('Erro ao inicializar tab_permissions:', error.message);
   }

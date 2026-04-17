@@ -126,6 +126,63 @@ async function loadDistribuicao() {
 }
 
 /**
+ * Carregar dados agrupados por USUÁRIO → ETAPA → LEADS
+ * Nova estrutura para refatoração do funil
+ */
+async function loadFunilByUser() {
+  try {
+    if (!CLICKUP_API_KEY) {
+      return getMockFunilByUser();
+    }
+
+    const CRM_VENDAS_LIST_ID = process.env.CLICKUP_CRM_VENDAS_ID || '12345';
+    const response = await fetchClickUpList(CRM_VENDAS_LIST_ID);
+
+    const ETAPAS = ['Prospecção', 'Stand By', 'Qualificado', 'Reunião Agendada', 'Apresentação', 'Follow-Up', 'Pago'];
+    const funilByUser = {};
+
+    (response.tasks || []).forEach((task) => {
+      // Extrair responsável
+      const assignee = task.assignees?.[0];
+      const userName = assignee?.username || 'Sem Responsável';
+
+      // Extrair etapa
+      let etapa = task.status?.status || 'Prospecção';
+      const etapaMatch = ETAPAS.find(e =>
+        e.toLowerCase() === etapa.toLowerCase() ||
+        task.name?.toLowerCase().includes(e.toLowerCase())
+      ) || 'Prospecção';
+
+      // Inicializar usuário se não existe
+      if (!funilByUser[userName]) {
+        funilByUser[userName] = {
+          nome: userName,
+          etapas: {}
+        };
+        ETAPAS.forEach(e => {
+          funilByUser[userName].etapas[e] = [];
+        });
+      }
+
+      // Adicionar lead à etapa do usuário
+      if (funilByUser[userName].etapas[etapaMatch]) {
+        funilByUser[userName].etapas[etapaMatch].push({
+          id: task.id,
+          nome: task.name || 'Sem nome',
+          email: task.custom_fields?.find(f => f.id === 'email')?.value || '',
+          valor: task.custom_fields?.find(f => f.id === 'valor')?.value || 0,
+        });
+      }
+    });
+
+    return funilByUser;
+  } catch (error) {
+    console.error('Erro ao buscar funil por usuário:', error.message);
+    return getMockFunilByUser();
+  }
+}
+
+/**
  * Dados mock para desenvolvimento
  */
 function getMockDistribuicao() {
@@ -157,6 +214,57 @@ function getMockDistribuicao() {
 }
 
 /**
+ * Dados mock agrupados por usuário
+ */
+function getMockFunilByUser() {
+  const ETAPAS = ['Prospecção', 'Stand By', 'Qualificado', 'Reunião Agendada', 'Apresentação', 'Follow-Up', 'Pago'];
+
+  return {
+    'Maria Eduarda': {
+      nome: 'Maria Eduarda',
+      etapas: {
+        'Prospecção': [
+          { id: 't1', nome: 'João Silva', email: 'joao@example.com', valor: 5000 },
+          { id: 't2', nome: 'Ana Costa', email: 'ana@example.com', valor: 3000 },
+        ],
+        'Stand By': [],
+        'Qualificado': [
+          { id: 't4', nome: 'Maria Oliveira', email: 'maria@example.com', valor: 12000 },
+        ],
+        'Reunião Agendada': [],
+        'Apresentação': [],
+        'Follow-Up': [],
+        'Pago': [
+          { id: 't9', nome: 'Diego Machado', email: 'diego@example.com', valor: 50000 },
+        ],
+      }
+    },
+    'Nicolas': {
+      nome: 'Nicolas',
+      etapas: {
+        'Prospecção': [],
+        'Stand By': [
+          { id: 't3', nome: 'Pedro Santos', email: 'pedro@example.com', valor: 8000 },
+        ],
+        'Qualificado': [
+          { id: 't5', nome: 'Carlos Lima', email: 'carlos@example.com', valor: 10000 },
+        ],
+        'Reunião Agendada': [
+          { id: 't6', nome: 'Lucia Martins', email: 'lucia@example.com', valor: 15000 },
+        ],
+        'Apresentação': [
+          { id: 't7', nome: 'Roberto Alves', email: 'roberto@example.com', valor: 20000 },
+        ],
+        'Follow-Up': [
+          { id: 't8', nome: 'Fernanda Rocha', email: 'fernanda@example.com', valor: 25000 },
+        ],
+        'Pago': [],
+      }
+    }
+  };
+}
+
+/**
  * Clear cache (útil para testes)
  */
 function clearCache() {
@@ -166,6 +274,7 @@ function clearCache() {
 
 module.exports = {
   loadDistribuicao,
+  loadFunilByUser,
   clearCache,
   ETAPAS: ['Prospecção', 'Stand By', 'Qualificado', 'Reunião Agendada', 'Apresentação', 'Follow-Up', 'Pago'],
 };
