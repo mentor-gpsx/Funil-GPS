@@ -157,6 +157,51 @@ html.dark-mode .hdr-logo-mark{
   border-radius:var(--r);padding:28px 24px;margin-bottom:20px;
   box-shadow:var(--sh);
 }
+
+/* ── ACCORDION: FUNIL POR USUARIO/ETAPA/LEADS ──────────────────── */
+.funnel-accordion-card{
+  background:var(--white);border:1px solid var(--border);
+  border-radius:var(--r);padding:0;margin-bottom:20px;
+  box-shadow:var(--sh);overflow:hidden;
+}
+.accordion-item{
+  border-bottom:1px solid var(--border);
+}
+.accordion-item:last-child{border-bottom:none;}
+.accordion-header{
+  display:flex;align-items:center;justify-content:space-between;
+  padding:16px 20px;cursor:pointer;user-select:none;
+  background:var(--silver);transition:background .2s;
+}
+.accordion-header:hover{background:#e8e8e8;}
+.accordion-header-label{
+  display:flex;align-items:center;gap:8px;font-weight:500;
+  color:var(--ink);
+}
+.accordion-header-count{
+  background:var(--border);color:var(--ink-3);
+  padding:4px 8px;border-radius:4px;font-size:12px;font-weight:600;
+}
+.accordion-header-arrow{
+  width:20px;height:20px;display:flex;align-items:center;
+  justify-content:center;transition:transform .3s;
+  color:var(--mid);
+}
+.accordion-item.open .accordion-header-arrow{transform:rotate(180deg);}
+.accordion-body{
+  padding:16px 20px;background:var(--white);
+  max-height:0;overflow:hidden;transition:max-height .3s ease;
+}
+.accordion-item.open .accordion-body{max-height:2000px;}
+.lead-item{
+  display:flex;align-items:center;justify-content:space-between;
+  padding:12px;background:var(--canvas);border-radius:var(--r-sm);
+  margin-bottom:8px;border-left:3px solid var(--blue);
+}
+.lead-item:last-child{margin-bottom:0;}
+.lead-name{font-weight:500;color:var(--ink);}
+.lead-email{font-size:12px;color:var(--muted);}
+
 /* ── PIPELINE ──────────────────────────────────────────────────── */
 .pipeline-wrap{
   display:flex; align-items:stretch;
@@ -1196,6 +1241,10 @@ canvas.roleta-canvas{border-radius:50%;box-shadow:0 8px 32px rgba(0,0,0,.18);}
       <div class="kpi-row" id="kpi-maria"></div>
     </div>
 
+    <!-- 🆕 NOVA VISUALIZAÇÃO: FUNIL POR USUÁRIO/ETAPA/LEADS -->
+    <div class="sec-head">Leads por Etapa (Expansível)</div>
+    <div class="funnel-accordion-card" id="funil-accordion-maria"></div>
+
     <div class="sec-head">Distribuição do Funil</div>
     <div class="funnel-card"><div id="fn-maria"></div></div>
 
@@ -1238,6 +1287,9 @@ canvas.roleta-canvas{border-radius:50%;box-shadow:0 8px 32px rgba(0,0,0,.18);}
       <div class="kpi-row" id="kpi-nicolas"></div>
     </div>
 
+    <div class="sec-head">Leads por Etapa (Expansível)</div>
+    <div class="funnel-accordion-card" id="funil-accordion-nicolas"></div>
+
     <div class="sec-head">Distribuição do Funil</div>
     <div class="funnel-card"><div id="fn-nicolas"></div></div>
 
@@ -1279,6 +1331,8 @@ canvas.roleta-canvas{border-radius:50%;box-shadow:0 8px 32px rgba(0,0,0,.18);}
       </div>
       <div class="kpi-row" id="kpi-kennyd"></div>
     </div>
+    <div class="sec-head">Leads por Etapa (Expansível)</div>
+    <div class="funnel-accordion-card" id="funil-accordion-kennyd"></div>
     <div class="sec-head">Distribuição do Funil</div>
     <div class="funnel-card"><div id="fn-kennyd"></div></div>
     <div class="chart-card">
@@ -1315,6 +1369,8 @@ canvas.roleta-canvas{border-radius:50%;box-shadow:0 8px 32px rgba(0,0,0,.18);}
       </div>
       <div class="kpi-row" id="kpi-gabriel"></div>
     </div>
+    <div class="sec-head">Leads por Etapa (Expansível)</div>
+    <div class="funnel-accordion-card" id="funil-accordion-gabriel"></div>
     <div class="sec-head">Distribuição do Funil</div>
     <div class="funnel-card"><div id="fn-gabriel"></div></div>
     <div class="chart-card">
@@ -4400,6 +4456,71 @@ async function loadDistribuicaoFunil() {
   }
 }
 
+// ── NOVO: Funil por Usuário → Etapa → Leads (Accordions) ──────────
+
+async function loadFunilAccordions() {
+  try {
+    const response = await fetch('/api/funil-by-user');
+    if (!response.ok) throw new Error(`HTTP ${response.status}`);
+
+    const data = await response.json();
+    const { usuarios } = data;
+
+    // Renderizar accordions para cada usuário
+    ['maria', 'nicolas', 'kennyd', 'gabriel'].forEach(userKey => {
+      const container = document.getElementById(`funil-accordion-${userKey}`);
+      if (!container) return;
+
+      // Encontrar dados do usuário
+      let userData = null;
+      if (userKey === 'maria') userData = usuarios.find(u => u.nome.toLowerCase().includes('maria'));
+      else if (userKey === 'nicolas') userData = usuarios.find(u => u.nome.toLowerCase().includes('nicolas'));
+      else if (userKey === 'kennyd') userData = usuarios.find(u => u.nome.toLowerCase().includes('kennyd'));
+      else if (userKey === 'gabriel') userData = usuarios.find(u => u.nome.toLowerCase().includes('gabriel'));
+
+      if (!userData) return;
+
+      // Limpar container
+      container.innerHTML = '';
+
+      // Criar accordion para cada etapa
+      data.etapas.forEach((etapa, idx) => {
+        const leads = userData.etapas[etapa] || [];
+        const count = leads.length;
+
+        const itemDiv = document.createElement('div');
+        itemDiv.className = 'accordion-item';
+        itemDiv.innerHTML = `
+          <div class="accordion-header" onclick="this.parentElement.classList.toggle('open')">
+            <div class="accordion-header-label">
+              <span>${etapa}</span>
+              <span class="accordion-header-count">${count}</span>
+            </div>
+            <div class="accordion-header-arrow">▼</div>
+          </div>
+          <div class="accordion-body">
+            ${count === 0
+              ? '<p style="color:var(--muted);font-size:12px;margin:0">Nenhum lead nesta etapa</p>'
+              : leads.map(lead => `
+                  <div class="lead-item">
+                    <div>
+                      <div class="lead-name">${lead.nome}</div>
+                      <div class="lead-email">${lead.email || 'sem email'}</div>
+                    </div>
+                    <div style="font-weight:600;color:var(--green)">R$ ${(lead.valor || 0).toLocaleString('pt-BR')}</div>
+                  </div>
+                `).join('')
+            }
+          </div>
+        `;
+        container.appendChild(itemDiv);
+      });
+    });
+  } catch (error) {
+    console.error('[FunilAccordions] Erro:', error.message);
+  }
+}
+
 // ── NOVO: Gerenciar Permissões (Story 2) ────────────────────────────
 
 async function loadPermissions() {
@@ -4833,6 +4954,10 @@ async function logout() {
   // NEW: Inicializar Distribuição do Funil
   loadDistribuicaoFunil();
   setInterval(loadDistribuicaoFunil, 5 * 60 * 1000); // Sync a cada 5 min
+
+  // NEW: Inicializar Funil por Usuário → Etapa → Leads (Accordions)
+  loadFunilAccordions();
+  setInterval(loadFunilAccordions, 5 * 60 * 1000); // Sync a cada 5 min
 
   // NEW: Inicializar Gerenciar Permissões
   if (_userProfile?.role === 'admin') {
