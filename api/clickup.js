@@ -134,10 +134,9 @@ async function loadFunilByUser() {
     console.log('[ClickUp] CLICKUP_API_KEY:', CLICKUP_API_KEY ? 'SET' : 'EMPTY');
     console.log('[ClickUp] CLICKUP_CRM_VENDAS_ID:', process.env.CLICKUP_CRM_VENDAS_ID);
 
-    if (!CLICKUP_API_KEY) {
-      console.log('[ClickUp] Using mock data - API key not set');
-      return getMockFunilByUser();
-    }
+    // TEMPORARY: Force mock to debug
+    console.log('[ClickUp] FORCING MOCK DATA FOR DEBUG');
+    return getMockFunilByUser();
 
     const CRM_VENDAS_LIST_ID = process.env.CLICKUP_CRM_VENDAS_ID || '12345';
     const response = await fetchClickUpList(CRM_VENDAS_LIST_ID);
