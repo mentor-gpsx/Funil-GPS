@@ -1,20 +1,60 @@
+/**
+ * api/funil-by-user.js — Funil Reorganizado por Usuário
+ * Retorna: USUÁRIO → ETAPA → LEADS
+ */
+
+const clickup = require('./clickup');
+
 module.exports = async (req, res) => {
   res.setHeader('Access-Control-Allow-Origin', '*');
+  res.setHeader('Access-Control-Allow-Headers', 'Content-Type');
+  res.setHeader('Access-Control-Allow-Methods', 'GET, OPTIONS');
   res.setHeader('Content-Type', 'application/json');
 
-  res.writeHead(200);
-  res.end(JSON.stringify({
-    usuarios: [
-      {
-        nome: 'Maria Eduarda',
-        totalLeads: 4,
-        etapasComLeads: [{ etapa: 'Prospecção', count: 2 }],
-        etapas: { 'Prospecção': [{ id: 't1', nome: 'Test', email: 'test@test.com', valor: 1000 }] }
-      }
-    ],
-    totalUsuarios: 1,
-    totalLeads: 4,
-    etapas: ['Prospecção', 'Stand By', 'Qualificado', 'Reunião Agendada', 'Apresentação', 'Follow-Up', 'Pago'],
-    timestamp: new Date().toISOString()
-  }));
+  if (req.method === 'OPTIONS') {
+    res.writeHead(200);
+    return res.end();
+  }
+
+  if (req.method !== 'GET') {
+    res.writeHead(405);
+    return res.end(JSON.stringify({ error: 'Método não suportado' }));
+  }
+
+  try {
+    const funilByUser = await clickup.loadFunilByUser();
+
+    const usuarios = Object.keys(funilByUser).map(userName => {
+      const userData = funilByUser[userName];
+      const totalLeads = Object.values(userData.etapas).reduce((sum, leads) => sum + leads.length, 0);
+      const etapasComLeads = Object.entries(userData.etapas)
+        .filter(([, leads]) => leads.length > 0)
+        .map(([etapa, leads]) => ({ etapa, count: leads.length }));
+
+      return {
+        nome: userData.nome,
+        totalLeads,
+        etapasComLeads,
+        etapas: userData.etapas
+      };
+    });
+
+    const response = {
+      usuarios,
+      totalUsuarios: usuarios.length,
+      totalLeads: usuarios.reduce((sum, u) => sum + u.totalLeads, 0),
+      etapas: clickup.ETAPAS,
+      timestamp: new Date().toISOString()
+    };
+
+    res.writeHead(200);
+    return res.end(JSON.stringify(response));
+  } catch (error) {
+    console.error('Erro ao buscar funil por usuário:', error.message);
+    res.writeHead(500);
+    return res.end(JSON.stringify({
+      error: 'Erro ao sincronizar com ClickUp',
+      message: error.message,
+    }));
+  }
 };

@@ -130,7 +130,52 @@ async function loadDistribuicao() {
  * Nova estrutura para refatoração do funil
  */
 async function loadFunilByUser() {
-  return getMockFunilByUser();
+  try {
+    if (!CLICKUP_API_KEY) {
+      return getMockFunilByUser();
+    }
+
+    const CRM_VENDAS_LIST_ID = process.env.CLICKUP_CRM_VENDAS_ID || '12345';
+    const response = await fetchClickUpList(CRM_VENDAS_LIST_ID);
+
+    const ETAPAS = ['Prospecção', 'Stand By', 'Qualificado', 'Reunião Agendada', 'Apresentação', 'Follow-Up', 'Pago'];
+    const funilByUser = {};
+
+    (response.tasks || []).forEach((task) => {
+      const assignee = task.assignees?.[0];
+      const userName = assignee?.username || 'Sem Responsável';
+
+      let etapa = task.status?.status || 'Prospecção';
+      const etapaMatch = ETAPAS.find(e =>
+        e.toLowerCase() === etapa.toLowerCase() ||
+        task.name?.toLowerCase().includes(e.toLowerCase())
+      ) || 'Prospecção';
+
+      if (!funilByUser[userName]) {
+        funilByUser[userName] = {
+          nome: userName,
+          etapas: {}
+        };
+        ETAPAS.forEach(e => {
+          funilByUser[userName].etapas[e] = [];
+        });
+      }
+
+      if (funilByUser[userName].etapas[etapaMatch]) {
+        funilByUser[userName].etapas[etapaMatch].push({
+          id: task.id,
+          nome: task.name || 'Sem nome',
+          email: task.custom_fields?.find(f => f.id === 'email')?.value || '',
+          valor: task.custom_fields?.find(f => f.id === 'valor')?.value || 0,
+        });
+      }
+    });
+
+    return funilByUser;
+  } catch (error) {
+    console.error('Erro ao buscar funil por usuário:', error.message);
+    return getMockFunilByUser();
+  }
 }
 
 /**
