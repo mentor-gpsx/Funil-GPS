@@ -16,50 +16,56 @@ const cache = {
 };
 
 /**
- * Fetch de lista ClickUp com tarefas (com paginação)
+ * Fetch de lista ClickUp com tarefas
  */
 async function fetchClickUpList(listId) {
-  const allTasks = [];
-  let offset = 0;
-  const limit = 100;
+  return new Promise((resolve, reject) => {
+    if (!CLICKUP_API_KEY) {
+      return reject(new Error('CLICKUP_API_KEY não configurada'));
+    }
 
-  while (true) {
-    const tasks = await new Promise((resolve, reject) => {
-      const options = {
-        hostname: 'api.clickup.com',
-        port: 443,
-        path: `/api/v2/list/${listId}/task?include_subtasks=false&limit=${limit}&offset=${offset}`,
-        method: 'GET',
-        headers: {
-          'Authorization': CLICKUP_API_KEY,
-          'Content-Type': 'application/json',
-        },
-      };
+    const options = {
+      hostname: 'api.clickup.com',
+      port: 443,
+      path: `/api/v2/list/${listId}/task?include_subtasks=false&limit=500&order_by=created&order_direction=asc`,
+      method: 'GET',
+      headers: {
+        'Authorization': CLICKUP_API_KEY,
+        'Content-Type': 'application/json',
+      },
+    };
 
-      const req = https.request(options, (res) => {
-        let data = '';
-        res.on('data', (chunk) => { data += chunk; });
-        res.on('end', () => {
-          try {
-            const parsed = JSON.parse(data);
-            resolve(parsed.tasks || []);
-          } catch (e) {
-            reject(new Error('Invalid JSON from ClickUp'));
+    const req = https.request(options, (res) => {
+      let data = '';
+      res.on('data', (chunk) => { data += chunk; });
+      res.on('end', () => {
+        try {
+          const parsed = JSON.parse(data);
+          console.log(`[ClickUp] Status ${res.statusCode}, Tasks: ${parsed.tasks?.length || 0}`);
+
+          if (res.statusCode !== 200) {
+            return reject(new Error(`ClickUp API error ${res.statusCode}: ${parsed.err || 'Unknown error'}`));
           }
-        });
-      });
 
-      req.on('error', (error) => reject(error));
-      req.setTimeout(10000);
-      req.end();
+          resolve(parsed);
+        } catch (e) {
+          reject(new Error(`Invalid JSON from ClickUp: ${e.message}`));
+        }
+      });
     });
 
-    allTasks.push(...tasks);
-    if (tasks.length < limit) break; // última página
-    offset += limit;
-  }
+    req.on('error', (error) => {
+      console.error('[ClickUp] Request error:', error.message);
+      reject(error);
+    });
 
-  return { tasks: allTasks };
+    req.setTimeout(15000, () => {
+      req.abort();
+      reject(new Error('ClickUp API timeout after 15s'));
+    });
+
+    req.end();
+  });
 }
 
 /**
