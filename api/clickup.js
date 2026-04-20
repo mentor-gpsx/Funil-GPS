@@ -131,12 +131,17 @@ async function loadDistribuicao() {
  */
 async function loadFunilByUser() {
   try {
+    console.log('[ClickUp] CLICKUP_API_KEY:', CLICKUP_API_KEY ? 'SET' : 'EMPTY');
+    console.log('[ClickUp] CLICKUP_CRM_VENDAS_ID:', process.env.CLICKUP_CRM_VENDAS_ID);
+
     if (!CLICKUP_API_KEY) {
+      console.log('[ClickUp] Using mock data - API key not set');
       return getMockFunilByUser();
     }
 
     const CRM_VENDAS_LIST_ID = process.env.CLICKUP_CRM_VENDAS_ID || '12345';
     const response = await fetchClickUpList(CRM_VENDAS_LIST_ID);
+    console.log('[ClickUp] Response tasks:', response.tasks ? response.tasks.length : 'null');
 
     const ETAPAS = ['Prospecção', 'Stand By', 'Qualificado', 'Reunião Agendada', 'Apresentação', 'Follow-Up', 'Pago'];
     const funilByUser = {};
