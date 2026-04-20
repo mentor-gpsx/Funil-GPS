@@ -1245,9 +1245,6 @@ canvas.roleta-canvas{border-radius:50%;box-shadow:0 8px 32px rgba(0,0,0,.18);}
     <div class="sec-head">Leads por Etapa (Expansível)</div>
     <div class="funnel-accordion-card" id="funil-accordion-maria"></div>
 
-    <div class="sec-head">Distribuição do Funil</div>
-    <div class="funnel-card"><div id="fn-maria"></div></div>
-
     <div class="chart-card">
       <div class="card-hd">
         <div class="card-title">Volume por Etapa</div>
@@ -1290,9 +1287,6 @@ canvas.roleta-canvas{border-radius:50%;box-shadow:0 8px 32px rgba(0,0,0,.18);}
     <div class="sec-head">Leads por Etapa (Expansível)</div>
     <div class="funnel-accordion-card" id="funil-accordion-nicolas"></div>
 
-    <div class="sec-head">Distribuição do Funil</div>
-    <div class="funnel-card"><div id="fn-nicolas"></div></div>
-
     <div class="chart-card">
       <div class="card-hd">
         <div class="card-title">Volume por Etapa</div>
@@ -1333,8 +1327,6 @@ canvas.roleta-canvas{border-radius:50%;box-shadow:0 8px 32px rgba(0,0,0,.18);}
     </div>
     <div class="sec-head">Leads por Etapa (Expansível)</div>
     <div class="funnel-accordion-card" id="funil-accordion-kennyd"></div>
-    <div class="sec-head">Distribuição do Funil</div>
-    <div class="funnel-card"><div id="fn-kennyd"></div></div>
     <div class="chart-card">
       <div class="card-hd">
         <div class="card-title">Volume por Etapa</div>
@@ -1371,8 +1363,6 @@ canvas.roleta-canvas{border-radius:50%;box-shadow:0 8px 32px rgba(0,0,0,.18);}
     </div>
     <div class="sec-head">Leads por Etapa (Expansível)</div>
     <div class="funnel-accordion-card" id="funil-accordion-gabriel"></div>
-    <div class="sec-head">Distribuição do Funil</div>
-    <div class="funnel-card"><div id="fn-gabriel"></div></div>
     <div class="chart-card">
       <div class="card-hd">
         <div class="card-title">Volume por Etapa</div>
@@ -4377,85 +4367,6 @@ async function renderAdminRoletas() {
     </div>`;
 }
 
-// ── NOVO: Distribuição do Funil (Story 1) ──────────────────────────
-
-async function loadDistribuicaoFunil() {
-  const container = document.getElementById('distribuicao-container');
-  const statusEl = document.getElementById('dist-sync-status');
-  const dotEl = document.getElementById('dist-sync-dot');
-
-  if (!container) return; // Aba não foi renderizada
-
-  try {
-    // Atualizar status
-    dotEl?.classList.add('loading');
-    statusEl.style.color = 'var(--amber)';
-    statusEl.innerHTML = '<span class="sync-dot loading"></span><span>Sincronizando com ClickUp...</span>';
-
-    // Fetch distribuição
-    const response = await fetch('/api/distribuicao');
-    if (!response.ok) throw new Error(`HTTP ${response.status}`);
-
-    const data = await response.json();
-    const { etapas, distribuicao, total_clientes } = data;
-
-    // Renderizar acordeões
-    container.innerHTML = '';
-    etapas.forEach((etapa, idx) => {
-      const clientes = distribuicao[etapa] || [];
-      const count = clientes.length;
-
-      const details = document.createElement('details');
-      details.style.cssText = 'background:var(--silver);border-radius:var(--r-sm);padding:0;overflow:hidden;border:1px solid var(--border)';
-
-      const summary = document.createElement('summary');
-      summary.style.cssText = 'cursor:pointer;padding:12px 16px;display:flex;justify-content:space-between;align-items:center;user-select:none;transition:background .2s';
-      summary.innerHTML = `
-        <span style="font-weight:600;font-size:14px">${etapa}</span>
-        <span style="background:var(--blue-b);color:var(--blue);padding:4px 10px;border-radius:var(--r-xs);font-size:12px;font-weight:600">${count}</span>
-      `;
-
-      // Hover effect
-      summary.onmouseover = () => { details.style.background = 'var(--white)'; };
-      summary.onmouseout = () => { details.style.background = 'var(--silver)'; };
-
-      // Conteúdo (clientes)
-      const content = document.createElement('div');
-      content.style.cssText = 'padding:12px 16px;border-top:1px solid var(--border);background:var(--white)';
-
-      if (count === 0) {
-        content.innerHTML = '<p style="font-size:12px;color:var(--muted);margin:0">Nenhum cliente nesta etapa</p>';
-      } else {
-        content.innerHTML = `<div style="display:grid;gap:8px">
-          ${clientes.map(c => `
-            <div style="padding:8px 12px;background:var(--silver);border-radius:var(--r-xs);font-size:13px">
-              <div style="font-weight:600;margin-bottom:4px">${c.nome}</div>
-              <div style="color:var(--muted);font-size:11px">
-                ${c.email ? `📧 ${c.email}` : ''}
-                ${c.valor ? ` • 💰 R$ ${(c.valor/1000).toFixed(1)}K` : ''}
-              </div>
-            </div>
-          `).join('')}
-        </div>`;
-      }
-
-      details.appendChild(summary);
-      details.appendChild(content);
-      container.appendChild(details);
-    });
-
-    // Status OK
-    dotEl?.classList.remove('loading');
-    statusEl.style.color = 'var(--green)';
-    statusEl.innerHTML = `<span class="sync-dot"></span><span>Sincronizado • ${total_clientes} clientes • ${new Date().toLocaleTimeString()}</span>`;
-  } catch (error) {
-    console.error('[Distribuição] Erro:', error.message);
-    dotEl?.classList.remove('loading');
-    statusEl.style.color = 'var(--red)';
-    statusEl.innerHTML = `<span class="sync-dot error"></span><span>Erro na sincronização</span>`;
-  }
-}
-
 // ── NOVO: Funil por Usuário → Etapa → Leads (Accordions) ──────────
 
 async function loadFunilAccordions() {
@@ -4950,10 +4861,6 @@ async function logout() {
   carregarDadosClickUp(true);
   setInterval(() => carregarDadosClickUp(false), CONFIG.INTERVAL);
   roletaInit();
-
-  // NEW: Inicializar Distribuição do Funil
-  loadDistribuicaoFunil();
-  setInterval(loadDistribuicaoFunil, 5 * 60 * 1000); // Sync a cada 5 min
 
   // NEW: Inicializar Funil por Usuário → Etapa → Leads (Accordions)
   loadFunilAccordions();

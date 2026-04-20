@@ -197,11 +197,74 @@ module.exports = async (req, res) => {
 async function syncClickUpUsersWithProfiles() {
   try {
     const clickup = require('./clickup');
-    // Fazer sync de usuários - pode ser expandido para usar ClickUp API
-    // Por enquanto, apenas garante que usuários existem
-    console.log('✓ Sincronização de usuários ClickUp concluída');
+    console.log('[Sync] Iniciando sincronização ClickUp→Permissões...');
+
+    // 1. Buscar usuários do ClickUp
+    const clickupUsers = await clickup.fetchClickUpUsers();
+    console.log(`[Sync] Encontrados ${clickupUsers.length} usuários no ClickUp`);
+
+    // 2. Para cada usuário, criar/atualizar perfil no Supabase
+    for (const clickupUser of clickupUsers) {
+      const { id: clickup_id, username, email, role } = clickupUser;
+
+      // Mapear role ClickUp → nossos roles
+      const our_role = role === 'owner' || role === 'admin' ? 'admin' : 'user';
+
+      // Upsert no Supabase
+      const { error } = await supabase
+        .from('profiles')
+        .upsert({
+          id: clickup_id,
+          email: email || `${username}@clickup.local`,
+          display_name: username,
+          role: our_role,
+          clickup_username: username,
+          updated_at: new Date().toISOString(),
+        }, {
+          onConflict: 'id'
+        });
+
+      if (error) {
+        console.error(`[Sync] Erro ao sincronizar ${username}:`, error.message);
+      } else {
+        console.log(`[Sync] ✓ Sincronizado: ${username} (${our_role})`);
+        await initializeTabPermissionsForUser(clickup_id, our_role);
+      }
+    }
+
+    console.log('[Sync] ✓ Sincronização concluída com sucesso');
+    return { success: true, synced: clickupUsers.length };
+
   } catch (error) {
-    console.error('Erro ao sincronizar usuários ClickUp:', error.message);
+    console.error('[Sync] Erro crítico:', error.message);
+    throw error;
+  }
+}
+
+/**
+ * Inicializar permissões padrão para um usuário
+ */
+async function initializeTabPermissionsForUser(userId, role) {
+  try {
+    const permissions = DEFAULT_PERMISSIONS[role] || DEFAULT_PERMISSIONS.user;
+    const records = [];
+
+    TODAS_ABAS.forEach((aba) => {
+      records.push({
+        tab_key: aba.key,
+        user_id: userId,
+        has_access: permissions[aba.key] || false,
+        created_at: new Date().toISOString(),
+      });
+    });
+
+    if (records.length > 0) {
+      await supabase
+        .from('tab_permissions')
+        .upsert(records, { onConflict: 'tab_key,user_id' });
+    }
+  } catch (error) {
+    console.error('[Sync] Erro ao criar permissões:', error.message);
   }
 }
 

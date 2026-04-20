@@ -268,9 +268,51 @@ function clearCache() {
   cache.timestamp = null;
 }
 
+/**
+ * Buscar usuários do ClickUp pelo Team ID
+ */
+async function fetchClickUpUsers() {
+  const TEAM_ID = process.env.CLICKUP_TEAM_ID || '9013550760';
+
+  return new Promise((resolve, reject) => {
+    const options = {
+      hostname: 'api.clickup.com',
+      port: 443,
+      path: `/api/v2/team/${TEAM_ID}/member`,
+      method: 'GET',
+      headers: {
+        'Authorization': CLICKUP_API_KEY,
+        'Content-Type': 'application/json',
+      },
+    };
+
+    const req = https.request(options, (res) => {
+      let data = '';
+      res.on('data', chunk => { data += chunk; });
+      res.on('end', () => {
+        try {
+          const json = JSON.parse(data);
+          if (json.err) {
+            reject(new Error(`ClickUp API: ${json.err}`));
+          } else {
+            resolve(json.members || []);
+          }
+        } catch (e) {
+          reject(new Error('Invalid JSON from ClickUp'));
+        }
+      });
+    });
+
+    req.on('error', reject);
+    req.setTimeout(10000);
+    req.end();
+  });
+}
+
 module.exports = {
   loadDistribuicao,
   loadFunilByUser,
+  fetchClickUpUsers,
   clearCache,
   ETAPAS: ['Prospecção', 'Stand By', 'Qualificado', 'Reunião Agendada', 'Apresentação', 'Follow-Up', 'Pago'],
 };
