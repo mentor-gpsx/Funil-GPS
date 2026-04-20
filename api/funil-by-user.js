@@ -48,7 +48,11 @@ module.exports = async (req, res) => {
       totalUsuarios: usuarios.length,
       totalLeads: usuarios.reduce((sum, u) => sum + u.totalLeads, 0),
       etapas: clickup.ETAPAS,
-      timestamp: new Date().toISOString()
+      timestamp: new Date().toISOString(),
+      _debug: {
+        funilByUserKeys: Object.keys(funilByUser),
+        funilByUserType: typeof funilByUser
+      }
     };
 
     res.writeHead(200);
