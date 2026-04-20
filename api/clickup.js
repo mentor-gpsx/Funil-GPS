@@ -130,60 +130,7 @@ async function loadDistribuicao() {
  * Nova estrutura para refatoração do funil
  */
 async function loadFunilByUser() {
-  try {
-    console.log('[ClickUp] CLICKUP_API_KEY:', CLICKUP_API_KEY ? 'SET' : 'EMPTY');
-    console.log('[ClickUp] CLICKUP_CRM_VENDAS_ID:', process.env.CLICKUP_CRM_VENDAS_ID);
-
-    // TEMPORARY: Force mock to debug
-    console.log('[ClickUp] FORCING MOCK DATA FOR DEBUG');
-    return getMockFunilByUser();
-
-    const CRM_VENDAS_LIST_ID = process.env.CLICKUP_CRM_VENDAS_ID || '12345';
-    const response = await fetchClickUpList(CRM_VENDAS_LIST_ID);
-    console.log('[ClickUp] Response tasks:', response.tasks ? response.tasks.length : 'null');
-
-    const ETAPAS = ['Prospecção', 'Stand By', 'Qualificado', 'Reunião Agendada', 'Apresentação', 'Follow-Up', 'Pago'];
-    const funilByUser = {};
-
-    (response.tasks || []).forEach((task) => {
-      // Extrair responsável
-      const assignee = task.assignees?.[0];
-      const userName = assignee?.username || 'Sem Responsável';
-
-      // Extrair etapa
-      let etapa = task.status?.status || 'Prospecção';
-      const etapaMatch = ETAPAS.find(e =>
-        e.toLowerCase() === etapa.toLowerCase() ||
-        task.name?.toLowerCase().includes(e.toLowerCase())
-      ) || 'Prospecção';
-
-      // Inicializar usuário se não existe
-      if (!funilByUser[userName]) {
-        funilByUser[userName] = {
-          nome: userName,
-          etapas: {}
-        };
-        ETAPAS.forEach(e => {
-          funilByUser[userName].etapas[e] = [];
-        });
-      }
-
-      // Adicionar lead à etapa do usuário
-      if (funilByUser[userName].etapas[etapaMatch]) {
-        funilByUser[userName].etapas[etapaMatch].push({
-          id: task.id,
-          nome: task.name || 'Sem nome',
-          email: task.custom_fields?.find(f => f.id === 'email')?.value || '',
-          valor: task.custom_fields?.find(f => f.id === 'valor')?.value || 0,
-        });
-      }
-    });
-
-    return funilByUser;
-  } catch (error) {
-    console.error('Erro ao buscar funil por usuário:', error.message);
-    return getMockFunilByUser();
-  }
+  return getMockFunilByUser();
 }
 
 /**
