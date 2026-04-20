@@ -16,37 +16,50 @@ const cache = {
 };
 
 /**
- * Fetch de lista ClickUp com tarefas
+ * Fetch de lista ClickUp com tarefas (com paginação)
  */
 async function fetchClickUpList(listId) {
-  return new Promise((resolve, reject) => {
-    const options = {
-      hostname: 'api.clickup.com',
-      port: 443,
-      path: `/api/v2/list/${listId}/task?include_subtasks=false&limit=200`,
-      method: 'GET',
-      headers: {
-        'Authorization': CLICKUP_API_KEY,
-        'Content-Type': 'application/json',
-      },
-    };
+  const allTasks = [];
+  let offset = 0;
+  const limit = 100;
 
-    const req = https.request(options, (res) => {
-      let data = '';
-      res.on('data', (chunk) => { data += chunk; });
-      res.on('end', () => {
-        try {
-          resolve(JSON.parse(data));
-        } catch (e) {
-          reject(new Error('Invalid JSON from ClickUp'));
-        }
+  while (true) {
+    const tasks = await new Promise((resolve, reject) => {
+      const options = {
+        hostname: 'api.clickup.com',
+        port: 443,
+        path: `/api/v2/list/${listId}/task?include_subtasks=false&limit=${limit}&offset=${offset}`,
+        method: 'GET',
+        headers: {
+          'Authorization': CLICKUP_API_KEY,
+          'Content-Type': 'application/json',
+        },
+      };
+
+      const req = https.request(options, (res) => {
+        let data = '';
+        res.on('data', (chunk) => { data += chunk; });
+        res.on('end', () => {
+          try {
+            const parsed = JSON.parse(data);
+            resolve(parsed.tasks || []);
+          } catch (e) {
+            reject(new Error('Invalid JSON from ClickUp'));
+          }
+        });
       });
+
+      req.on('error', (error) => reject(error));
+      req.setTimeout(10000);
+      req.end();
     });
 
-    req.on('error', (error) => reject(error));
-    req.setTimeout(10000); // 10s timeout
-    req.end();
-  });
+    allTasks.push(...tasks);
+    if (tasks.length < limit) break; // última página
+    offset += limit;
+  }
+
+  return { tasks: allTasks };
 }
 
 /**
@@ -107,8 +120,8 @@ async function loadDistribuicao() {
       return getMockDistribuicao();
     }
 
-    // IDs do ClickUp (você deve configurar esses)
-    const CRM_VENDAS_LIST_ID = process.env.CLICKUP_CRM_VENDAS_ID || '12345';
+    // Use List ID correto do CRM-VENDAS
+    const CRM_VENDAS_LIST_ID = process.env.CLICKUP_CRM_VENDAS_ID || '901309503357';
 
     const response = await fetchClickUpList(CRM_VENDAS_LIST_ID);
     const distribuicao = parseClickUpTasks(response.tasks || [], CRM_VENDAS_LIST_ID);
@@ -135,15 +148,20 @@ async function loadFunilByUser() {
       return getMockFunilByUser();
     }
 
-    const CRM_VENDAS_LIST_ID = process.env.CLICKUP_CRM_VENDAS_ID || '12345';
+    // Use List ID correto do CRM-VENDAS
+    const CRM_VENDAS_LIST_ID = process.env.CLICKUP_CRM_VENDAS_ID || '901309503357';
     const response = await fetchClickUpList(CRM_VENDAS_LIST_ID);
+    console.log(`[ClickUp] Carregadas ${response.tasks?.length || 0} tarefas do CRM-VENDAS`);
 
     const ETAPAS = ['Prospecção', 'Stand By', 'Qualificado', 'Reunião Agendada', 'Apresentação', 'Follow-Up', 'Pago'];
     const funilByUser = {};
 
     (response.tasks || []).forEach((task) => {
-      const assignee = task.assignees?.[0];
-      const userName = assignee?.username || 'Sem Responsável';
+      // Pega TODOS os assignees, não só o primeiro
+      const assignees = task.assignees || [];
+      const userNames = assignees.length > 0
+        ? assignees.map(a => a.username)
+        : ['Sem Responsável'];
 
       let etapa = task.status?.status || 'Prospecção';
       const etapaMatch = ETAPAS.find(e =>
@@ -151,24 +169,29 @@ async function loadFunilByUser() {
         task.name?.toLowerCase().includes(e.toLowerCase())
       ) || 'Prospecção';
 
-      if (!funilByUser[userName]) {
-        funilByUser[userName] = {
-          nome: userName,
-          etapas: {}
-        };
-        ETAPAS.forEach(e => {
-          funilByUser[userName].etapas[e] = [];
-        });
-      }
+      const leadData = {
+        id: task.id,
+        nome: task.name || 'Sem nome',
+        email: task.custom_fields?.find(f => f.id === 'email')?.value || '',
+        valor: task.custom_fields?.find(f => f.id === 'valor')?.value || 0,
+      };
 
-      if (funilByUser[userName].etapas[etapaMatch]) {
-        funilByUser[userName].etapas[etapaMatch].push({
-          id: task.id,
-          nome: task.name || 'Sem nome',
-          email: task.custom_fields?.find(f => f.id === 'email')?.value || '',
-          valor: task.custom_fields?.find(f => f.id === 'valor')?.value || 0,
-        });
-      }
+      // Adiciona tarefa para cada assignee
+      userNames.forEach(userName => {
+        if (!funilByUser[userName]) {
+          funilByUser[userName] = {
+            nome: userName,
+            etapas: {}
+          };
+          ETAPAS.forEach(e => {
+            funilByUser[userName].etapas[e] = [];
+          });
+        }
+
+        if (funilByUser[userName].etapas[etapaMatch]) {
+          funilByUser[userName].etapas[etapaMatch].push(leadData);
+        }
+      });
     });
 
     return funilByUser;
