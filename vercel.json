@@ -1,10 +1,6 @@
 {
   "outputDirectory": ".",
-  "api": {
-    "builder": "@vercel/node@3.x"
-  },
   "rewrites": [
-    { "source": "/", "destination": "/login.html" },
-    { "source": "/api/:path*", "destination": "/api/:path*" }
+    { "source": "/", "destination": "/login.html" }
   ]
 }
