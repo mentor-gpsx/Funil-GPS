@@ -23,7 +23,7 @@ async function fetchClickUpList(listId) {
     const options = {
       hostname: 'api.clickup.com',
       port: 443,
-      path: `/api/v2/list/${listId}/task?include_subtasks=false&limit=100`,
+      path: `/api/v2/list/${listId}/task?include_subtasks=false&limit=500`,
       method: 'GET',
       headers: {
         'Authorization': CLICKUP_API_KEY,
