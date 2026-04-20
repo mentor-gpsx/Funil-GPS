@@ -24,6 +24,8 @@ module.exports = async (req, res) => {
   try {
     // Carregar dados agrupados por usuário
     const funilByUser = await clickup.loadFunilByUser();
+    console.log('[funil-by-user] funilByUser keys:', Object.keys(funilByUser));
+    console.log('[funil-by-user] funilByUser:', JSON.stringify(funilByUser).substring(0, 100));
 
     // Calcular estatísticas
     const usuarios = Object.keys(funilByUser).map(userName => {
