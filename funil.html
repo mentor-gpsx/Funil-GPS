@@ -2059,7 +2059,8 @@ function renderFechamentos() {
       ? [{ v: 'R$\u00A0' + ticket.toLocaleString('pt-BR', {minimumFractionDigits: 0}), l: 'Ticket Médio' }]
       : []),
   ];
-  document.getElementById('cf-kpis').innerHTML =
+  const cfKpisEl = document.getElementById('cf-kpis');
+  if (cfKpisEl) cfKpisEl.innerHTML =
     `<div class="kpi-row">${cfKpiItems.map(k =>
       `<div class="kpi ${k.h?'highlight':''}"><div class="kpi-v">${k.v}</div><div class="kpi-l">${k.l}</div></div>`
     ).join('')}</div>${momHtml ? `<div style="margin-top:6px;margin-bottom:4px">${momHtml}</div>` : ''}`;
@@ -2068,8 +2069,10 @@ function renderFechamentos() {
   renderRevenueChart(cfSeller);
 
   // Fechamentos list grouped by month
+  const cfListEl = document.getElementById('cf-list');
+  if (!cfListEl) return;
   if (filtClosed.length === 0) {
-    document.getElementById('cf-list').innerHTML =
+    cfListEl.innerHTML =
       `<div class="ctrl-empty">Nenhum fechamento encontrado. Os dados são carregados a partir do campo "Data do pagamento" no CRM-VENDAS e no CRM OFICIAL.</div>`;
   } else {
     const groups = {};
@@ -2094,7 +2097,7 @@ function renderFechamentos() {
           <span class="ctrl-group-count">${groups[k].length} fechamento${groups[k].length>1?'s':''}</span>
         </div>${rows}`;
     }).join('');
-    document.getElementById('cf-list').innerHTML = `
+    cfListEl.innerHTML = `
       <div class="ctrl-table-wrap">
         <div class="ctrl-table-hd ctrl-cols-5">
           <div>Cliente</div><div>Responsável</div><div>Data Pagamento</div><div>Valor Pago</div><div>Status</div>
@@ -3177,10 +3180,13 @@ function renderSeller(key) {
   const fuLabel      = aSecIdx  >= 0 ? activeStages[aSecIdx].label  : 'Follow-Up';
 
   // TAB PILL — total includes passive (real headcount)
-  document.getElementById(`pill-${key}`).textContent = total || '–';
+  const pillEl = document.getElementById(`pill-${key}`);
+  if (pillEl) pillEl.textContent = total || '–';
 
   // KPI — Fundo Funil uses ACTIVE stages only
-  document.getElementById(`kpi-${key}`).innerHTML = [
+  const kpiEl = document.getElementById(`kpi-${key}`);
+  if (!kpiEl) return;
+  kpiEl.innerHTML = [
     { v: total,                      l: 'Total Funil' },
     { v: bottomFunnel,               l: 'Fundo Funil',  h: bottomFunnel > 0 },
     { v: activeArr[aLastIdx]||0,     l: negLabel,       h: (activeArr[aLastIdx]||0) > 0 },
@@ -3275,10 +3281,13 @@ function renderSeller(key) {
       </div>`);
   });
 
-  document.getElementById(`fn-${key}`).innerHTML = `<div class="fn-stages">${funnelRows.join('')}</div>`;
+  const fnEl = document.getElementById(`fn-${key}`);
+  if (fnEl) fnEl.innerHTML = `<div class="fn-stages">${funnelRows.join('')}</div>`;
 
   // CHART — passive bars are grey/desaturated
-  const ctx = document.getElementById(`chart-${key}`).getContext('2d');
+  const chartEl = document.getElementById(`chart-${key}`);
+  if (!chartEl) return;
+  const ctx = chartEl.getContext('2d');
   if (charts[key]) charts[key].destroy();
 
   const chartH = 210;
