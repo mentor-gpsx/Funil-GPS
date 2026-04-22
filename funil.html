@@ -4377,22 +4377,23 @@ async function loadFunilAccordions() {
     const data = await response.json();
     const { usuarios } = data;
 
-    // Renderizar accordions para cada usuário
-    ['maria', 'nicolas', 'kennyd', 'gabriel'].forEach(userKey => {
+    // Renderizar accordions para cada usuário — dinâmico, sem hardcoded 4-user filter
+    usuarios.forEach(userData => {
+      const userKey = userData.nome.toLowerCase().replace(/\s+/g, '_');
       const container = document.getElementById(`funil-accordion-${userKey}`);
-      if (!container) return;
 
-      // Encontrar dados do usuário
-      let userData = null;
-      if (userKey === 'maria') userData = usuarios.find(u => u.nome.toLowerCase().includes('maria'));
-      else if (userKey === 'nicolas') userData = usuarios.find(u => u.nome.toLowerCase().includes('nicolas'));
-      else if (userKey === 'kennyd') userData = usuarios.find(u => u.nome.toLowerCase().includes('kennyd'));
-      else if (userKey === 'gabriel') userData = usuarios.find(u => u.nome.toLowerCase().includes('gabriel'));
+      // Se container não existe, criar dinamicamente
+      if (!container) {
+        const newContainer = document.createElement('div');
+        newContainer.id = `funil-accordion-${userKey}`;
+        newContainer.className = 'accordion-section';
+        document.querySelector('.funil-container')?.appendChild(newContainer);
+      }
 
-      if (!userData) return;
+      const renderContainer = document.getElementById(`funil-accordion-${userKey}`) || container;
 
       // Limpar container
-      container.innerHTML = '';
+      renderContainer.innerHTML = '';
 
       // Criar accordion para cada etapa
       data.etapas.forEach((etapa, idx) => {
@@ -4424,7 +4425,7 @@ async function loadFunilAccordions() {
             }
           </div>
         `;
-        container.appendChild(itemDiv);
+        renderContainer.appendChild(itemDiv);
       });
     });
   } catch (error) {
