@@ -139,7 +139,7 @@ async function loadDistribuicao() {
     }
 
     // Use List ID correto do CRM-VENDAS
-    const CRM_VENDAS_LIST_ID = process.env.CLICKUP_CRM_VENDAS_ID || '901309503357';
+    const CRM_VENDAS_LIST_ID = process.env.CLICKUP_LIST_ID || '901309503357';
 
     const response = await fetchClickUpList(CRM_VENDAS_LIST_ID);
     const distribuicao = parseClickUpTasks(response.tasks || [], CRM_VENDAS_LIST_ID);
@@ -167,7 +167,7 @@ async function loadFunilByUser() {
     }
 
     // Use List ID correto do CRM-VENDAS
-    const CRM_VENDAS_LIST_ID = process.env.CLICKUP_CRM_VENDAS_ID || '901309503357';
+    const CRM_VENDAS_LIST_ID = process.env.CLICKUP_LIST_ID || '901309503357';
     const response = await fetchClickUpList(CRM_VENDAS_LIST_ID);
     console.log(`[ClickUp] Carregadas ${response.tasks?.length || 0} tarefas do CRM-VENDAS`);
 
