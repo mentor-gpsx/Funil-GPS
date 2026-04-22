@@ -92,6 +92,7 @@ function parseClickUpTasks(tasks, listId) {
     'Reunião Agendada',
     'Apresentação',
     'Follow-Up',
+    'Negociação',
     'Pago',
   ];
 
@@ -171,7 +172,7 @@ async function loadFunilByUser() {
     const response = await fetchClickUpList(CRM_VENDAS_LIST_ID);
     console.log(`[ClickUp] Carregadas ${response.tasks?.length || 0} tarefas do CRM-VENDAS`);
 
-    const ETAPAS = ['Prospecção', 'Stand By', 'Qualificado', 'Reunião Agendada', 'Apresentação', 'Follow-Up', 'Pago'];
+    const ETAPAS = ['Prospecção', 'Stand By', 'Qualificado', 'Reunião Agendada', 'Apresentação', 'Follow-Up', 'Negociação', 'Pago'];
     const funilByUser = {};
 
     (response.tasks || []).forEach((task) => {
@@ -254,7 +255,7 @@ function getMockDistribuicao() {
  * Dados mock agrupados por usuário
  */
 function getMockFunilByUser() {
-  const ETAPAS = ['Prospecção', 'Stand By', 'Qualificado', 'Reunião Agendada', 'Apresentação', 'Follow-Up', 'Pago'];
+  const ETAPAS = ['Prospecção', 'Stand By', 'Qualificado', 'Reunião Agendada', 'Apresentação', 'Follow-Up', 'Negociação', 'Pago'];
 
   return {
     'Maria Eduarda': {
