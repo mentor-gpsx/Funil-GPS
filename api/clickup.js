@@ -163,6 +163,7 @@ async function loadDistribuicao() {
  */
 async function loadFunilByUser() {
   try {
+    console.log('[ClickUp] loadFunilByUser called. API Key length:', CLICKUP_API_KEY.length, 'Key prefix:', CLICKUP_API_KEY?.substring(0, 30));
     if (!CLICKUP_API_KEY) {
       return getMockFunilByUser();
     }
