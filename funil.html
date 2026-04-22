@@ -4377,42 +4377,22 @@ async function loadFunilAccordions() {
     const data = await response.json();
     const { usuarios } = data;
 
-    // Renderizar accordions para cada usuário — dinâmico, sem hardcoded 4-user filter
-    usuarios.forEach(userData => {
-      const userKey = userData.nome.toLowerCase().split(/\s+/)[0]; // Usar só primeira palavra
-      let renderContainer = document.getElementById(`funil-accordion-${userKey}`);
+    // Renderizar accordions para cada usuário
+    ['maria', 'nicolas', 'kennyd', 'gabriel'].forEach(userKey => {
+      const container = document.getElementById(`funil-accordion-${userKey}`);
+      if (!container) return;
 
-      // Se container não existe, tentar criar dinamicamente
-      if (!renderContainer) {
-        // Tenta encontrar a view do usuário (ex: view-maria, view-nicolas, etc)
-        const viewId = `view-${userKey}`;
-        const view = document.getElementById(viewId);
+      // Encontrar dados do usuário
+      let userData = null;
+      if (userKey === 'maria') userData = usuarios.find(u => u.nome.toLowerCase().includes('maria'));
+      else if (userKey === 'nicolas') userData = usuarios.find(u => u.nome.toLowerCase().includes('nicolas'));
+      else if (userKey === 'kennyd') userData = usuarios.find(u => u.nome.toLowerCase().includes('kennyd'));
+      else if (userKey === 'gabriel') userData = usuarios.find(u => u.nome.toLowerCase().includes('gabriel'));
 
-        if (view) {
-          // Se existe a view, cria container dentro dela
-          const pageDiv = view.querySelector('.page');
-          if (pageDiv) {
-            // Insere após o hero section
-            const sectionHead = pageDiv.querySelector('.sec-head');
-            if (sectionHead) {
-              const newContainer = document.createElement('div');
-              newContainer.id = `funil-accordion-${userKey}`;
-              newContainer.className = 'funnel-accordion-card';
-              sectionHead.parentNode.insertBefore(newContainer, sectionHead.nextSibling);
-              renderContainer = newContainer;
-            }
-          }
-        }
-      }
-
-      // Se ainda não conseguiu container, pular este usuário
-      if (!renderContainer) {
-        console.warn(`[FunilAccordions] Container não encontrado para usuário "${userData.nome}"`);
-        return;
-      }
+      if (!userData) return;
 
       // Limpar container
-      renderContainer.innerHTML = '';
+      container.innerHTML = '';
 
       // Criar accordion para cada etapa
       data.etapas.forEach((etapa, idx) => {
@@ -4444,7 +4424,7 @@ async function loadFunilAccordions() {
             }
           </div>
         `;
-        renderContainer.appendChild(itemDiv);
+        container.appendChild(itemDiv);
       });
     });
   } catch (error) {
