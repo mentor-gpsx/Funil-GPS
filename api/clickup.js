@@ -356,5 +356,5 @@ module.exports = {
   loadFunilByUser,
   fetchClickUpUsers,
   clearCache,
-  ETAPAS: ['Prospecção', 'Stand By', 'Qualificado', 'Reunião Agendada', 'Apresentação', 'Follow-Up', 'Pago'],
+  ETAPAS: ['Prospecção', 'Stand By', 'Qualificado', 'Reunião Agendada', 'Apresentação', 'Follow-Up', 'Negociação', 'Pago'],
 };
