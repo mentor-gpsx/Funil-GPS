@@ -9,6 +9,7 @@
     "@supabase/supabase-js": "^2.47.0"
   },
   "devDependencies": {
+    "dotenv": "^16.0.0",
     "supabase": "^2.92.1"
   }
 }

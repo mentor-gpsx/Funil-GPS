@@ -16,56 +16,68 @@ const cache = {
 };
 
 /**
- * Fetch de lista ClickUp com tarefas
+ * Fetch de lista ClickUp com tarefas (com paginação)
  */
 async function fetchClickUpList(listId) {
-  return new Promise((resolve, reject) => {
-    if (!CLICKUP_API_KEY) {
-      return reject(new Error('CLICKUP_API_KEY não configurada'));
-    }
+  const allTasks = [];
+  let page = 0;
 
-    const options = {
-      hostname: 'api.clickup.com',
-      port: 443,
-      path: `/api/v2/list/${listId}/task?include_subtasks=false&limit=500&order_by=created&order_direction=asc`,
-      method: 'GET',
-      headers: {
-        'Authorization': CLICKUP_API_KEY,
-        'Content-Type': 'application/json',
-      },
-    };
+  while (true) {
+    const tasks = await new Promise((resolve, reject) => {
+      if (!CLICKUP_API_KEY) {
+        return reject(new Error('CLICKUP_API_KEY não configurada'));
+      }
 
-    const req = https.request(options, (res) => {
-      let data = '';
-      res.on('data', (chunk) => { data += chunk; });
-      res.on('end', () => {
-        try {
-          const parsed = JSON.parse(data);
-          console.log(`[ClickUp] Status ${res.statusCode}, Tasks: ${parsed.tasks?.length || 0}`);
+      const options = {
+        hostname: 'api.clickup.com',
+        port: 443,
+        path: `/api/v2/list/${listId}/task?include_subtasks=false&limit=100&page=${page}&include_closed=true&archived=false&order_by=created&order_direction=asc`,
+        method: 'GET',
+        headers: {
+          'Authorization': CLICKUP_API_KEY,
+          'Content-Type': 'application/json',
+        },
+      };
 
-          if (res.statusCode !== 200) {
-            return reject(new Error(`ClickUp API error ${res.statusCode}: ${parsed.err || 'Unknown error'}`));
+      const req = https.request(options, (res) => {
+        let data = '';
+        res.on('data', (chunk) => { data += chunk; });
+        res.on('end', () => {
+          try {
+            const parsed = JSON.parse(data);
+
+            if (res.statusCode !== 200) {
+              return reject(new Error(`ClickUp API error ${res.statusCode}: ${parsed.err || 'Unknown error'}`));
+            }
+
+            resolve(parsed.tasks || []);
+          } catch (e) {
+            reject(new Error(`Invalid JSON from ClickUp: ${e.message}`));
           }
-
-          resolve(parsed);
-        } catch (e) {
-          reject(new Error(`Invalid JSON from ClickUp: ${e.message}`));
-        }
+        });
       });
+
+      req.on('error', (error) => {
+        console.error('[ClickUp] Request error:', error.message);
+        reject(error);
+      });
+
+      req.setTimeout(15000, () => {
+        req.abort();
+        reject(new Error('ClickUp API timeout after 15s'));
+      });
+
+      req.end();
     });
 
-    req.on('error', (error) => {
-      console.error('[ClickUp] Request error:', error.message);
-      reject(error);
-    });
+    allTasks.push(...tasks);
+    console.log(`[ClickUp] Page ${page}: ${tasks.length} tasks (total: ${allTasks.length})`);
 
-    req.setTimeout(15000, () => {
-      req.abort();
-      reject(new Error('ClickUp API timeout after 15s'));
-    });
+    if (tasks.length < 100) break; // última página
+    page++;
+  }
 
-    req.end();
-  });
+  return { tasks: allTasks };
 }
 
 /**
@@ -203,7 +215,7 @@ async function loadFunilByUser() {
     return funilByUser;
   } catch (error) {
     console.error('Erro ao buscar funil por usuário:', error.message);
-    return getMockFunilByUser();
+    throw error;
   }
 }
 
