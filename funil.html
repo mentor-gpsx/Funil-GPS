@@ -1215,7 +1215,7 @@ canvas.roleta-canvas{border-radius:50%;box-shadow:0 8px 32px rgba(0,0,0,.18);}
 <nav class="tab-bar">
   <button class="tb on" id="tb-visao-geral" onclick="switchTab('visao-geral')">👥 Visão Geral <span class="tb-pill" id="pill-visao-geral">–</span></button>
   <div class="tab-divider"></div>
-  <button class="tb" id="tb-maria"   onclick="switchTab('maria')">Maria Eduarda <span class="tb-pill" id="pill-maria">–</span></button>
+  <button class="tb" id="tb-maria" onclick="switchTab('maria')">Maria Eduarda <span class="tb-pill" id="pill-maria">–</span></button>
   <button class="tb"    id="tb-nicolas" onclick="switchTab('nicolas')">Nicolas <span class="tb-pill" id="pill-nicolas">–</span></button>
   <button class="tb"    id="tb-kennyd"  onclick="switchTab('kennyd')">Kennyd <span class="tb-pill" id="pill-kennyd">–</span></button>
   <button class="tb"    id="tb-gabriel" onclick="switchTab('gabriel')">Gabriel <span class="tb-pill" id="pill-gabriel">–</span></button>
@@ -1230,7 +1230,7 @@ canvas.roleta-canvas{border-radius:50%;box-shadow:0 8px 32px rgba(0,0,0,.18);}
 </nav>
 
 <!-- VIEW: VISÃO GERAL (Todos os Usuários) -->
-<div class="view on" id="view-visao-geral">
+<div class="view on" id="view-visao-geral" style="display: block;">
   <div class="page">
     <div class="hero">
       <div class="hero-id">
@@ -1778,7 +1778,7 @@ function formatLabel(raw) {
 // STATE
 // ================================================================
 const charts   = {};
-let activeTab  = 'maria';
+let activeTab  = 'visao-geral';
 let data       = {}; // populated dynamically per seller keys in CONFIG.SELLERS
 
 // Comparativo filter — which sellers are visible in the comparison tab
