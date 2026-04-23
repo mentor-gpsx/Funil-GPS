@@ -1217,6 +1217,8 @@ canvas.roleta-canvas{border-radius:50%;box-shadow:0 8px 32px rgba(0,0,0,.18);}
   <button class="tb"    id="tb-nicolas" onclick="switchTab('nicolas')">Nicolas <span class="tb-pill" id="pill-nicolas">–</span></button>
   <button class="tb"    id="tb-kennyd"  onclick="switchTab('kennyd')">Kennyd <span class="tb-pill" id="pill-kennyd">–</span></button>
   <button class="tb"    id="tb-gabriel" onclick="switchTab('gabriel')">Gabriel <span class="tb-pill" id="pill-gabriel">–</span></button>
+  <button class="tb"    id="tb-rafael" onclick="switchTab('rafael')">Rafael Simões <span class="tb-pill" id="pill-rafael">–</span></button>
+  <button class="tb"    id="tb-sem-responsavel" onclick="switchTab('sem-responsavel')">Sem Responsável <span class="tb-pill" id="pill-sem-responsavel">–</span></button>
   <div class="tab-divider"></div>
   <button class="tb"    id="tb-fechamentos" onclick="switchTab('fechamentos')">Fechamentos <span class="tb-pill" id="pill-fechamentos">–</span></button>
   <button class="tb admin-only" id="tb-cmp"     onclick="switchTab('cmp')">Comparativo</button>
@@ -1381,6 +1383,40 @@ canvas.roleta-canvas{border-radius:50%;box-shadow:0 8px 32px rgba(0,0,0,.18);}
     <div class="stages-grid" id="stages-gabriel"></div>
     <div class="sec-head">Direcionamento Estratégico</div>
     <div class="str-grid" id="strategic-gabriel"></div>
+  </div>
+</div>
+
+<!-- VIEW: RAFAEL SIMÕES -->
+<div class="view" id="view-rafael">
+  <div class="page">
+    <div class="hero">
+      <div class="hero-id">
+        <div class="avatar">RS</div>
+        <div>
+          <div class="hero-name">Rafael Simões</div>
+          <div class="hero-sub">CRM-VENDAS · Atualizado ao vivo</div>
+        </div>
+      </div>
+    </div>
+    <div class="sec-head">Leads por Etapa (Expansível)</div>
+    <div class="funnel-accordion-card" id="funil-accordion-rafael"></div>
+  </div>
+</div>
+
+<!-- VIEW: SEM RESPONSÁVEL -->
+<div class="view" id="view-sem-responsavel">
+  <div class="page">
+    <div class="hero">
+      <div class="hero-id">
+        <div class="avatar">SR</div>
+        <div>
+          <div class="hero-name">Sem Responsável</div>
+          <div class="hero-sub">CRM-VENDAS · Leads não atribuídos</div>
+        </div>
+      </div>
+    </div>
+    <div class="sec-head">Leads por Etapa (Expansível)</div>
+    <div class="funnel-accordion-card" id="funil-accordion-sem-responsavel"></div>
   </div>
 </div>
 
@@ -3804,6 +3840,9 @@ function switchTab(key) {
   if (key === 'roletas')     renderAdminRoletas();
   if (key === 'avaliador')   renderMonthlyPoints();
   if (key === 'crmscore')    renderCrmScore();
+  // Dynamically trigger loadFunilAccordions for any seller tab
+  const sellerKeys = Object.keys(CONFIG.SELLERS).concat(['sem-responsavel']);
+  if (sellerKeys.includes(key)) loadFunilAccordions();
   // Recarregar perfil para sync de permissões em tempo real
   reloadUserProfile();
 }
@@ -4380,53 +4419,74 @@ async function renderAdminRoletas() {
 
 async function loadFunilAccordions() {
   try {
+    console.log('[🔍 Accordions] Iniciando loadFunilAccordions...');
+
     const response = await fetch('/api/funil-by-user');
-    if (!response.ok) throw new Error(`HTTP ${response.status}`);
+    console.log('[🔍 Accordions] API response status:', response.status);
 
-    const data = await response.json();
-    const { usuarios } = data;
-
-    // Renderizar accordions dinamicamente para cada usuário da API
-    if (!usuarios || !Array.isArray(usuarios)) {
-      console.warn('[FunilAccordions] API não retornou usuarios array válido');
+    if (!response.ok) {
+      console.error('[❌ Accordions] API error:', response.status);
+      const text = await response.text();
+      console.error('[❌ Accordions] Response body:', text);
       return;
     }
 
+    const data = await response.json();
+    console.log('[🔍 Accordions] API data received:', data);
+
+    const { usuarios } = data;
+
+    if (!usuarios || !Array.isArray(usuarios)) {
+      console.error('[❌ Accordions] Invalid usuarios:', usuarios);
+      return;
+    }
+
+    console.log('[🔍 Accordions] Usuarios count:', usuarios.length);
+
+    const ETAPAS = ['Prospecção', 'Stand By', 'Qualificado', 'Reunião Agendada', 'Apresentação', 'Follow-Up', 'Negociação', 'Pago'];
+
     usuarios.forEach((userData, idx) => {
-      // Tentar encontrar container pelos prefixos de nome comuns
-      let container = null;
-      const nome = userData.nome.toLowerCase();
+      console.log(`[🔍 Accordions] Processando usuario ${idx}: ${userData.nome}`);
 
-      // Procurar container por correspondência de nome
-      if (nome.includes('maria')) container = document.getElementById('funil-accordion-maria');
-      else if (nome.includes('nicolas')) container = document.getElementById('funil-accordion-nicolas');
-      else if (nome.includes('kennyd')) container = document.getElementById('funil-accordion-kennyd');
-      else if (nome.includes('gabriel')) container = document.getElementById('funil-accordion-gabriel');
+      // Mapear username dinâmico para seller_key usando CONFIG.SELLERS
+      let sellerKey = null;
+      const lowerName = userData.nome.toLowerCase().trim();
 
-      if (!container) return; // Só renderiza se existe container pré-renderizado
+      // Tenta encontrar seller_key usando CONFIG.SELLERS keywords
+      for (const [sk, keywords] of Object.entries(CONFIG.SELLERS)) {
+        if (keywords.some(kw => lowerName.includes(kw.toLowerCase()))) {
+          sellerKey = sk;
+          break;
+        }
+      }
 
-      // Limpar container
-      container.innerHTML = '';
+      const containerId = sellerKey ? `funil-accordion-${sellerKey}` : `funil-accordion-sem-responsavel`;
+      let containerEl = document.getElementById(containerId);
 
-      // Criar accordion para cada etapa
-      data.etapas.forEach((etapa, idx) => {
+      if (!containerEl) {
+        console.warn(`[⚠️ Accordions] Container não encontrado para ${userData.nome} (seller: ${sellerKey})`);
+        return;
+      }
+
+      console.log(`[🔍 Accordions] Container encontrado para ${userData.nome}: ${containerId}`);
+
+      containerEl.innerHTML = '';
+
+      ETAPAS.forEach((etapa) => {
         const leads = userData.etapas[etapa] || [];
-        const count = leads.length;
-
-        const itemDiv = document.createElement('div');
-        itemDiv.className = 'accordion-item';
-        itemDiv.innerHTML = `
-          <div class="accordion-header" onclick="this.parentElement.classList.toggle('open')">
-            <div class="accordion-header-label">
-              <span>${etapa}</span>
-              <span class="accordion-header-count">${count}</span>
+        const html = `
+          <div class="accordion-item">
+            <div class="accordion-header">
+              <div class="accordion-header-label">
+                <span>${etapa}</span>
+                <span class="accordion-header-count">${leads.length}</span>
+              </div>
+              <div class="accordion-header-arrow">▼</div>
             </div>
-            <div class="accordion-header-arrow">▼</div>
-          </div>
-          <div class="accordion-body">
-            ${count === 0
-              ? '<p style="color:var(--muted);font-size:12px;margin:0">Nenhum lead nesta etapa</p>'
-              : leads.map(lead => `
+            <div class="accordion-body">
+              ${leads.length === 0
+                ? '<p style="color:var(--muted);font-size:12px;margin:0">Nenhum lead nesta etapa</p>'
+                : leads.map(lead => `
                   <div class="lead-item">
                     <div>
                       <div class="lead-name">${lead.nome}</div>
@@ -4435,14 +4495,36 @@ async function loadFunilAccordions() {
                     <div style="font-weight:600;color:var(--green)">R$ ${(lead.valor || 0).toLocaleString('pt-BR')}</div>
                   </div>
                 `).join('')
-            }
+              }
+            </div>
           </div>
         `;
-        container.appendChild(itemDiv);
+
+        const itemDiv = document.createElement('div');
+        itemDiv.innerHTML = html;
+        const accordionItem = itemDiv.firstElementChild;
+        containerEl.appendChild(accordionItem);
       });
+
+      // Adicionar event delegation listener
+      containerEl.addEventListener('click', (e) => {
+        const header = e.target.closest('.accordion-header');
+        if (header) {
+          const item = header.closest('.accordion-item');
+          if (item) {
+            item.classList.toggle('open');
+            console.log('[🔍 Accordions] Toggled open:', item.classList.contains('open'));
+          }
+        }
+      });
+
+      console.log(`[✅ Accordions] Usuario ${userData.nome} renderizado`);
     });
+
+    console.log('[✅ Accordions] Renderizado com sucesso');
   } catch (error) {
-    console.error('[FunilAccordions] Erro:', error.message);
+    console.error('[❌ Accordions] Erro completo:', error);
+    console.error('[❌ Accordions] Stack:', error.stack);
   }
 }
 
@@ -4872,13 +4954,25 @@ async function logout() {
   // Inicializar configuração de roleta por vendedor
   loadSellerRoletaConfig();
 
-  carregarDadosClickUp(true);
-  setInterval(() => carregarDadosClickUp(false), CONFIG.INTERVAL);
-  roletaInit();
+  try {
+    carregarDadosClickUp(true);
+    setInterval(() => carregarDadosClickUp(false), CONFIG.INTERVAL);
+  } catch (e) {
+    console.error('[INIT] Erro em carregarDadosClickUp:', e);
+  }
+
+  try {
+    roletaInit();
+  } catch (e) {
+    console.error('[INIT] Erro em roletaInit:', e);
+  }
 
   // NEW: Inicializar Funil por Usuário → Etapa → Leads (Accordions)
-  loadFunilAccordions();
-  setInterval(loadFunilAccordions, 5 * 60 * 1000); // Sync a cada 5 min
+  setTimeout(() => {
+    console.log('[INIT] Chamando loadFunilAccordions...');
+    loadFunilAccordions().catch(e => console.error('[INIT] Erro em loadFunilAccordions:', e));
+    setInterval(() => loadFunilAccordions().catch(e => console.error('[INIT] Erro em setInterval:', e)), 5 * 60 * 1000);
+  }, 500);
 
   // NEW: Inicializar Gerenciar Permissões
   if (_userProfile?.role === 'admin') {
