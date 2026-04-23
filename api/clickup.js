@@ -62,9 +62,9 @@ async function fetchClickUpList(listId) {
         reject(error);
       });
 
-      req.setTimeout(15000, () => {
+      req.setTimeout(45000, () => {
         req.abort();
-        reject(new Error('ClickUp API timeout after 15s'));
+        reject(new Error('ClickUp API timeout after 45s'));
       });
 
       req.end();
