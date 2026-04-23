@@ -183,6 +183,11 @@ async function loadFunilByUser() {
         ? assignees.map(a => a.username)
         : ['Sem Responsável'];
 
+      // DEBUG: Log first 5 tasks to see actual usernames
+      if (Object.keys(funilByUser).length < 100) {
+        console.log(`[ClickUp] Task: "${task.name}", Assignees:`, assignees.map(a => `${a.username}/${a.display_name}`).join(', ') || 'none');
+      }
+
       let etapa = task.status?.status || 'Prospecção';
       const etapaMatch = ETAPAS.find(e =>
         e.toLowerCase() === etapa.toLowerCase() ||
