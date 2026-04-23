@@ -1213,7 +1213,9 @@ canvas.roleta-canvas{border-radius:50%;box-shadow:0 8px 32px rgba(0,0,0,.18);}
 
 <!-- TABS -->
 <nav class="tab-bar">
-  <button class="tb on" id="tb-maria"   onclick="switchTab('maria')">Maria Eduarda <span class="tb-pill" id="pill-maria">–</span></button>
+  <button class="tb on" id="tb-visao-geral" onclick="switchTab('visao-geral')">👥 Visão Geral <span class="tb-pill" id="pill-visao-geral">–</span></button>
+  <div class="tab-divider"></div>
+  <button class="tb" id="tb-maria"   onclick="switchTab('maria')">Maria Eduarda <span class="tb-pill" id="pill-maria">–</span></button>
   <button class="tb"    id="tb-nicolas" onclick="switchTab('nicolas')">Nicolas <span class="tb-pill" id="pill-nicolas">–</span></button>
   <button class="tb"    id="tb-kennyd"  onclick="switchTab('kennyd')">Kennyd <span class="tb-pill" id="pill-kennyd">–</span></button>
   <button class="tb"    id="tb-gabriel" onclick="switchTab('gabriel')">Gabriel <span class="tb-pill" id="pill-gabriel">–</span></button>
@@ -1226,6 +1228,25 @@ canvas.roleta-canvas{border-radius:50%;box-shadow:0 8px 32px rgba(0,0,0,.18);}
   <button class="tb admin-only" id="tb-roletas" onclick="switchTab('roletas')">Roletas</button>
   <button class="tb admin-only" id="tb-perms" onclick="switchTab('perms')">⚙️ Gerenciar Permissões</button>
 </nav>
+
+<!-- VIEW: VISÃO GERAL (Todos os Usuários) -->
+<div class="view on" id="view-visao-geral">
+  <div class="page">
+    <div class="hero">
+      <div class="hero-id">
+        <div class="avatar">👥</div>
+        <div>
+          <div class="hero-name">Visão Geral</div>
+          <div class="hero-sub">CRM-VENDAS · Todos os Usuários</div>
+        </div>
+      </div>
+      <div class="kpi-row" id="kpi-visao-geral"></div>
+    </div>
+
+    <div class="sec-head">Leads por Usuário (Expansível)</div>
+    <div id="funil-visao-geral-container"></div>
+  </div>
+</div>
 
 <!-- VIEW: MARIA -->
 <div class="view on" id="view-maria">
@@ -4392,25 +4413,71 @@ async function loadFunilAccordions() {
       return;
     }
 
+    // Container para Visão Geral (todos os usuários)
+    const visaoGeralContainer = document.getElementById('funil-visao-geral-container');
+    if (visaoGeralContainer) {
+      visaoGeralContainer.innerHTML = '';
+    }
+
     usuarios.forEach((userData, idx) => {
-      // Gerar ID único baseado no nome do usuário (remover espaços e caracteres especiais)
+      // Renderizar em Visão Geral (novo container)
+      if (visaoGeralContainer) {
+        const userCard = document.createElement('div');
+        userCard.className = 'accordion-card';
+        userCard.style.marginBottom = '16px';
+        userCard.innerHTML = `
+          <div class="accordion-header" onclick="this.parentElement.classList.toggle('open')" style="background: var(--surface-secondary); cursor: pointer;">
+            <div class="accordion-header-label">
+              <span style="font-weight: 600;">${userData.nome}</span>
+              <span class="accordion-header-count">${userData.totalLeads} leads</span>
+            </div>
+            <div class="accordion-header-arrow">▼</div>
+          </div>
+          <div class="accordion-body">
+            ${data.etapas.map(etapa => {
+              const leads = userData.etapas[etapa] || [];
+              const count = leads.length;
+              return `
+                <div class="accordion-item" style="margin-bottom: 8px;">
+                  <div class="accordion-header" onclick="this.parentElement.classList.toggle('open')">
+                    <div class="accordion-header-label">
+                      <span>${etapa}</span>
+                      <span class="accordion-header-count">${count}</span>
+                    </div>
+                    <div class="accordion-header-arrow">▼</div>
+                  </div>
+                  <div class="accordion-body">
+                    ${count === 0
+                      ? '<p style="color:var(--muted);font-size:12px;margin:0">Nenhum lead nesta etapa</p>'
+                      : leads.map(lead => `
+                          <div class="lead-item">
+                            <div>
+                              <div class="lead-name">${lead.nome}</div>
+                              <div class="lead-email">${lead.email || 'sem email'}</div>
+                            </div>
+                            <div style="font-weight:600;color:var(--green)">R$ ${(lead.valor || 0).toLocaleString('pt-BR')}</div>
+                          </div>
+                        `).join('')
+                    }
+                  </div>
+                </div>
+              `;
+            }).join('')}
+          </div>
+        `;
+        visaoGeralContainer.appendChild(userCard);
+      }
+
+      // Renderizar em views individuais (para os 4 usuários hardcoded)
       const userKey = userData.nome.toLowerCase()
         .replace(/\s+/g, '-')
         .replace(/[^\w-]/g, '');
 
       const container = document.getElementById(`funil-accordion-${userKey}`);
-      // Se não há container pré-renderizado, criar um dinamicamente
-      const dynamicContainer = container || (() => {
-        const div = document.createElement('div');
-        div.id = `funil-accordion-${userKey}`;
-        div.className = 'funnel-accordion-card';
-        return div;
-      })();
-
-      if (!userData) return;
+      if (!container) return; // Só renderiza se existe container pré-renderizado
 
       // Limpar container
-      dynamicContainer.innerHTML = '';
+      container.innerHTML = '';
 
       // Criar accordion para cada etapa
       data.etapas.forEach((etapa, idx) => {
@@ -4442,7 +4509,7 @@ async function loadFunilAccordions() {
             }
           </div>
         `;
-        dynamicContainer.appendChild(itemDiv);
+        container.appendChild(itemDiv);
       });
     });
   } catch (error) {
