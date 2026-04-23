@@ -6,7 +6,7 @@
 const https = require('https');
 
 const CLICKUP_API_BASE = 'https://api.clickup.com/api/v2';
-const CLICKUP_API_KEY = process.env.CLICKUP_API_KEY || '';
+const CLICKUP_API_KEY = (process.env.CLICKUP_API_KEY || '').trim();
 
 // Cache simples em memória (em produção, usar Redis)
 const cache = {
