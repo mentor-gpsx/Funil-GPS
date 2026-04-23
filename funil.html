@@ -4386,22 +4386,31 @@ async function loadFunilAccordions() {
     const data = await response.json();
     const { usuarios } = data;
 
-    // Renderizar accordions para cada usuário
-    ['maria', 'nicolas', 'kennyd', 'gabriel'].forEach(userKey => {
-      const container = document.getElementById(`funil-accordion-${userKey}`);
-      if (!container) return;
+    // Renderizar accordions dinamicamente para cada usuário da API
+    if (!usuarios || !Array.isArray(usuarios)) {
+      console.warn('[FunilAccordions] API não retornou usuarios array válido');
+      return;
+    }
 
-      // Encontrar dados do usuário
-      let userData = null;
-      if (userKey === 'maria') userData = usuarios.find(u => u.nome.toLowerCase().includes('maria'));
-      else if (userKey === 'nicolas') userData = usuarios.find(u => u.nome.toLowerCase().includes('nicolas'));
-      else if (userKey === 'kennyd') userData = usuarios.find(u => u.nome.toLowerCase().includes('kennyd'));
-      else if (userKey === 'gabriel') userData = usuarios.find(u => u.nome.toLowerCase().includes('gabriel'));
+    usuarios.forEach((userData, idx) => {
+      // Gerar ID único baseado no nome do usuário (remover espaços e caracteres especiais)
+      const userKey = userData.nome.toLowerCase()
+        .replace(/\s+/g, '-')
+        .replace(/[^\w-]/g, '');
+
+      const container = document.getElementById(`funil-accordion-${userKey}`);
+      // Se não há container pré-renderizado, criar um dinamicamente
+      const dynamicContainer = container || (() => {
+        const div = document.createElement('div');
+        div.id = `funil-accordion-${userKey}`;
+        div.className = 'funnel-accordion-card';
+        return div;
+      })();
 
       if (!userData) return;
 
       // Limpar container
-      container.innerHTML = '';
+      dynamicContainer.innerHTML = '';
 
       // Criar accordion para cada etapa
       data.etapas.forEach((etapa, idx) => {
@@ -4433,7 +4442,7 @@ async function loadFunilAccordions() {
             }
           </div>
         `;
-        container.appendChild(itemDiv);
+        dynamicContainer.appendChild(itemDiv);
       });
     });
   } catch (error) {
