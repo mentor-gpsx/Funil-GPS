@@ -1,0 +1,1172 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Dashboard Financeiro - GPS.X</title>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/3.9.1/chart.min.js"></script>
+  <style>
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+      background: #0f1419;
+      color: #ffffff;
+      line-height: 1.6;
+      min-height: 100vh;
+    }
+
+    .container {
+      max-width: 1600px;
+      margin: 0 auto;
+      padding: 20px;
+    }
+
+    /* ════════════════════════════════════════════════════════════════ */
+    /* HEADER */
+    /* ════════════════════════════════════════════════════════════════ */
+
+    header {
+      background: linear-gradient(135deg, #1a1f2e 0%, #0f1419 100%);
+      border-bottom: 1px solid #2a3447;
+      padding: 20px 0;
+      margin-bottom: 30px;
+    }
+
+    .header-content {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 0 20px;
+    }
+
+    .logo {
+      font-size: 24px;
+      font-weight: 700;
+      color: #fff;
+    }
+
+    .logo-icon {
+      font-size: 28px;
+      margin-right: 10px;
+    }
+
+    .sync-status {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      font-size: 12px;
+      color: #888;
+    }
+
+    .status-dot {
+      width: 8px;
+      height: 8px;
+      border-radius: 50%;
+      background: #22c55e;
+      animation: pulse 2s infinite;
+    }
+
+    @keyframes pulse {
+      0%, 100% { opacity: 1; }
+      50% { opacity: 0.5; }
+    }
+
+    /* ════════════════════════════════════════════════════════════════ */
+    /* TABS */
+    /* ════════════════════════════════════════════════════════════════ */
+
+    .tabs {
+      display: flex;
+      gap: 20px;
+      border-bottom: 1px solid #2a3447;
+      margin-bottom: 30px;
+      overflow-x: auto;
+      padding: 0 20px;
+    }
+
+    .tab-button {
+      padding: 15px 0;
+      border: none;
+      background: transparent;
+      color: #888;
+      cursor: pointer;
+      font-size: 14px;
+      font-weight: 500;
+      border-bottom: 2px solid transparent;
+      transition: all 0.3s;
+      white-space: nowrap;
+    }
+
+    .tab-button:hover {
+      color: #fff;
+      border-bottom-color: #3a4557;
+    }
+
+    .tab-button.active {
+      color: #fff;
+      border-bottom-color: #fff;
+    }
+
+    .tab-content {
+      display: none;
+      animation: fadeIn 0.3s;
+    }
+
+    .tab-content.active {
+      display: block;
+    }
+
+    @keyframes fadeIn {
+      from { opacity: 0; }
+      to { opacity: 1; }
+    }
+
+    /* ════════════════════════════════════════════════════════════════ */
+    /* MÉTRICAS */
+    /* ════════════════════════════════════════════════════════════════ */
+
+    .metrics-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+      gap: 15px;
+      margin-bottom: 30px;
+      padding: 0 20px;
+    }
+
+    .metric-card {
+      background: #1a1f2e;
+      border: 1px solid #2a3447;
+      border-radius: 8px;
+      padding: 20px;
+      transition: all 0.3s ease;
+      cursor: pointer;
+    }
+
+    .metric-card:hover {
+      border-color: #3a4557;
+      background: #1f252f;
+      transform: translateY(-2px);
+    }
+
+    .metric-label {
+      font-size: 12px;
+      color: #888;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+      margin-bottom: 8px;
+    }
+
+    .metric-value {
+      font-size: 28px;
+      font-weight: 700;
+      color: #fff;
+      margin-bottom: 5px;
+    }
+
+    .metric-change {
+      font-size: 12px;
+      color: #22c55e;
+    }
+
+    .metric-change.negative {
+      color: #ef4444;
+    }
+
+    /* ════════════════════════════════════════════════════════════════ */
+    /* SEÇÕES */
+    /* ════════════════════════════════════════════════════════════════ */
+
+    .section {
+      background: #1a1f2e;
+      border: 1px solid #2a3447;
+      border-radius: 8px;
+      padding: 30px;
+      margin-bottom: 30px;
+      margin-left: 20px;
+      margin-right: 20px;
+    }
+
+    .section h2 {
+      font-size: 18px;
+      font-weight: 600;
+      margin-bottom: 20px;
+      color: #fff;
+      padding-bottom: 15px;
+      border-bottom: 1px solid #2a3447;
+    }
+
+    /* ════════════════════════════════════════════════════════════════ */
+    /* TABELAS */
+    /* ════════════════════════════════════════════════════════════════ */
+
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      font-size: 14px;
+    }
+
+    th {
+      padding: 12px;
+      text-align: left;
+      font-weight: 600;
+      color: #888;
+      background: #0f1419;
+      border-bottom: 1px solid #2a3447;
+      text-transform: uppercase;
+      font-size: 11px;
+      letter-spacing: 0.5px;
+    }
+
+    td {
+      padding: 12px;
+      border-bottom: 1px solid #2a3447;
+      color: #ccc;
+    }
+
+    tbody tr {
+      transition: all 0.2s;
+    }
+
+    tbody tr:hover {
+      background: #0f1419;
+    }
+
+    /* ════════════════════════════════════════════════════════════════ */
+    /* BADGES & TAGS */
+    /* ════════════════════════════════════════════════════════════════ */
+
+    .badge {
+      display: inline-block;
+      padding: 6px 12px;
+      border-radius: 4px;
+      font-size: 11px;
+      font-weight: 600;
+      text-transform: uppercase;
+      border: 1px solid #2a3447;
+    }
+
+    .badge-active {
+      background: rgba(34, 197, 94, 0.1);
+      color: #22c55e;
+      border-color: #22c55e;
+    }
+
+    .badge-pending {
+      background: rgba(251, 146, 60, 0.1);
+      color: #fb923c;
+      border-color: #fb923c;
+    }
+
+    .badge-failed {
+      background: rgba(239, 68, 68, 0.1);
+      color: #ef4444;
+      border-color: #ef4444;
+    }
+
+    .badge-risk {
+      background: rgba(239, 68, 68, 0.1);
+      color: #ef4444;
+      border-color: #ef4444;
+    }
+
+    /* ════════════════════════════════════════════════════════════════ */
+    /* GRÁFICOS */
+    /* ════════════════════════════════════════════════════════════════ */
+
+    .chart-container {
+      position: relative;
+      height: 300px;
+      margin-bottom: 30px;
+    }
+
+    .charts-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(500px, 1fr));
+      gap: 30px;
+      margin-bottom: 30px;
+    }
+
+    /* ════════════════════════════════════════════════════════════════ */
+    /* BOTÕES */
+    /* ════════════════════════════════════════════════════════════════ */
+
+    button {
+      background: #1a1f2e;
+      color: #fff;
+      border: 1px solid #2a3447;
+      padding: 10px 20px;
+      border-radius: 6px;
+      cursor: pointer;
+      font-size: 12px;
+      font-weight: 600;
+      transition: all 0.3s;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+    }
+
+    button:hover {
+      background: #fff;
+      color: #0f1419;
+      border-color: #fff;
+    }
+
+    button.primary {
+      background: #22c55e;
+      border-color: #22c55e;
+      color: #000;
+    }
+
+    button.primary:hover {
+      background: #16a34a;
+      border-color: #16a34a;
+    }
+
+    /* ════════════════════════════════════════════════════════════════ */
+    /* ALERTAS */
+    /* ════════════════════════════════════════════════════════════════ */
+
+    .alert {
+      padding: 15px;
+      border-radius: 6px;
+      margin-bottom: 15px;
+      border-left: 4px solid;
+      display: flex;
+      align-items: center;
+      gap: 12px;
+    }
+
+    .alert-critical {
+      background: rgba(239, 68, 68, 0.1);
+      border-color: #ef4444;
+      color: #ef4444;
+    }
+
+    .alert-warning {
+      background: rgba(251, 146, 60, 0.1);
+      border-color: #fb923c;
+      color: #fb923c;
+    }
+
+    .alert-info {
+      background: rgba(59, 130, 246, 0.1);
+      border-color: #3b82f6;
+      color: #3b82f6;
+    }
+
+    .alert-success {
+      background: rgba(34, 197, 94, 0.1);
+      border-color: #22c55e;
+      color: #22c55e;
+    }
+
+    .alert-icon {
+      font-size: 20px;
+      flex-shrink: 0;
+    }
+
+    /* ════════════════════════════════════════════════════════════════ */
+    /* RESPONSIVE */
+    /* ════════════════════════════════════════════════════════════════ */
+
+    @media (max-width: 768px) {
+      .header-content {
+        flex-direction: column;
+        gap: 15px;
+      }
+
+      .charts-grid {
+        grid-template-columns: 1fr;
+      }
+
+      .metrics-grid {
+        grid-template-columns: 1fr;
+      }
+
+      table {
+        font-size: 12px;
+      }
+
+      th, td {
+        padding: 8px;
+      }
+    }
+
+    /* ════════════════════════════════════════════════════════════════ */
+    /* UTILITÁRIOS */
+    /* ════════════════════════════════════════════════════════════════ */
+
+    .text-muted {
+      color: #888;
+    }
+
+    .text-success {
+      color: #22c55e;
+    }
+
+    .text-danger {
+      color: #ef4444;
+    }
+
+    .mt-20 {
+      margin-top: 20px;
+    }
+
+    .mb-20 {
+      margin-bottom: 20px;
+    }
+
+    .text-center {
+      text-align: center;
+    }
+
+    .loading {
+      text-align: center;
+      padding: 40px;
+      color: #888;
+    }
+
+    .spinner {
+      display: inline-block;
+      width: 20px;
+      height: 20px;
+      border: 2px solid #2a3447;
+      border-top-color: #fff;
+      border-radius: 50%;
+      animation: spin 0.8s linear infinite;
+    }
+
+    @keyframes spin {
+      to { transform: rotate(360deg); }
+    }
+  </style>
+</head>
+<body>
+  <header>
+    <div class="header-content">
+      <div>
+        <div class="logo">
+          <span class="logo-icon">💰</span> Dashboard Financeiro
+        </div>
+        <div class="text-muted" style="font-size: 12px; margin-top: 5px;">Previsibilidade GPS.X</div>
+      </div>
+      <div class="sync-status">
+        <span class="status-dot"></span>
+        <span>Sincronizando com Cakto</span>
+        <button class="primary" onclick="refreshData()" style="margin: 0; padding: 8px 16px; font-size: 11px;">↻ Atualizar</button>
+      </div>
+    </div>
+  </header>
+
+  <div class="container">
+    <div class="tabs">
+      <button class="tab-button active" onclick="switchTab(0)">Visão Geral</button>
+      <button class="tab-button" onclick="switchTab(1)">Detalhes dos Clientes</button>
+      <button class="tab-button" onclick="switchTab(2)">Receita</button>
+      <button class="tab-button" onclick="switchTab(3)">Previsões</button>
+      <button class="tab-button" onclick="switchTab(4)">Cenários</button>
+      <button class="tab-button" onclick="switchTab(5)">Alertas</button>
+      <button class="tab-button" onclick="switchTab(6)">Clientes em Risco</button>
+    </div>
+
+    <!-- TAB 0: VISÃO GERAL -->
+    <div class="tab-content active">
+      <div class="metrics-grid">
+        <div class="metric-card">
+          <div class="metric-label">Receita Total (Bruta)</div>
+          <div class="metric-value" id="gross-revenue">R$ --</div>
+          <div class="metric-change">Sem descontos</div>
+        </div>
+        <div class="metric-card">
+          <div class="metric-label">Receita Líquida</div>
+          <div class="metric-value" id="net-revenue">R$ --</div>
+          <div class="metric-change">Após taxas e impostos</div>
+        </div>
+        <div class="metric-card">
+          <div class="metric-label">MRR (Receita Recorrente)</div>
+          <div class="metric-value" id="mrr">R$ --</div>
+          <div class="metric-change">Monthly Recurring</div>
+        </div>
+        <div class="metric-card">
+          <div class="metric-label">ARR (Anual)</div>
+          <div class="metric-value" id="arr">R$ --</div>
+          <div class="metric-change">MRR × 12</div>
+        </div>
+        <div class="metric-card">
+          <div class="metric-label">Ticket Médio</div>
+          <div class="metric-value" id="avg-ticket">R$ --</div>
+          <div class="metric-change">Por cliente</div>
+        </div>
+        <div class="metric-card">
+          <div class="metric-label">Clientes Ativos</div>
+          <div class="metric-value" id="active-customers">--</div>
+          <div class="metric-change">Total</div>
+        </div>
+        <div class="metric-card">
+          <div class="metric-label">Taxa de Sucesso</div>
+          <div class="metric-value" id="success-rate">--%</div>
+          <div class="metric-change">Pagamentos bem-sucedidos</div>
+        </div>
+        <div class="metric-card">
+          <div class="metric-label">Taxa de Churn</div>
+          <div class="metric-value" id="churn-rate">--%</div>
+          <div class="metric-change">Cancelamentos mensais</div>
+        </div>
+      </div>
+
+      <div class="section">
+        <h2>Score de Saúde Financeira (0-100)</h2>
+        <div class="chart-container">
+          <canvas id="health-chart"></canvas>
+        </div>
+        <div id="health-details" style="margin-top: 20px;"></div>
+      </div>
+    </div>
+
+    <!-- TAB 1: DETALHES DOS CLIENTES -->
+    <div class="tab-content">
+      <div class="section">
+        <h2>📋 Clientes e Histórico de Pagamentos</h2>
+        <div id="clients-container" style="display: grid; gap: 20px;">
+          <div class="loading"><div class="spinner"></div></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- TAB 2: RECEITA -->
+    <div class="tab-content">
+      <div class="section">
+        <h2>Breakdown de Receita</h2>
+        <table>
+          <thead>
+            <tr>
+              <th>Categoria</th>
+              <th>Valor</th>
+              <th>Percentual</th>
+            </tr>
+          </thead>
+          <tbody id="revenue-breakdown">
+            <tr><td colspan="3" class="text-center text-muted">Carregando...</td></tr>
+          </tbody>
+        </table>
+      </div>
+
+      <div class="section">
+        <h2>Custos e Impostos</h2>
+        <table>
+          <thead>
+            <tr>
+              <th>Tipo de Custo</th>
+              <th>Valor</th>
+              <th>Taxa</th>
+            </tr>
+          </thead>
+          <tbody id="cost-breakdown">
+            <tr><td colspan="3" class="text-center text-muted">Carregando...</td></tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+
+    <!-- TAB 2: PREVISÕES -->
+    <div class="tab-content">
+      <div class="charts-grid">
+        <div class="section">
+          <h2>Fluxo de Caixa (30 dias)</h2>
+          <div class="chart-container">
+            <canvas id="cashflow-chart"></canvas>
+          </div>
+        </div>
+      </div>
+      <div class="charts-grid">
+        <div class="section">
+          <h2>Impacto de Churn (12 meses)</h2>
+          <div class="chart-container">
+            <canvas id="churn-chart"></canvas>
+          </div>
+        </div>
+      </div>
+      <div class="charts-grid">
+        <div class="section">
+          <h2>Projeção de Crescimento (12 meses)</h2>
+          <div class="chart-container">
+            <canvas id="growth-chart"></canvas>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- TAB 3: CENÁRIOS -->
+    <div class="tab-content">
+      <div class="metrics-grid">
+        <div class="metric-card">
+          <div class="metric-label">Cenário Pessimista</div>
+          <div class="metric-value" id="scenario-pessimistic">R$ --</div>
+          <div class="metric-change">-5% ao mês</div>
+        </div>
+        <div class="metric-card">
+          <div class="metric-label">Cenário Base</div>
+          <div class="metric-value" id="scenario-base">R$ --</div>
+          <div class="metric-change">+10% ao mês</div>
+        </div>
+        <div class="metric-card">
+          <div class="metric-label">Cenário Otimista</div>
+          <div class="metric-value" id="scenario-optimistic">R$ --</div>
+          <div class="metric-change">+25% ao mês</div>
+        </div>
+      </div>
+
+      <div class="section">
+        <h2>Simulação de Cenários (12 meses)</h2>
+        <div class="chart-container">
+          <canvas id="scenarios-chart"></canvas>
+        </div>
+      </div>
+    </div>
+
+    <!-- TAB 4: ALERTAS -->
+    <div class="tab-content">
+      <div class="section">
+        <h2>Notificações Automáticas</h2>
+        <div id="alerts-container">
+          <div class="loading"><div class="spinner"></div></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- TAB 5: CLIENTES EM RISCO -->
+    <div class="tab-content">
+      <div class="section">
+        <h2>Detecção de Potencial Churn</h2>
+        <table>
+          <thead>
+            <tr>
+              <th>Cliente</th>
+              <th>Valor em Atraso</th>
+              <th>Dias em Atraso</th>
+              <th>Nível de Risco</th>
+            </tr>
+          </thead>
+          <tbody id="at-risk-customers">
+            <tr><td colspan="4" class="text-center text-muted">Carregando...</td></tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    // GLOBAL STATE
+    let currentTab = 0;
+    let dashboardData = null;
+    let charts = {};
+
+    // ════════════════════════════════════════════════════════════════
+    // TAB SWITCHING
+    // ════════════════════════════════════════════════════════════════
+
+    function switchTab(index) {
+      document.querySelectorAll('.tab-content').forEach((el, i) => {
+        el.classList.toggle('active', i === index);
+      });
+      document.querySelectorAll('.tab-button').forEach((el, i) => {
+        el.classList.toggle('active', i === index);
+      });
+      currentTab = index;
+      setTimeout(() => {
+        Object.values(charts).forEach(chart => {
+          if (chart) chart.resize();
+        });
+      }, 100);
+    }
+
+    // ════════════════════════════════════════════════════════════════
+    // DATA LOADING
+    // ════════════════════════════════════════════════════════════════
+
+    async function loadData() {
+      try {
+        const response = await fetch('http://localhost:3001/api/forecast/dashboard');
+        if (!response.ok) throw new Error('Erro ao carregar dados do servidor');
+
+        dashboardData = await response.json();
+        renderDashboard();
+      } catch (error) {
+        console.error('Erro:', error);
+        showError(error.message);
+      }
+    }
+
+    function showError(message) {
+      const container = document.querySelector('.tab-content.active');
+      if (container) {
+        const alert = document.createElement('div');
+        alert.className = 'section';
+        alert.innerHTML = `<div class="alert alert-critical">⚠️ ${message}</div>`;
+        container.prepend(alert);
+      }
+    }
+
+    // ════════════════════════════════════════════════════════════════
+    // RENDERING
+    // ════════════════════════════════════════════════════════════════
+
+    function renderDashboard() {
+      // Mapear dados da API
+      const o = dashboardData.overview || {};
+      const c = dashboardData.costBreakdown || {};
+      const h = dashboardData.health || {};
+
+      // Converter valores monetários
+      const parseValue = (str) => {
+        if (typeof str === 'number') return str;
+        return parseFloat(String(str).replace(/[^\d,.-]/g, '').replace(',', '.')) || 0;
+      };
+
+      // Métricas principais
+      document.getElementById('gross-revenue').textContent = o.totalRevenue || 'R$ --';
+      document.getElementById('net-revenue').textContent = o.netRevenue || 'R$ --';
+      document.getElementById('mrr').textContent = o.mrr || 'R$ --';
+      document.getElementById('arr').textContent = o.arr || 'R$ --';
+      document.getElementById('avg-ticket').textContent = o.avgCustomerValue || 'R$ --';
+      document.getElementById('active-customers').textContent = o.activeCustomers || '--';
+      document.getElementById('success-rate').textContent = o.paymentSuccessRate || '--%';
+      document.getElementById('churn-rate').textContent = o.churnRate || '--%';
+
+      // Health Score
+      renderHealthScore(h.score || 0);
+
+      // Revenue Breakdown
+      renderRevenueBreakdown(dashboardData);
+
+      // Cost Breakdown
+      renderCostBreakdown(dashboardData);
+
+      // Gráficos
+      renderCharts();
+
+      // Cenários
+      renderScenarios(dashboardData);
+
+      // Alertas
+      renderAlerts(dashboardData);
+
+      // Clientes em Risco
+      renderAtRiskCustomers(dashboardData);
+
+      // Carregar dados dos clientes
+      loadClientsData();
+    }
+
+    async function loadClientsData() {
+      try {
+        const response = await fetch('clients-data.json');
+        if (!response.ok) throw new Error('Erro ao carregar dados dos clientes');
+        const clients = await response.json();
+        renderClientsDetail(clients);
+      } catch (error) {
+        console.error('Erro:', error);
+        document.getElementById('clients-container').innerHTML = `<div class="alert alert-critical">⚠️ ${error.message}</div>`;
+      }
+    }
+
+    function renderClientsDetail(clients) {
+      if (!clients || clients.length === 0) {
+        document.getElementById('clients-container').innerHTML = '<div class="alert alert-info">Nenhum cliente encontrado</div>';
+        return;
+      }
+
+      const html = clients.map((client, idx) => `
+        <div style="background: #1a1f2e; border: 1px solid #2a3447; border-radius: 8px; padding: 20px;">
+          <div style="display: flex; justify-content: space-between; align-items: start; margin-bottom: 15px;">
+            <div>
+              <h3 style="color: #fff; margin: 0 0 5px 0;">${idx + 1}. ${client.name}</h3>
+              <div style="color: #888; font-size: 12px;">📧 ${client.email} | 📱 ${client.phone}</div>
+              <div style="color: #888; font-size: 12px;">Cadastro: ${new Date(client.created_at).toLocaleDateString('pt-BR')}</div>
+            </div>
+            <div style="text-align: right;">
+              <div style="color: #22c55e; font-size: 20px; font-weight: 700;">R$ ${client.total_paid.toLocaleString('pt-BR', {minimumFractionDigits: 0, maximumFractionDigits: 0})}</div>
+              <div style="color: #888; font-size: 11px;">Receita Total</div>
+            </div>
+          </div>
+
+          <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 10px; margin-bottom: 15px;">
+            <div style="background: #0f1419; padding: 10px; border-radius: 6px; border-left: 3px solid #22c55e;">
+              <div style="color: #888; font-size: 11px;">Cobranças Pagas</div>
+              <div style="color: #22c55e; font-weight: 700;">${client.paid_charges} de ${client.total_charges}</div>
+            </div>
+            <div style="background: #0f1419; padding: 10px; border-radius: 6px; border-left: 3px solid #fb923c;">
+              <div style="color: #888; font-size: 11px;">Pendentes</div>
+              <div style="color: #fb923c; font-weight: 700;">${client.pending_charges}</div>
+            </div>
+            <div style="background: #0f1419; padding: 10px; border-radius: 6px; border-left: 3px solid #ef4444;">
+              <div style="color: #888; font-size: 11px;">Falhadas</div>
+              <div style="color: #ef4444; font-weight: 700;">${client.failed_charges}</div>
+            </div>
+            <div style="background: #0f1419; padding: 10px; border-radius: 6px; border-left: 3px solid #3b82f6;">
+              <div style="color: #888; font-size: 11px;">MRR</div>
+              <div style="color: #3b82f6; font-weight: 700;">R$ ${client.monthly_revenue.toLocaleString('pt-BR')}</div>
+            </div>
+          </div>
+
+          <div style="padding-top: 10px; border-top: 1px solid #2a3447;">
+            <div style="color: #888; font-size: 12px; margin-bottom: 8px;">📅 Último Pagamento: ${client.last_payment_date ? new Date(client.last_payment_date).toLocaleDateString('pt-BR') : 'Sem registros'}</div>
+            <div style="color: #888; font-size: 12px;">📈 Assinaturas Ativas: ${client.active_subscriptions}</div>
+          </div>
+        </div>
+      `).join('');
+
+      document.getElementById('clients-container').innerHTML = html;
+    }
+
+    function renderHealthScore(score) {
+      const ctx = document.getElementById('health-chart');
+      if (!ctx) return;
+
+      const color = score >= 60 ? '#22c55e' : score >= 40 ? '#fb923c' : '#ef4444';
+
+      if (charts.health) charts.health.destroy();
+      charts.health = new Chart(ctx, {
+        type: 'doughnut',
+        data: {
+          datasets: [{
+            data: [score, 100 - score],
+            backgroundColor: [color, '#2a3447'],
+            borderColor: '#1a1f2e',
+            borderWidth: 2
+          }]
+        },
+        options: {
+          responsive: true,
+          maintainAspectRatio: false,
+          plugins: {
+            legend: { display: false },
+            tooltip: {
+              callbacks: {
+                label: ctx => ctx.label === 'Score' ? `${score}/100` : ''
+              }
+            }
+          }
+        }
+      });
+
+      const assessment = score >= 60 ? 'Saudável' : score >= 40 ? 'Preocupante' : 'Crítico';
+      document.getElementById('health-details').innerHTML = `
+        <div style="text-align: center;">
+          <div style="font-size: 48px; font-weight: 700; color: ${color};">${score}</div>
+          <div class="text-muted" style="margin-top: 10px;">Avaliação: <strong style="color: ${color};">${assessment}</strong></div>
+        </div>
+      `;
+    }
+
+    function renderRevenueBreakdown(data) {
+      const tbody = document.getElementById('revenue-breakdown');
+      if (!data) return;
+
+      const o = data.overview || {};
+      const rows = `
+        <tr>
+          <td><strong>Receita Bruta</strong></td>
+          <td>${o.totalRevenue || 'R$ --'}</td>
+          <td>100%</td>
+        </tr>
+        <tr>
+          <td><strong>Receita Líquida</strong></td>
+          <td>${o.netRevenue || 'R$ --'}</td>
+          <td>${data.costBreakdown?.percentage || '--'}%</td>
+        </tr>
+      `;
+
+      tbody.innerHTML = rows;
+    }
+
+    function renderCostBreakdown(data) {
+      const tbody = document.getElementById('cost-breakdown');
+      if (!data || !data.costBreakdown) return;
+
+      const c = data.costBreakdown;
+      const costs = [
+        { name: 'Taxas de Pagamento', value: c.paymentMethods, rate: '--' },
+        { name: 'Taxas de Parcelamento', value: c.installments, rate: '--' },
+        { name: 'IRRF (1.5%)', value: c.irrf, rate: '1.5%' },
+        { name: 'INSS (5%)', value: c.inss, rate: '5%' },
+        { name: 'ISS (5%)', value: c.iss, rate: '5%' }
+      ];
+
+      const rows = costs.map(cost => `
+        <tr>
+          <td><strong>${cost.name}</strong></td>
+          <td>${cost.value || 'R$ 0,00'}</td>
+          <td>${cost.rate}</td>
+        </tr>
+      `).join('');
+
+      tbody.innerHTML = rows;
+    }
+
+    function renderCharts() {
+      // Cashflow
+      const cfCtx = document.getElementById('cashflow-chart');
+      if (cfCtx && dashboardData.forecasts?.cashFlow30Days) {
+        const cf = dashboardData.forecasts.cashFlow30Days;
+        if (charts.cashflow) charts.cashflow.destroy();
+        charts.cashflow = new Chart(cfCtx, {
+          type: 'line',
+          data: {
+            labels: cf.map(d => new Date(d.date).toLocaleDateString('pt-BR', {month: 'short', day: 'numeric'})),
+            datasets: [{
+              label: 'Fluxo de Caixa',
+              data: cf.map(d => d.cumulative),
+              borderColor: '#22c55e',
+              backgroundColor: 'rgba(34, 197, 94, 0.1)',
+              borderWidth: 2,
+              tension: 0.4,
+              fill: true
+            }]
+          },
+          options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            plugins: {
+              legend: { labels: { color: '#888' } }
+            },
+            scales: {
+              y: { ticks: { color: '#888' }, grid: { color: '#2a3447' } },
+              x: { ticks: { color: '#888' }, grid: { color: '#2a3447' } }
+            }
+          }
+        });
+      }
+
+      // Churn Impact (simulado)
+      const chCtx = document.getElementById('churn-chart');
+      if (chCtx) {
+        const o = dashboardData.overview || {};
+        const parseValue = (str) => parseFloat(String(str).replace(/[^\d,.-]/g, '').replace(',', '.')) || 0;
+        const mrr = parseValue(o.mrr || 'R$ 0');
+        const churnRate = parseValue(o.churnRate || '0%') / 100;
+
+        const churnData = Array.from({length: 12}, (_, i) => mrr * Math.pow(1 - churnRate, i));
+
+        if (charts.churn) charts.churn.destroy();
+        charts.churn = new Chart(chCtx, {
+          type: 'line',
+          data: {
+            labels: Array.from({length: 12}, (_, i) => `Mês ${i + 1}`),
+            datasets: [{
+              label: 'Impacto de Churn',
+              data: churnData,
+              borderColor: '#ef4444',
+              backgroundColor: 'rgba(239, 68, 68, 0.1)',
+              borderWidth: 2,
+              tension: 0.4,
+              fill: true
+            }]
+          },
+          options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            plugins: {
+              legend: { labels: { color: '#888' } }
+            },
+            scales: {
+              y: { ticks: { color: '#888' }, grid: { color: '#2a3447' } },
+              x: { ticks: { color: '#888' }, grid: { color: '#2a3447' } }
+            }
+          }
+        });
+      }
+
+      // Growth (simulado)
+      const grCtx = document.getElementById('growth-chart');
+      if (grCtx) {
+        const o = dashboardData.overview || {};
+        const parseValue = (str) => parseFloat(String(str).replace(/[^\d,.-]/g, '').replace(',', '.')) || 0;
+        const mrr = parseValue(o.mrr || 'R$ 0');
+        const growthRate = 0.10; // 10% por padrão
+
+        const growthData = Array.from({length: 12}, (_, i) => mrr * Math.pow(1 + growthRate, i));
+
+        if (charts.growth) charts.growth.destroy();
+        charts.growth = new Chart(grCtx, {
+          type: 'line',
+          data: {
+            labels: Array.from({length: 12}, (_, i) => `Mês ${i + 1}`),
+            datasets: [{
+              label: 'Crescimento Projetado',
+              data: growthData,
+              borderColor: '#3b82f6',
+              backgroundColor: 'rgba(59, 130, 246, 0.1)',
+              borderWidth: 2,
+              tension: 0.4,
+              fill: true
+            }]
+          },
+          options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            plugins: {
+              legend: { labels: { color: '#888' } }
+            },
+            scales: {
+              y: { ticks: { color: '#888' }, grid: { color: '#2a3447' } },
+              x: { ticks: { color: '#888' }, grid: { color: '#2a3447' } }
+            }
+          }
+        });
+      }
+    }
+
+    function renderScenarios(data) {
+      if (!data) return;
+      // Simular cenários baseado em MRR
+      const o = data.overview || {};
+      const parseValue = (str) => parseFloat(String(str).replace(/[^\d,.-]/g, '').replace(',', '.')) || 0;
+      const mrr = parseValue(o.mrr || 'R$ 0');
+
+      const pessimistic = mrr * 0.95 * 12;
+      const base = mrr * 1.10 * 12;
+      const optimistic = mrr * 1.25 * 12;
+
+      document.getElementById('scenario-pessimistic').textContent = formatCurrency(pessimistic);
+      document.getElementById('scenario-base').textContent = formatCurrency(base);
+      document.getElementById('scenario-optimistic').textContent = formatCurrency(optimistic);
+
+      const scCtx = document.getElementById('scenarios-chart');
+      if (scCtx) {
+        const o = dashboardData.overview || {};
+        const parseValue = (str) => parseFloat(String(str).replace(/[^\d,.-]/g, '').replace(',', '.')) || 0;
+        const mrr = parseValue(o.mrr || 'R$ 0');
+
+        const months = Array.from({length: 12}, (_, i) => `Mês ${i + 1}`);
+        const pessimisticData = Array.from({length: 12}, (_, i) => mrr * Math.pow(0.95, i));
+        const baseData = Array.from({length: 12}, (_, i) => mrr * Math.pow(1.10, i));
+        const optimisticData = Array.from({length: 12}, (_, i) => mrr * Math.pow(1.25, i));
+
+        if (charts.scenarios) charts.scenarios.destroy();
+        charts.scenarios = new Chart(scCtx, {
+          type: 'line',
+          data: {
+            labels: months,
+            datasets: [
+              {
+                label: 'Pessimista (-5%)',
+                data: pessimisticData,
+                borderColor: '#ef4444',
+                backgroundColor: 'rgba(239, 68, 68, 0.05)',
+                borderWidth: 2,
+                tension: 0.4
+              },
+              {
+                label: 'Base (+10%)',
+                data: baseData,
+                borderColor: '#fb923c',
+                backgroundColor: 'rgba(251, 146, 60, 0.05)',
+                borderWidth: 2,
+                tension: 0.4
+              },
+              {
+                label: 'Otimista (+25%)',
+                data: optimisticData,
+                borderColor: '#22c55e',
+                backgroundColor: 'rgba(34, 197, 94, 0.05)',
+                borderWidth: 2,
+                tension: 0.4
+              }
+            ]
+          },
+          options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            plugins: {
+              legend: { labels: { color: '#888' } }
+            },
+            scales: {
+              y: { ticks: { color: '#888' }, grid: { color: '#2a3447' } },
+              x: { ticks: { color: '#888' }, grid: { color: '#2a3447' } }
+            }
+          }
+        });
+      }
+    }
+
+    function renderAlerts(data) {
+      const container = document.getElementById('alerts-container');
+      if (!data || !data.health) {
+        container.innerHTML = '<div class="alert alert-success">✓ Carregando alertas...</div>';
+        return;
+      }
+
+      const h = data.health || {};
+      const o = data.overview || {};
+      const alerts = [];
+
+      // Gerar alertas baseado no score de saúde
+      if (h.score < 30) {
+        alerts.push({ level: 'CRITICAL', message: '🔴 Saúde financeira CRÍTICA - Score abaixo de 30' });
+      } else if (h.score < 60) {
+        alerts.push({ level: 'WARNING', message: '🟡 Saúde financeira PREOCUPANTE - Score abaixo de 60' });
+      }
+
+      // Alerta de churn alto
+      const parseValue = (str) => parseFloat(String(str).replace(/[^\d,.-]/g, '').replace(',', '.')) || 0;
+      const churnRate = parseValue(o.churnRate || '0%');
+      if (churnRate > 15) {
+        alerts.push({ level: 'WARNING', message: '🟡 Taxa de churn alta - Mais de 15% de cancelamentos' });
+      }
+
+      // Alerta de taxa de sucesso baixa
+      const successRate = parseValue(o.paymentSuccessRate || '100%');
+      if (successRate < 80) {
+        alerts.push({ level: 'WARNING', message: '🟡 Taxa de sucesso de pagamentos abaixo de 80%' });
+      }
+
+      if (alerts.length === 0) {
+        alerts.push({ level: 'OK', message: '✓ Nenhum alerta crítico - Situação saudável' });
+      }
+
+      const alertMap = {
+        CRITICAL: 'alert-critical',
+        WARNING: 'alert-warning',
+        INFO: 'alert-info',
+        OK: 'alert-success'
+      };
+
+      container.innerHTML = alerts.map(alert => {
+        return `<div class="alert ${alertMap[alert.level] || 'alert-info'}">${alert.message}</div>`;
+      }).join('');
+    }
+
+    function renderAtRiskCustomers(data) {
+      const tbody = document.getElementById('at-risk-customers');
+      tbody.innerHTML = '<tr><td colspan="4" class="text-center text-muted">Nenhum cliente em risco</td></tr>';
+    }
+
+    // ════════════════════════════════════════════════════════════════
+    // UTILITIES
+    // ════════════════════════════════════════════════════════════════
+
+    function formatCurrency(value) {
+      return new Intl.NumberFormat('pt-BR', {
+        style: 'currency',
+        currency: 'BRL'
+      }).format(value);
+    }
+
+    function refreshData() {
+      loadData();
+    }
+
+    // ════════════════════════════════════════════════════════════════
+    // INITIALIZATION
+    // ════════════════════════════════════════════════════════════════
+
+    loadData();
+    setInterval(loadData, 30000); // Auto-refresh a cada 30s
+  </script>
+</body>
+</html>

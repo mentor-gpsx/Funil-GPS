@@ -1,0 +1,733 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Dashboard Interativo GPS.X</title>
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+      background: #f0f0f0;
+      min-height: 100vh;
+      padding: 20px;
+      color: #333;
+    }
+    .container { max-width: 1600px; margin: 0 auto; }
+
+    .header {
+      background: #000;
+      color: white;
+      padding: 40px 30px;
+      margin-bottom: 30px;
+      border-radius: 8px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+    .header h1 { font-size: 2.5rem; }
+    .header p { font-size: 0.9rem; opacity: 0.8; margin-top: 5px; }
+    .refresh-btn {
+      background: white;
+      color: #000;
+      border: 2px solid #000;
+      padding: 10px 20px;
+      border-radius: 6px;
+      cursor: pointer;
+      font-weight: 600;
+      transition: all .3s;
+    }
+    .refresh-btn:hover { background: #000; color: white; }
+
+    .tabs {
+      display: flex;
+      gap: 10px;
+      margin-bottom: 30px;
+      flex-wrap: wrap;
+    }
+    .tab-btn {
+      background: white;
+      border: 2px solid #000;
+      padding: 12px 24px;
+      border-radius: 6px;
+      cursor: pointer;
+      font-weight: 600;
+      transition: all .3s;
+    }
+    .tab-btn.active { background: #000; color: white; }
+    .tab-btn:hover { transform: translateY(-2px); }
+
+    .tab-content { display: none; }
+    .tab-content.active { display: block; }
+
+    .grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(250px, 1fr)); gap: 20px; margin-bottom: 30px; }
+    .card {
+      background: white;
+      border: 2px solid #000;
+      border-radius: 8px;
+      padding: 24px;
+      cursor: pointer;
+      transition: all .3s;
+    }
+    .card:hover { transform: translateY(-4px); box-shadow: 0 8px 24px rgba(0,0,0,.15); }
+    .card h3 { color: #666; font-size: .85rem; margin-bottom: 12px; text-transform: uppercase; letter-spacing: 1px; }
+    .card .value { font-size: 2.2rem; font-weight: 700; color: #000; }
+    .card .sub { font-size: .85rem; color: #999; margin-top: 8px; }
+
+    .section {
+      background: white;
+      border: 2px solid #000;
+      border-radius: 8px;
+      padding: 30px;
+      margin-bottom: 30px;
+    }
+    .section h2 { font-size: 1.4rem; margin-bottom: 20px; padding-bottom: 12px; border-bottom: 3px solid #000; }
+
+    .filter-bar {
+      display: flex;
+      gap: 10px;
+      margin-bottom: 20px;
+      flex-wrap: wrap;
+    }
+    .filter-btn {
+      background: #f5f5f5;
+      border: 1px solid #ddd;
+      padding: 8px 16px;
+      border-radius: 6px;
+      cursor: pointer;
+      font-size: .9rem;
+      transition: all .3s;
+    }
+    .filter-btn.active { background: #000; color: white; border-color: #000; }
+    .filter-btn:hover { border-color: #000; }
+
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      margin-top: 20px;
+    }
+    th {
+      padding: 12px;
+      text-align: left;
+      font-weight: 700;
+      color: white;
+      background: #000;
+      border: 1px solid #000;
+      cursor: pointer;
+      user-select: none;
+    }
+    th:hover { opacity: 0.8; }
+    td { padding: 12px; border: 1px solid #ddd; }
+    tbody tr:hover { background: #f5f5f5; }
+
+    .badge {
+      display: inline-block;
+      padding: 6px 12px;
+      border-radius: 4px;
+      font-size: .75rem;
+      font-weight: 700;
+      border: 1px solid #000;
+      cursor: pointer;
+      transition: all .2s;
+    }
+    .badge:hover { background: #000; color: white; }
+    .badge-active { background: white; color: #000; }
+    .badge-pending { background: #f5f5f5; color: #000; }
+    .badge-failed { background: #000; color: white; }
+
+    .modal {
+      display: none;
+      position: fixed;
+      top: 0;
+      left: 0;
+      right: 0;
+      bottom: 0;
+      background: rgba(0,0,0,.7);
+      z-index: 1000;
+      align-items: center;
+      justify-content: center;
+    }
+    .modal.active { display: flex; }
+    .modal-content {
+      background: white;
+      border: 3px solid #000;
+      border-radius: 8px;
+      padding: 40px;
+      max-width: 600px;
+      width: 90%;
+      max-height: 80vh;
+      overflow-y: auto;
+    }
+    .modal h3 { font-size: 1.5rem; margin-bottom: 20px; }
+    .modal-row { display: flex; justify-content: space-between; padding: 10px 0; border-bottom: 1px solid #eee; }
+    .modal-row:last-child { border-bottom: none; }
+    .modal-close {
+      background: #000;
+      color: white;
+      border: none;
+      padding: 10px 20px;
+      border-radius: 4px;
+      cursor: pointer;
+      font-weight: 600;
+      margin-top: 20px;
+    }
+
+    .chart {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+      gap: 15px;
+      margin-top: 20px;
+    }
+    .chart-item {
+      text-align: center;
+      padding: 20px;
+      background: #f5f5f5;
+      border-radius: 6px;
+      border: 1px solid #ddd;
+      cursor: pointer;
+      transition: all .3s;
+    }
+    .chart-item:hover { transform: scale(1.05); border-color: #000; }
+    .chart-value { font-size: 2rem; font-weight: 700; color: #000; }
+    .chart-label { font-size: .8rem; color: #666; margin-top: 8px; }
+
+    .loading { text-align: center; padding: 60px 20px; }
+    .spinner {
+      width: 50px;
+      height: 50px;
+      border: 3px solid #f5f5f5;
+      border-top-color: #000;
+      border-radius: 50%;
+      animation: spin 1s linear infinite;
+      margin: 0 auto 20px;
+    }
+    @keyframes spin { to { transform: rotate(360deg); } }
+
+    .footer { text-align: center; margin-top: 40px; color: #666; font-size: .85rem; }
+    .footer strong { color: #000; }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <div class="header">
+      <div>
+        <h1>GPS.X FINANCEIRO</h1>
+        <p>Dashboard Interativo de Faturamento Automático</p>
+      </div>
+      <button class="refresh-btn" id="refreshBtn">🔄 Atualizar</button>
+    </div>
+
+    <div class="tabs">
+      <button class="tab-btn active" data-tab="overview">📊 Visão Geral</button>
+      <button class="tab-btn" data-tab="clientes">👥 Clientes</button>
+      <button class="tab-btn" data-tab="cobracas">💳 Cobranças</button>
+      <button class="tab-btn" data-tab="transacoes">📋 Transações Detalhadas</button>
+      <button class="tab-btn" data-tab="analise">📈 Análise</button>
+    </div>
+
+    <!-- TAB 1: VISÃO GERAL -->
+    <div id="overview" class="tab-content active">
+      <div class="grid" id="kpis"></div>
+
+      <div class="section">
+        <h2>🔒 Confiança de Recebimento</h2>
+        <div class="chart" id="confidence"></div>
+      </div>
+
+      <div class="section">
+        <h2>📊 Saúde do Sistema</h2>
+        <div class="chart" id="health"></div>
+      </div>
+    </div>
+
+    <!-- TAB 2: CLIENTES -->
+    <div id="clientes" class="tab-content">
+      <div class="section">
+        <h2>Clientes Ativos</h2>
+        <div class="filter-bar">
+          <button class="filter-btn active" data-filter="all">Todos</button>
+          <button class="filter-btn" data-filter="active">Ativos</button>
+          <button class="filter-btn" data-filter="pending">Pendentes</button>
+          <button class="filter-btn" data-filter="failed">Falhados</button>
+        </div>
+        <table id="clientesTable"></table>
+      </div>
+    </div>
+
+    <!-- TAB 3: COBRANÇAS -->
+    <div id="cobracas" class="tab-content">
+      <div class="section">
+        <h2>Histórico de Cobranças</h2>
+        <div class="chart" id="chargeBreakdown"></div>
+      </div>
+      <div class="section">
+        <h2>Forecast vs Real</h2>
+        <div class="grid">
+          <div class="card" onclick="showDetails('forecast')">
+            <h3>Forecast 30 dias</h3>
+            <div class="value" id="forecast30">R$ 0</div>
+            <div class="sub">Clique para detalhes</div>
+          </div>
+          <div class="card" onclick="showDetails('forecast')">
+            <h3>Forecast 90 dias</h3>
+            <div class="value" id="forecast90">R$ 0</div>
+            <div class="sub">Clique para detalhes</div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- TAB 4: TRANSAÇÕES DETALHADAS -->
+    <div id="transacoes" class="tab-content">
+      <div class="section">
+        <h2>📋 Todas as Transações</h2>
+        <div class="filter-bar">
+          <button class="filter-btn active" data-txn-filter="all">Todas</button>
+          <button class="filter-btn" data-txn-filter="paid">✓ Pagas</button>
+          <button class="filter-btn" data-txn-filter="pending">⏳ Pendentes</button>
+          <button class="filter-btn" data-txn-filter="failed">✗ Falhadas</button>
+        </div>
+        <table id="transactionsTable"></table>
+      </div>
+    </div>
+
+    <!-- TAB 5: ANÁLISE -->
+    <div id="analise" class="tab-content">
+      <div class="section">
+        <h2>Análise Detalhada</h2>
+        <div id="analisisContent"></div>
+      </div>
+    </div>
+
+    <div class="footer">
+      Última atualização: <strong id="lastUpdate">—</strong> • Auto-refresh a cada 30s
+    </div>
+  </div>
+
+  <!-- MODAL -->
+  <div id="modal" class="modal">
+    <div class="modal-content">
+      <h3 id="modalTitle"></h3>
+      <div id="modalBody"></div>
+      <button class="modal-close" onclick="closeModal()">Fechar</button>
+    </div>
+  </div>
+
+  <script>
+    let allData = {};
+    let filter = 'all';
+    let txnFilter = 'all';
+
+    const API = '/api/dashboard-finance';
+
+    async function loadData() {
+      try {
+        const res = await fetch(API);
+        const data = await res.json();
+        allData = data;
+        render();
+        document.getElementById('lastUpdate').textContent = new Date().toLocaleString('pt-BR');
+      } catch(e) {
+        console.error('Erro:', e);
+      }
+    }
+
+    function render() {
+      renderKPIs();
+      renderConfidence();
+      renderHealth();
+      renderClientes();
+      renderChargeBreakdown();
+      renderTransactions();
+      renderAnalisis();
+      updateForecasts();
+    }
+
+    function renderKPIs() {
+      const mrr = (allData.health_metrics?.total_mrr_cents || 0) / 100;
+      const html = `
+        <div class="card" onclick="showDetails('mrr')">
+          <h3>💵 MRR Total</h3>
+          <div class="value">R$ ${mrr.toFixed(2)}</div>
+          <div class="sub">Clique para detalhes</div>
+        </div>
+        <div class="card" onclick="showDetails('forecast')">
+          <h3>📊 Forecast 30d</h3>
+          <div class="value">R$ ${(allData.forecast?.days_30 || 0).toFixed(2)}</div>
+          <div class="sub">Clique para detalhes</div>
+        </div>
+        <div class="card" onclick="showDetails('forecast')">
+          <h3>📈 Forecast 90d</h3>
+          <div class="value">R$ ${(allData.forecast?.days_90 || 0).toFixed(2)}</div>
+          <div class="sub">Clique para detalhes</div>
+        </div>
+        <div class="card" onclick="showDetails('health')">
+          <h3>🏥 Saúde</h3>
+          <div class="value">${(allData.health_metrics?.pending_charges || 0) + (allData.health_metrics?.failed_charges || 0)}</div>
+          <div class="sub">Problemas | Clique</div>
+        </div>
+      `;
+      document.getElementById('kpis').innerHTML = html;
+    }
+
+    function renderConfidence() {
+      const scores = allData.confidence_scores || {};
+      let html = '';
+      Object.values(scores).forEach(s => {
+        html += `
+          <div class="chart-item" onclick="showDetails('confidence')">
+            <div class="chart-value">${Math.round(s.confidence * 100)}%</div>
+            <div class="chart-label">${s.description}</div>
+          </div>
+        `;
+      });
+      document.getElementById('confidence').innerHTML = html;
+    }
+
+    function renderHealth() {
+      const h = allData.health_metrics || {};
+      const b = allData.charge_breakdown || {};
+      const html = `
+        <div class="chart-item" onclick="showDetails('pending')">
+          <div class="chart-value">${h.pending_charges || 0}</div>
+          <div class="chart-label">Pendentes</div>
+        </div>
+        <div class="chart-item" onclick="showDetails('failed')">
+          <div class="chart-value">${h.failed_charges || 0}</div>
+          <div class="chart-label">Falhas</div>
+        </div>
+        <div class="chart-item" onclick="showDetails('active')">
+          <div class="chart-value">${h.active_subscriptions || 0}</div>
+          <div class="chart-label">Ativas</div>
+        </div>
+        <div class="chart-item" onclick="showDetails('paid')">
+          <div class="chart-value">${b.paid || 0}</div>
+          <div class="chart-label">Pagas</div>
+        </div>
+      `;
+      document.getElementById('health').innerHTML = html;
+    }
+
+    function renderClientes() {
+      let customers = allData.customers || [];
+      if (filter !== 'all') {
+        customers = customers.filter(c => c.subscription_status === filter);
+      }
+
+      let html = '<table><thead><tr><th onclick="sortTable(0)">Cliente</th><th onclick="sortTable(1)">Plano</th><th onclick="sortTable(2)">Pagamento</th><th onclick="sortTable(3)">Status</th><th onclick="sortTable(4)">Próxima</th><th style="text-align:right">Valor</th></tr></thead><tbody>';
+      customers.forEach(c => {
+        const amt = (c.monthly_amount_cents / 100).toFixed(2);
+        const nextDate = new Date(c.next_charge_date).toLocaleDateString('pt-BR');
+        const status = c.subscription_status || 'active';
+        html += `
+          <tr onclick="showCustomerModal('${c.customer_name}', '${c.customer_email}', '${c.plan_name}', '${amt}', '${nextDate}', '${status}')">
+            <td><strong>${c.customer_name}</strong></td>
+            <td>${c.plan_name}</td>
+            <td><strong>${c.payment_method.toUpperCase()}</strong></td>
+            <td><span class="badge badge-${status}">${status}</span></td>
+            <td>${nextDate}</td>
+            <td style="text-align:right;font-weight:600">R$ ${amt}</td>
+          </tr>
+        `;
+      });
+      html += '</tbody></table>';
+      document.getElementById('clientesTable').innerHTML = html;
+    }
+
+    function renderChargeBreakdown() {
+      const b = allData.charge_breakdown || {};
+      const html = `
+        <div class="chart-item" onclick="showDetails('paid')"><div class="chart-value">${b.paid || 0}</div><div class="chart-label">Pago ✓</div></div>
+        <div class="chart-item" onclick="showDetails('pending')"><div class="chart-value">${b.pending || 0}</div><div class="chart-label">Pendente ⏳</div></div>
+        <div class="chart-item" onclick="showDetails('failed')"><div class="chart-value">${b.failed || 0}</div><div class="chart-label">Falha ✗</div></div>
+        <div class="chart-item" onclick="showDetails('refunded')"><div class="chart-value">${b.refunded || 0}</div><div class="chart-label">Reembolso ↩</div></div>
+      `;
+      document.getElementById('chargeBreakdown').innerHTML = html;
+    }
+
+    function renderTransactions() {
+      let transactions = allData.transactions || [];
+      if (txnFilter !== 'all') {
+        transactions = transactions.filter(t => t.status === txnFilter);
+      }
+
+      let html = '<table><thead><tr><th>Cliente</th><th>Plano</th><th>Valor</th><th>Data</th><th>Método</th><th>Status</th><th>Ação</th></tr></thead><tbody>';
+      transactions.forEach(t => {
+        const amt = (t.amount_cents / 100).toFixed(2);
+        const date = new Date(t.charge_date).toLocaleDateString('pt-BR');
+        const statusIcon = t.status === 'paid' ? '✓' : t.status === 'pending' ? '⏳' : '✗';
+        const statusLabel = t.status === 'paid' ? 'Paga' : t.status === 'pending' ? 'Pendente' : 'Falhada';
+        html += `
+          <tr style="cursor: pointer;" onclick="showTransactionModal('${t.transaction_id}')">
+            <td><strong>${t.customer_name}</strong></td>
+            <td>${t.plan}</td>
+            <td style="text-align:right; font-weight:600;">R$ ${amt}</td>
+            <td>${date}</td>
+            <td>${t.payment_method.toUpperCase()}</td>
+            <td><span class="badge badge-${t.status}">${statusLabel}</span></td>
+            <td style="text-align:center;">
+              <button onclick="showTransactionModal('${t.transaction_id}', event)" style="background: #000; color: white; border: none; padding: 4px 12px; border-radius: 4px; cursor: pointer; font-size: 0.75rem;">Ver Detalhes</button>
+            </td>
+          </tr>
+        `;
+      });
+      html += '</tbody></table>';
+      document.getElementById('transactionsTable').innerHTML = html;
+    }
+
+    function renderAnalisis() {
+      const mrr = (allData.health_metrics?.total_mrr_cents || 0) / 100;
+      const f30 = allData.forecast?.days_30 || 0;
+      const f90 = allData.forecast?.days_90 || 0;
+      const customers = (allData.customers || []).length;
+      const html = `
+        <div style="display: grid; gap: 20px;">
+          <div style="padding: 20px; background: #f5f5f5; border-radius: 6px; border-left: 4px solid #000;">
+            <h4>📊 Receita Média por Cliente</h4>
+            <p style="font-size: 2rem; color: #000; font-weight: 700; margin-top: 10px;">R$ ${(mrr / customers).toFixed(2)}</p>
+          </div>
+          <div style="padding: 20px; background: #f5f5f5; border-radius: 6px; border-left: 4px solid #000;">
+            <h4>📈 Crescimento Esperado</h4>
+            <p style="font-size: 2rem; color: #000; font-weight: 700; margin-top: 10px;">R$ ${(f90 - (mrr * 3)).toFixed(2)}</p>
+          </div>
+          <div style="padding: 20px; background: #f5f5f5; border-radius: 6px; border-left: 4px solid #000;">
+            <h4>💰 Média Diária</h4>
+            <p style="font-size: 2rem; color: #000; font-weight: 700; margin-top: 10px;">R$ ${(mrr / 30).toFixed(2)}</p>
+          </div>
+        </div>
+      `;
+      document.getElementById('analisisContent').innerHTML = html;
+    }
+
+    function updateForecasts() {
+      document.getElementById('forecast30').textContent = 'R$ ' + (allData.forecast?.days_30 || 0).toFixed(2);
+      document.getElementById('forecast90').textContent = 'R$ ' + (allData.forecast?.days_90 || 0).toFixed(2);
+    }
+
+    function showDetails(type) {
+      const modal = document.getElementById('modal');
+      const title = document.getElementById('modalTitle');
+      const body = document.getElementById('modalBody');
+      const mrr = (allData.health_metrics?.total_mrr_cents || 0) / 100;
+      const activeCustomers = allData.health_metrics?.active_subscriptions || 0;
+
+      const details = {
+        mrr: {
+          title: '💵 MRR Total - Monthly Recurring Revenue',
+          content: `
+            <div class="modal-row"><span>Valor Total MRR:</span><strong>R$ ${mrr.toFixed(2)}</strong></div>
+            <div class="modal-row"><span>Clientes Ativos:</span><strong>${activeCustomers}</strong></div>
+            <div class="modal-row"><span>Receita Média/Cliente:</span><strong>R$ ${(mrr / (activeCustomers || 1)).toFixed(2)}</strong></div>
+            <div class="modal-row"><span>Receita Diária (estimada):</span><strong>R$ ${(mrr / 30).toFixed(2)}</strong></div>
+            <hr style="margin: 15px 0; border: none; border-top: 1px solid #eee;">
+            <div style="font-size: 0.85rem; color: #666; margin-top: 15px;">
+              <strong>O que é MRR?</strong><br>
+              Receita mensal recorrente de todas as assinaturas ativas. Este é o seu fluxo de caixa previsível.
+            </div>
+          `
+        },
+        forecast: {
+          title: '📊 Forecast de Receita',
+          content: `
+            <div class="modal-row"><span>Forecast 30 dias:</span><strong>R$ ${(allData.forecast?.days_30 || 0).toFixed(2)}</strong></div>
+            <div class="modal-row"><span>Forecast 90 dias:</span><strong>R$ ${(allData.forecast?.days_90 || 0).toFixed(2)}</strong></div>
+            <div class="modal-row"><span>Média diária esperada (30d):</span><strong>R$ ${((allData.forecast?.days_30 || 0) / 30).toFixed(2)}</strong></div>
+            <hr style="margin: 15px 0; border: none; border-top: 1px solid #eee;">
+            <div style="font-size: 0.9rem; margin-top: 10px;">
+              <strong>Cálculo por método:</strong><br>
+              PIX (95%): R$ ${((allData.forecast?.days_30 || 0) * 0.95).toFixed(2)}<br>
+              Boleto (60%): R$ ${((allData.forecast?.days_30 || 0) * 0.60).toFixed(2)}<br>
+              Cartão (40%): R$ ${((allData.forecast?.days_30 || 0) * 0.40).toFixed(2)}
+            </div>
+          `
+        },
+        health: {
+          title: '🏥 Saúde do Sistema',
+          content: `
+            <div class="modal-row"><span>Assinaturas Ativas:</span><strong style="color: #0a7f2f;">${allData.health_metrics?.active_subscriptions || 0} ✓</strong></div>
+            <div class="modal-row"><span>Cobranças Pendentes:</span><strong style="color: #e6a500;">${allData.health_metrics?.pending_charges || 0} ⏳</strong></div>
+            <div class="modal-row"><span>Cobranças Falhadas:</span><strong style="color: #d90a0a;">${allData.health_metrics?.failed_charges || 0} ✗</strong></div>
+            <hr style="margin: 15px 0; border: none; border-top: 1px solid #eee;">
+            <div style="font-size: 0.85rem; color: #666;">
+              <strong>Taxa de Sucesso:</strong><br>
+              ${((((allData.charge_breakdown?.paid || 0) / (((allData.charge_breakdown?.paid || 0) + (allData.charge_breakdown?.failed || 0) + (allData.charge_breakdown?.pending || 0)) || 1)) * 100).toFixed(1))}% de sucesso
+            </div>
+          `
+        },
+        pending: {
+          title: '⏳ Cobranças Pendentes',
+          content: `
+            <div class="modal-row"><span>Quantidade:</span><strong>${allData.health_metrics?.pending_charges || 0}</strong></div>
+            <div class="modal-row"><span>Valor estimado:</span><strong>R$ ${(allData.health_metrics?.pending_charges * (mrr / (activeCustomers || 1))).toFixed(2)}</strong></div>
+            <div class="modal-row"><span>Status:</span><strong>Aguardando processamento</strong></div>
+            <hr style="margin: 15px 0; border: none; border-top: 1px solid #eee;">
+            <div style="font-size: 0.85rem; color: #666;">
+              Próxima tentativa será feita conforme configurado no sistema de retry.
+            </div>
+          `
+        },
+        failed: {
+          title: '✗ Cobranças Falhadas',
+          content: `
+            <div class="modal-row"><span>Quantidade:</span><strong>${allData.health_metrics?.failed_charges || 0}</strong></div>
+            <div class="modal-row"><span>Valor estimado:</span><strong>R$ ${(allData.health_metrics?.failed_charges * (mrr / (activeCustomers || 1))).toFixed(2)}</strong></div>
+            <div class="modal-row"><span>Ação necessária:</span><strong style="color: #d90a0a;">Contatar cliente</strong></div>
+            <hr style="margin: 15px 0; border: none; border-top: 1px solid #eee;">
+            <div style="font-size: 0.85rem; color: #666;">
+              Esses clientes precisam atualizar seu método de pagamento ou verificar fundos em conta.
+            </div>
+          `
+        },
+        active: {
+          title: '✓ Assinaturas Ativas',
+          content: `
+            <div class="modal-row"><span>Total de clientes:</span><strong>${allData.health_metrics?.active_subscriptions || 0}</strong></div>
+            <div class="modal-row"><span>Receita gerada:</span><strong>R$ ${mrr.toFixed(2)}</strong></div>
+            <div class="modal-row"><span>Receita média:</span><strong>R$ ${(mrr / (activeCustomers || 1)).toFixed(2)} por cliente</strong></div>
+            <hr style="margin: 15px 0; border: none; border-top: 1px solid #eee;">
+            <div style="font-size: 0.85rem; color: #666;">
+              Estes são seus clientes em dia com suas assinaturas.
+            </div>
+          `
+        },
+        paid: {
+          title: '✓ Cobranças Pagas',
+          content: `
+            <div class="modal-row"><span>Total processado:</span><strong>${allData.charge_breakdown?.paid || 0} cobranças</strong></div>
+            <div class="modal-row"><span>Taxa de sucesso:</span><strong>${((((allData.charge_breakdown?.paid || 0) / (((allData.charge_breakdown?.paid || 0) + (allData.charge_breakdown?.failed || 0) + (allData.charge_breakdown?.pending || 0)) || 1)) * 100).toFixed(1))}%</strong></div>
+            <div class="modal-row"><span>Último processamento:</span><strong>${new Date(allData.generated_at).toLocaleString('pt-BR')}</strong></div>
+            <hr style="margin: 15px 0; border: none; border-top: 1px solid #eee;">
+            <div style="font-size: 0.85rem; color: #666;">
+              Todas as cobranças com status "paid" foram processadas com sucesso.
+            </div>
+          `
+        },
+        confidence: {
+          title: '🔒 Confiança de Recebimento',
+          content: `
+            ${Object.values(allData.confidence_scores || {}).map(s => `
+              <div class="modal-row">
+                <span>${s.description}</span>
+                <strong>${Math.round(s.confidence * 100)}%</strong>
+              </div>
+            `).join('')}
+            <hr style="margin: 15px 0; border: none; border-top: 1px solid #eee;">
+            <div style="font-size: 0.85rem; color: #666;">
+              <strong>O que significa?</strong><br>
+              PIX tem maior taxa de sucesso, seguido por Boleto e depois Cartão.
+            </div>
+          `
+        }
+      };
+
+      const detail = details[type] || details.mrr;
+      title.textContent = detail.title;
+      body.innerHTML = detail.content;
+      modal.classList.add('active');
+    }
+
+    function showCustomerModal(name, email, plan, valor, nextDate, status) {
+      const modal = document.getElementById('modal');
+      const title = document.getElementById('modalTitle');
+      const body = document.getElementById('modalBody');
+
+      title.textContent = '👤 ' + name;
+      body.innerHTML = `
+        <div class="modal-row"><span>Email:</span><strong>${email}</strong></div>
+        <div class="modal-row"><span>Plano:</span><strong>${plan}</strong></div>
+        <div class="modal-row"><span>Valor Mensal:</span><strong>R$ ${valor}</strong></div>
+        <div class="modal-row"><span>Próxima Cobrança:</span><strong>${nextDate}</strong></div>
+        <div class="modal-row"><span>Status:</span><span class="badge badge-${status}">${status}</span></div>
+      `;
+      modal.classList.add('active');
+    }
+
+    function showTransactionModal(txnId, event) {
+      if (event) event.stopPropagation();
+
+      const txn = (allData.transactions || []).find(t => t.transaction_id === txnId);
+      if (!txn) return;
+
+      const modal = document.getElementById('modal');
+      const title = document.getElementById('modalTitle');
+      const body = document.getElementById('modalBody');
+
+      const statusIcon = txn.status === 'paid' ? '✓' : txn.status === 'pending' ? '⏳' : '✗';
+      const statusLabel = txn.status === 'paid' ? 'PAGA' : txn.status === 'pending' ? 'PENDENTE' : 'FALHADA';
+      const statusColor = txn.status === 'paid' ? '#0a7f2f' : txn.status === 'pending' ? '#e6a500' : '#d90a0a';
+
+      title.textContent = `${statusIcon} ${txn.customer_name} - ${statusLabel}`;
+      body.innerHTML = `
+        <div style="background: ${statusColor}20; padding: 15px; border-radius: 6px; margin-bottom: 20px;">
+          <strong style="color: ${statusColor};">Transação ${txn.transaction_id}</strong>
+        </div>
+
+        <div class="modal-row"><span><strong>Cliente</strong></span><strong>${txn.customer_name}</strong></div>
+        <div class="modal-row"><span>Email</span><strong>${txn.customer_email}</strong></div>
+        <div class="modal-row"><span>Plano</span><strong>${txn.plan}</strong></div>
+
+        <hr style="margin: 20px 0; border: none; border-top: 2px solid #eee;">
+
+        <div class="modal-row"><span><strong>Valor</strong></span><strong style="font-size: 1.3rem;">R$ ${(txn.amount_cents / 100).toFixed(2)}</strong></div>
+        <div class="modal-row"><span>Método de Pagamento</span><strong>${txn.payment_method.toUpperCase()}</strong></div>
+        <div class="modal-row"><span>Data da Cobrança</span><strong>${new Date(txn.charge_date).toLocaleDateString('pt-BR')}</strong></div>
+
+        ${txn.processed_date ? `<div class="modal-row"><span>Data de Processamento</span><strong>${new Date(txn.processed_date).toLocaleString('pt-BR')}</strong></div>` : ''}
+
+        <div class="modal-row"><span>Referência</span><strong style="font-family: monospace; font-size: 0.9rem;">${txn.reference}</strong></div>
+
+        ${txn.status !== 'paid' ? `
+          <hr style="margin: 20px 0; border: none; border-top: 2px solid #eee;">
+          <div class="modal-row"><span>Tentativas de Cobrança</span><strong>${txn.retry_count}</strong></div>
+          <div class="modal-row"><span>Próxima Tentativa</span><strong>${new Date(txn.next_retry).toLocaleString('pt-BR')}</strong></div>
+          ${txn.error_code ? `<div class="modal-row"><span>Código de Erro</span><strong style="color: #d90a0a;">${txn.error_code}</strong></div>` : ''}
+        ` : ''}
+
+        <hr style="margin: 20px 0; border: none; border-top: 2px solid #eee;">
+        <div style="background: #f5f5f5; padding: 12px; border-radius: 6px; border-left: 4px solid #000;">
+          <strong style="font-size: 0.85rem;">Observação:</strong><br>
+          <span style="font-size: 0.85rem; color: #666;">${txn.notes}</span>
+        </div>
+      `;
+      modal.classList.add('active');
+    }
+
+    function closeModal() {
+      document.getElementById('modal').classList.remove('active');
+    }
+
+    // Event listeners
+    document.querySelectorAll('.tab-btn').forEach(btn => {
+      btn.addEventListener('click', function() {
+        document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+        document.querySelectorAll('.tab-content').forEach(c => c.classList.remove('active'));
+        this.classList.add('active');
+        document.getElementById(this.dataset.tab).classList.add('active');
+      });
+    });
+
+    document.querySelectorAll('.filter-btn').forEach(btn => {
+      btn.addEventListener('click', function() {
+        document.querySelectorAll('.filter-btn').forEach(b => b.classList.remove('active'));
+        this.classList.add('active');
+        filter = this.dataset.filter;
+        renderClientes();
+      });
+    });
+
+    document.querySelectorAll('[data-txn-filter]').forEach(btn => {
+      btn.addEventListener('click', function() {
+        document.querySelectorAll('[data-txn-filter]').forEach(b => b.classList.remove('active'));
+        this.classList.add('active');
+        txnFilter = this.dataset.txnFilter;
+        renderTransactions();
+      });
+    });
+
+    document.getElementById('refreshBtn').addEventListener('click', loadData);
+
+    loadData();
+    setInterval(loadData, 30000);
+  </script>
+</body>
+</html>

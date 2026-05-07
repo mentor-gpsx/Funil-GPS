@@ -28,7 +28,7 @@ export class EntriesService {
   }
 
   private getCurrentUserId(): string {
-    const userId = this.request.user?.id;
+    const userId = this.request.user?.sub;
     if (!userId) {
       throw new BadRequestException('User ID not found in request');
     }

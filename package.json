@@ -1,15 +1,40 @@
 {
-  "name": "funil-gps",
+  "name": "funil-gps-financial-portal",
   "version": "1.0.0",
-  "private": true,
+  "description": "Sistema de Conciliação Financeira Multi-Gateway com Análise de Auditoria Avançada",
+  "main": "backend/src/server.js",
   "scripts": {
-    "build": "echo 'Static site — no build required'"
+    "setup": "node setup.js",
+    "start": "node backend/src/server.js",
+    "dev": "nodemon backend/src/server.js",
+    "import:csv": "node backend/scripts/import-csv.js",
+    "import:cakto:test": "node backend/scripts/import-cakto-test-data.js",
+    "import:cakto:manual": "node backend/scripts/import-cakto-manual.js"
   },
+  "keywords": [
+    "financial",
+    "payment",
+    "reconciliation",
+    "gateway",
+    "audit",
+    "cakto",
+    "infinitepay"
+  ],
+  "author": "GPSX",
+  "license": "proprietary",
   "dependencies": {
-    "@supabase/supabase-js": "^2.47.0"
+    "express": "^4.18.2",
+    "cors": "^2.8.5",
+    "sqlite3": "^5.1.6",
+    "csv-parse": "^5.4.1",
+    "pg": "^8.10.0",
+    "axios": "^1.6.0",
+    "dotenv": "^16.3.1"
   },
   "devDependencies": {
-    "dotenv": "^16.0.0",
-    "supabase": "^2.92.1"
+    "nodemon": "^3.0.1"
+  },
+  "engines": {
+    "node": ">=16.0.0"
   }
 }

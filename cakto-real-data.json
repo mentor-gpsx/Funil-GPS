@@ -1,0 +1,1431 @@
+{
+  "customers": [
+    {
+      "id": "cust_silasmauriciodasilvas",
+      "name": "SILAS  MAURICIO  DA SILVA",
+      "email": "silasmauriciodasilvas@yahoo.com.br",
+      "phone": "5516981220395",
+      "created_at": "2026-05-05T11:40:03.569Z",
+      "source": "cakto_real"
+    },
+    {
+      "id": "cust_gs7296566",
+      "name": "Guilherme Souza",
+      "email": "gs7296566@gmail.com",
+      "phone": "5516993325252",
+      "created_at": "2026-05-05T11:40:03.569Z",
+      "source": "cakto_real"
+    },
+    {
+      "id": "cust_leyrigoojs",
+      "name": "Leyriane Patrícia Gomes Amaral",
+      "email": "leyrigoojs@icloud.com",
+      "phone": "5516997772204",
+      "created_at": "2026-05-05T11:40:03.569Z",
+      "source": "cakto_real"
+    },
+    {
+      "id": "cust_ithalomaringolo18",
+      "name": "ITHALO MARINGOLO",
+      "email": "ithalomaringolo18@gmail.com",
+      "phone": "5516992080782",
+      "created_at": "2026-05-05T11:40:03.570Z",
+      "source": "cakto_real"
+    },
+    {
+      "id": "cust_joaobindo07",
+      "name": "João",
+      "email": "joaobindo07@gmail.com",
+      "phone": "5516991769459",
+      "created_at": "2026-05-05T11:40:03.570Z",
+      "source": "cakto_real"
+    },
+    {
+      "id": "cust_ariellicoliveira",
+      "name": "Arielli Cristina de Oliveira",
+      "email": "ariellicoliveira@gmail.com",
+      "phone": "5516992288926",
+      "created_at": "2026-05-05T11:40:03.570Z",
+      "source": "cakto_real"
+    },
+    {
+      "id": "cust_filipe7ferro",
+      "name": "Luis Filipe Leite Ferro",
+      "email": "filipe7ferro@gmail.com",
+      "phone": "5516996446969",
+      "created_at": "2026-05-05T11:40:03.570Z",
+      "source": "cakto_real"
+    },
+    {
+      "id": "cust_marcmellim",
+      "name": "Marcelo de Almeida Mellim",
+      "email": "marcmellim@hotmail.com",
+      "phone": "5516999996368",
+      "created_at": "2026-05-05T11:40:03.570Z",
+      "source": "cakto_real"
+    },
+    {
+      "id": "cust_gustavogabrielsilba",
+      "name": "Letícia Ferreira Mota",
+      "email": "gustavogabrielsilba@gmail.com",
+      "phone": "5516988708192",
+      "created_at": "2026-05-05T11:40:03.570Z",
+      "source": "cakto_real"
+    },
+    {
+      "id": "cust_pedrommariano2008",
+      "name": "pedro machado mariano",
+      "email": "pedrommariano2008@gmail.com",
+      "phone": "5516999716349",
+      "created_at": "2026-05-05T11:40:03.570Z",
+      "source": "cakto_real"
+    },
+    {
+      "id": "cust_acca2000",
+      "name": "Antonio Carlos Costa Andrade",
+      "email": "acca2000@bol.com.br",
+      "phone": "5516991977646",
+      "created_at": "2026-05-05T11:40:03.570Z",
+      "source": "cakto_real"
+    },
+    {
+      "id": "cust_vini.custodio6",
+      "name": "Richard tadeu Garcia",
+      "email": "vini.custodio6@gmail.com",
+      "phone": "5516994568685",
+      "created_at": "2026-05-05T11:40:03.570Z",
+      "source": "cakto_real"
+    },
+    {
+      "id": "cust_fefearmandodias",
+      "name": "Felipe Armando Gonçalves",
+      "email": "fefearmandodias@gmail.com",
+      "phone": "5516982005082",
+      "created_at": "2026-05-05T11:40:03.570Z",
+      "source": "cakto_real"
+    },
+    {
+      "id": "cust_andreassisinvestidor",
+      "name": "andré de assis lúcio",
+      "email": "andreassisinvestidor@gmail.com",
+      "phone": "5516992883878",
+      "created_at": "2026-05-05T11:40:03.570Z",
+      "source": "cakto_real"
+    },
+    {
+      "id": "cust_bielzinnsousa07",
+      "name": "Gabriel Henrique",
+      "email": "bielzinnsousa07@gmail.com",
+      "phone": "5516991442348",
+      "created_at": "2026-05-05T11:40:03.570Z",
+      "source": "cakto_real"
+    },
+    {
+      "id": "cust_alisson.f.o",
+      "name": "Alisson Freitas Oliveira",
+      "email": "alisson.f.o@hotmail.com",
+      "phone": "5516992084741",
+      "created_at": "2026-05-05T11:40:03.570Z",
+      "source": "cakto_real"
+    },
+    {
+      "id": "cust_you.deserveweb",
+      "name": "Cira da Silva Carrijo Boareti",
+      "email": "you.deserveweb@gmail.com",
+      "phone": "5516999965787",
+      "created_at": "2026-05-05T11:40:03.570Z",
+      "source": "cakto_real"
+    },
+    {
+      "id": "cust_gabriel08rinaldi",
+      "name": "Gabriel José Moreira Rinaldi",
+      "email": "gabriel08rinaldi@gmail.com",
+      "phone": "5516992275830",
+      "created_at": "2026-05-05T11:40:03.570Z",
+      "source": "cakto_real"
+    },
+    {
+      "id": "cust_marcus.10.10",
+      "name": "Marcus Vinicius Barbosa da Silva",
+      "email": "marcus.10.10@hotmail.com",
+      "phone": "5516992506455",
+      "created_at": "2026-05-05T11:40:03.570Z",
+      "source": "cakto_real"
+    },
+    {
+      "id": "cust_felipevilaca3",
+      "name": "Felipe Vilaça Silva",
+      "email": "felipevilaca3@gmail.com",
+      "phone": "5516994644049",
+      "created_at": "2026-05-05T11:40:03.570Z",
+      "source": "cakto_real"
+    },
+    {
+      "id": "cust_rsgomes0404",
+      "name": "RODRIGO DE SOUSA GOMES",
+      "email": "rsgomes0404@gmail.com",
+      "phone": "5516988143887",
+      "created_at": "2026-05-05T11:40:03.570Z",
+      "source": "cakto_real"
+    },
+    {
+      "id": "cust_jv4791503",
+      "name": "Jose vitor Gonçalves",
+      "email": "jv4791503@gmail.com",
+      "phone": "5516992749541",
+      "created_at": "2026-05-05T11:40:03.570Z",
+      "source": "cakto_real"
+    },
+    {
+      "id": "cust_wevertondsouza",
+      "name": "Weverton de Souza Faria",
+      "email": "wevertondsouza@hotmail.com",
+      "phone": "5516992988002",
+      "created_at": "2026-05-05T11:40:03.570Z",
+      "source": "cakto_real"
+    },
+    {
+      "id": "cust_contato",
+      "name": "Thiago Barbosa de Oliveira",
+      "email": "contato@othiagobarbosa.com.br",
+      "phone": "5516991700551",
+      "created_at": "2026-05-05T11:40:03.570Z",
+      "source": "cakto_real"
+    },
+    {
+      "id": "cust_daniela.paula",
+      "name": "A C SANTOS DO CARMO GONCALVES CONFECCAO  ME",
+      "email": "daniela.paula@b2gsolucoesempresariais.com.br",
+      "phone": "551699651662",
+      "created_at": "2026-05-05T11:40:03.570Z",
+      "source": "cakto_real"
+    },
+    {
+      "id": "cust_fernandoalvarengaa14",
+      "name": "Fernando José Alvarenga",
+      "email": "fernandoalvarengaa14@gmail.com",
+      "phone": "5516981306204",
+      "created_at": "2026-05-05T11:40:03.570Z",
+      "source": "cakto_real"
+    },
+    {
+      "id": "cust_gstavos96",
+      "name": "Gustavo Vinicius da Silva",
+      "email": "gstavos96@gmail.com",
+      "phone": "5516997270183",
+      "created_at": "2026-05-05T11:40:03.570Z",
+      "source": "cakto_real"
+    },
+    {
+      "id": "cust_jaquelineleme206",
+      "name": "Jaqueline Lima Leme",
+      "email": "jaquelineleme206@gmail.com",
+      "phone": "5516997056352",
+      "created_at": "2026-05-05T11:40:03.570Z",
+      "source": "cakto_real"
+    },
+    {
+      "id": "cust_fmachado699",
+      "name": "Felipe Kofahl Machado",
+      "email": "fmachado699@gmail.com",
+      "phone": "5516992876917",
+      "created_at": "2026-05-05T11:40:03.570Z",
+      "source": "cakto_real"
+    },
+    {
+      "id": "cust_anaagath",
+      "name": "Agatha cristine Santos",
+      "email": "anaagath@gmail.com",
+      "phone": "5516991040994",
+      "created_at": "2026-05-05T11:40:03.570Z",
+      "source": "cakto_real"
+    },
+    {
+      "id": "cust_anajulia.goulart.1996",
+      "name": "Julia Goulart",
+      "email": "anajulia.goulart.1996@hotmail.com",
+      "phone": "5516991344078",
+      "created_at": "2026-05-05T11:40:03.570Z",
+      "source": "cakto_real"
+    },
+    {
+      "id": "cust_7servicesltda",
+      "name": "Lucas Lucena",
+      "email": "7servicesltda@gmail.com",
+      "phone": "5516993660130",
+      "created_at": "2026-05-05T11:40:03.570Z",
+      "source": "cakto_real"
+    },
+    {
+      "id": "cust_luisscarlos9184",
+      "name": "Luis Carlos da Silva",
+      "email": "luisscarlos9184@gmail.com",
+      "phone": "5516993100460",
+      "created_at": "2026-05-05T11:40:03.570Z",
+      "source": "cakto_real"
+    },
+    {
+      "id": "cust_angelinaanjinha86",
+      "name": "Angelina de Sousa Oliveira Silva",
+      "email": "angelinaanjinha86@gmail.com",
+      "phone": "5516993962532",
+      "created_at": "2026-05-05T11:40:03.570Z",
+      "source": "cakto_real"
+    },
+    {
+      "id": "cust_didispirandelli-10",
+      "name": "Diego Spirandelli Soares",
+      "email": "didispirandelli-10@hotmail.com",
+      "phone": "5516991747854",
+      "created_at": "2026-05-05T11:40:03.570Z",
+      "source": "cakto_real"
+    },
+    {
+      "id": "cust_ththiagoribeiro2509",
+      "name": "Thiago Braga Ribeiro",
+      "email": "ththiagoribeiro2509@gmail.com",
+      "phone": "5516992645549",
+      "created_at": "2026-05-05T11:40:03.570Z",
+      "source": "cakto_real"
+    },
+    {
+      "id": "cust_gramosgomes",
+      "name": "Gislaine Ramos Gomes",
+      "email": "gramosgomes@gmail.com",
+      "phone": "5516991684664",
+      "created_at": "2026-05-05T11:40:03.570Z",
+      "source": "cakto_real"
+    },
+    {
+      "id": "cust_elciomarcos99",
+      "name": "Elcio Marcos Dias Junior",
+      "email": "elciomarcos99@gmail.com",
+      "phone": "5516992337515",
+      "created_at": "2026-05-05T11:40:03.570Z",
+      "source": "cakto_real"
+    },
+    {
+      "id": "cust_edivaldofarias85",
+      "name": "Edivaldo Farias de Souza",
+      "email": "edivaldofarias85@gmail.com",
+      "phone": "5516994218272",
+      "created_at": "2026-05-05T11:40:03.570Z",
+      "source": "cakto_real"
+    },
+    {
+      "id": "cust_bruno",
+      "name": "MTB CONFECÇÃO E COMERCIO",
+      "email": "bruno@nxp.adm.br",
+      "phone": "5514998690131",
+      "created_at": "2026-05-05T11:40:03.570Z",
+      "source": "cakto_real"
+    },
+    {
+      "id": "cust_calcadosilva2020",
+      "name": "Rodrigo Martins Da Silva",
+      "email": "calcadosilva2020@gmail.com",
+      "phone": "5516991626681",
+      "created_at": "2026-05-05T11:40:03.570Z",
+      "source": "cakto_real"
+    },
+    {
+      "id": "cust_erickoliveira1409",
+      "name": "Erick rodrigo de Oliveira",
+      "email": "erickoliveira1409@gmail.com",
+      "phone": "5543999846557",
+      "created_at": "2026-05-05T11:40:03.570Z",
+      "source": "cakto_real"
+    },
+    {
+      "id": "cust_felipekarol155",
+      "name": "Felipe oliveira Souza cruz",
+      "email": "felipekarol155@gmail.com",
+      "phone": "5516993650405",
+      "created_at": "2026-05-05T11:40:03.570Z",
+      "source": "cakto_real"
+    },
+    {
+      "id": "cust_matheusscintra",
+      "name": "Matheus da silva Cintra",
+      "email": "matheusscintra@hotmail.com",
+      "phone": "5516992795356",
+      "created_at": "2026-05-05T11:40:03.570Z",
+      "source": "cakto_real"
+    },
+    {
+      "id": "cust_angelborges91",
+      "name": "ANGELA ROSA BORGES",
+      "email": "angelborges91@outlook.com",
+      "phone": "5516991889237",
+      "created_at": "2026-05-05T11:40:03.570Z",
+      "source": "cakto_real"
+    },
+    {
+      "id": "cust_financeiro.damarketing",
+      "name": "WF Ecom Ltda",
+      "email": "financeiro.damarketing@gmail.com",
+      "phone": "5535988862853",
+      "created_at": "2026-05-05T11:40:03.570Z",
+      "source": "cakto_real"
+    },
+    {
+      "id": "cust_queiroozandre",
+      "name": "Andre Queiroz",
+      "email": "queiroozandre@gmail.com",
+      "phone": "5516999671208",
+      "created_at": "2026-05-05T11:40:03.570Z",
+      "source": "cakto_real"
+    },
+    {
+      "id": "cust_larissaap.antunes",
+      "name": "Larissa Aparecida Silva Antunes",
+      "email": "larissaap.antunes@hotmail.com",
+      "phone": "5516993518452",
+      "created_at": "2026-05-05T11:40:03.570Z",
+      "source": "cakto_real"
+    },
+    {
+      "id": "cust_francienemendesrepresentacoes",
+      "name": "FRANCIENE MENDES DE ALMEIDA SANTOS",
+      "email": "francienemendesrepresentacoes@gmail.com",
+      "phone": "5516991024572",
+      "created_at": "2026-05-05T11:40:03.570Z",
+      "source": "cakto_real"
+    },
+    {
+      "id": "cust_camisgiovana2044",
+      "name": "Camila Giovana Ferreira Silva",
+      "email": "camisgiovana2044@gmail.com",
+      "phone": "5535997753098",
+      "created_at": "2026-05-05T11:40:03.570Z",
+      "source": "cakto_real"
+    },
+    {
+      "id": "cust_belalinatextil",
+      "name": "Bruno Henrique",
+      "email": "belalinatextil@gmail.com",
+      "phone": "5516993444876",
+      "created_at": "2026-05-05T11:40:03.570Z",
+      "source": "cakto_real"
+    },
+    {
+      "id": "cust_mbl.jeferson",
+      "name": "Jeferson Borges",
+      "email": "mbl.jeferson@gmail.com",
+      "phone": "5516992526672",
+      "created_at": "2026-05-05T11:40:03.570Z",
+      "source": "cakto_real"
+    },
+    {
+      "id": "cust_leonardolemosprincipal",
+      "name": "Leonardo Lemos Damasceno",
+      "email": "leonardolemosprincipal@gmail.com",
+      "phone": "5516992460832",
+      "created_at": "2026-05-05T11:40:03.570Z",
+      "source": "cakto_real"
+    },
+    {
+      "id": "cust_mary",
+      "name": "Maryelle",
+      "email": "mary@gmail.com",
+      "phone": "5534999694876",
+      "created_at": "2026-05-05T11:40:03.570Z",
+      "source": "cakto_real"
+    },
+    {
+      "id": "cust_daniela.paula",
+      "name": "A C SANTOS DO CARMO GONCALVES CONFECCAO  ME",
+      "email": "daniela.paula@solucoesempresariais.com.br",
+      "phone": "5516999651662",
+      "created_at": "2026-05-05T11:40:03.570Z",
+      "source": "cakto_real"
+    },
+    {
+      "id": "cust_leticia.ccamargo",
+      "name": "Letícia Caroline Norberto de Camargo Rodrigues",
+      "email": "leticia.ccamargo@outlook.com",
+      "phone": "5516992822347",
+      "created_at": "2026-05-05T11:40:03.570Z",
+      "source": "cakto_real"
+    },
+    {
+      "id": "cust_martinsramon20",
+      "name": "Ramon vinicius martins Bazante",
+      "email": "martinsramon20@gmail.com",
+      "phone": "5516999685337",
+      "created_at": "2026-05-05T11:40:03.570Z",
+      "source": "cakto_real"
+    },
+    {
+      "id": "cust_roitsmoda",
+      "name": "Italo Fabricio",
+      "email": "roitsmoda@gmail.com",
+      "phone": "5516994097513",
+      "created_at": "2026-05-05T11:40:03.570Z",
+      "source": "cakto_real"
+    },
+    {
+      "id": "cust_daniela-oliver22",
+      "name": "DANIELA BARSANULFO Alves de Oliveira",
+      "email": "daniela-oliver22@hotmail.com",
+      "phone": "5516991685580",
+      "created_at": "2026-05-05T11:40:03.570Z",
+      "source": "cakto_real"
+    },
+    {
+      "id": "cust_sr_marcos.1069",
+      "name": "Marcos Adriano Dietrich",
+      "email": "sr_marcos.1069@hotmail.com",
+      "phone": "5516991107991",
+      "created_at": "2026-05-05T11:40:03.570Z",
+      "source": "cakto_real"
+    },
+    {
+      "id": "cust_valtercidesjunior5",
+      "name": "Valtercides Junior",
+      "email": "valtercidesjunior5@gmail.com",
+      "phone": "5516981398171",
+      "created_at": "2026-05-05T11:40:03.570Z",
+      "source": "cakto_real"
+    },
+    {
+      "id": "cust_rafaelfrc8",
+      "name": "Rafael de paula cardoso",
+      "email": "rafaelfrc8@outlook.com",
+      "phone": "5516992111165",
+      "created_at": "2026-05-05T11:40:03.570Z",
+      "source": "cakto_real"
+    },
+    {
+      "id": "cust_financeiro1.slz",
+      "name": "IS ANTUNES",
+      "email": "financeiro1.slz@hotmail.com",
+      "phone": "5516999777704",
+      "created_at": "2026-05-05T11:40:03.570Z",
+      "source": "cakto_real"
+    },
+    {
+      "id": "cust_danielsergio795",
+      "name": "Daniel gomes",
+      "email": "danielsergio795@gmail.com",
+      "phone": "5516990517620",
+      "created_at": "2026-05-05T11:40:03.571Z",
+      "source": "cakto_real"
+    }
+  ],
+  "charges": [
+    {
+      "id": "3FjpS8M",
+      "customer_id": "cust_silasmauriciodasilvas",
+      "customer_name": "SILAS  MAURICIO  DA SILVA",
+      "amount": 1000.99,
+      "status": "paid",
+      "payment_method": "pix",
+      "due_date": "2026-05-04T13:20:24.057Z",
+      "paid_date": "2026-05-04T13:20:24.057Z",
+      "created_at": "2026-05-05T11:40:03.569Z",
+      "source": "cakto_real"
+    },
+    {
+      "id": "h5tlAsx",
+      "customer_id": "cust_gs7296566",
+      "customer_name": "Guilherme Souza",
+      "amount": 7000.59,
+      "status": "paid",
+      "payment_method": "cc",
+      "due_date": "2026-04-30T22:56:46.315Z",
+      "paid_date": "2026-04-30T22:56:46.315Z",
+      "created_at": "2026-05-05T11:40:03.569Z",
+      "source": "cakto_real"
+    },
+    {
+      "id": "3a7tPtR",
+      "customer_id": "cust_leyrigoojs",
+      "customer_name": "Leyriane Patrícia Gomes Amaral",
+      "amount": 1000.99,
+      "status": "paid",
+      "payment_method": "boleto",
+      "due_date": "2026-04-30T19:38:22.236Z",
+      "paid_date": "2026-04-30T19:38:22.236Z",
+      "created_at": "2026-05-05T11:40:03.570Z",
+      "source": "cakto_real"
+    },
+    {
+      "id": "8vbCDtF",
+      "customer_id": "cust_ithalomaringolo18",
+      "customer_name": "ITHALO MARINGOLO",
+      "amount": 1800.99,
+      "status": "paid",
+      "payment_method": "pix",
+      "due_date": "2026-04-29T18:06:32.695Z",
+      "paid_date": "2026-04-29T18:06:32.695Z",
+      "created_at": "2026-05-05T11:40:03.570Z",
+      "source": "cakto_real"
+    },
+    {
+      "id": "9AkJd36",
+      "customer_id": "cust_joaobindo07",
+      "customer_name": "João",
+      "amount": 4000.99,
+      "status": "paid",
+      "payment_method": "pix",
+      "due_date": "2026-04-29T15:48:17.385Z",
+      "paid_date": "2026-04-29T15:48:17.385Z",
+      "created_at": "2026-05-05T11:40:03.570Z",
+      "source": "cakto_real"
+    },
+    {
+      "id": "wYs8GxJ",
+      "customer_id": "cust_ariellicoliveira",
+      "customer_name": "Arielli Cristina de Oliveira",
+      "amount": 5000.99,
+      "status": "paid",
+      "payment_method": "pix",
+      "due_date": "2026-04-29T14:22:45.454Z",
+      "paid_date": "2026-04-29T14:22:45.454Z",
+      "created_at": "2026-05-05T11:40:03.570Z",
+      "source": "cakto_real"
+    },
+    {
+      "id": "91G4V4h",
+      "customer_id": "cust_filipe7ferro",
+      "customer_name": "Luis Filipe Leite Ferro",
+      "amount": 2000.99,
+      "status": "paid",
+      "payment_method": "pix",
+      "due_date": "2026-04-29T00:30:00.389Z",
+      "paid_date": "2026-04-29T00:30:00.389Z",
+      "created_at": "2026-05-05T11:40:03.570Z",
+      "source": "cakto_real"
+    },
+    {
+      "id": "7Qt5wQ8",
+      "customer_id": "cust_marcmellim",
+      "customer_name": "Marcelo de Almeida Mellim",
+      "amount": 27.99,
+      "status": "paid",
+      "payment_method": "pix",
+      "due_date": "2026-04-28T21:05:40.210Z",
+      "paid_date": "2026-04-28T21:05:40.210Z",
+      "created_at": "2026-05-05T11:40:03.570Z",
+      "source": "cakto_real"
+    },
+    {
+      "id": "2sb9pje",
+      "customer_id": "cust_gustavogabrielsilba",
+      "customer_name": "Letícia Ferreira Mota",
+      "amount": 27.99,
+      "status": "paid",
+      "payment_method": "pix",
+      "due_date": "2026-04-28T20:30:55.702Z",
+      "paid_date": "2026-04-28T20:30:55.702Z",
+      "created_at": "2026-05-05T11:40:03.570Z",
+      "source": "cakto_real"
+    },
+    {
+      "id": "7EcY6We",
+      "customer_id": "cust_pedrommariano2008",
+      "customer_name": "pedro machado mariano",
+      "amount": 27.99,
+      "status": "paid",
+      "payment_method": "pix",
+      "due_date": "2026-04-28T19:47:02.087Z",
+      "paid_date": "2026-04-28T19:47:02.087Z",
+      "created_at": "2026-05-05T11:40:03.570Z",
+      "source": "cakto_real"
+    },
+    {
+      "id": "5dzizcJ",
+      "customer_id": "cust_acca2000",
+      "customer_name": "Antonio Carlos Costa Andrade",
+      "amount": 27.99,
+      "status": "paid",
+      "payment_method": "pix",
+      "due_date": "2026-04-28T18:39:35.673Z",
+      "paid_date": "2026-04-28T18:39:35.673Z",
+      "created_at": "2026-05-05T11:40:03.570Z",
+      "source": "cakto_real"
+    },
+    {
+      "id": "7L9rUvL",
+      "customer_id": "cust_vini.custodio6",
+      "customer_name": "Richard tadeu Garcia",
+      "amount": 27.99,
+      "status": "paid",
+      "payment_method": "pix",
+      "due_date": "2026-04-28T17:46:27.846Z",
+      "paid_date": "2026-04-28T17:46:27.846Z",
+      "created_at": "2026-05-05T11:40:03.570Z",
+      "source": "cakto_real"
+    },
+    {
+      "id": "6Ji1ddn",
+      "customer_id": "cust_vini.custodio6",
+      "customer_name": "Richard tadeu Garcia",
+      "amount": 27.99,
+      "status": "paid",
+      "payment_method": "pix",
+      "due_date": "2026-04-28T17:42:01.036Z",
+      "paid_date": "2026-04-28T17:42:01.036Z",
+      "created_at": "2026-05-05T11:40:03.570Z",
+      "source": "cakto_real"
+    },
+    {
+      "id": "88rHrt9",
+      "customer_id": "cust_fefearmandodias",
+      "customer_name": "Felipe Armando Gonçalves",
+      "amount": 27.99,
+      "status": "paid",
+      "payment_method": "pix",
+      "due_date": "2026-04-28T17:24:26.853Z",
+      "paid_date": "2026-04-28T17:24:26.853Z",
+      "created_at": "2026-05-05T11:40:03.570Z",
+      "source": "cakto_real"
+    },
+    {
+      "id": "9GaSaii",
+      "customer_id": "cust_andreassisinvestidor",
+      "customer_name": "andré de assis lúcio",
+      "amount": 27.99,
+      "status": "paid",
+      "payment_method": "pix",
+      "due_date": "2026-04-28T17:19:34.987Z",
+      "paid_date": "2026-04-28T17:19:34.987Z",
+      "created_at": "2026-05-05T11:40:03.570Z",
+      "source": "cakto_real"
+    },
+    {
+      "id": "97ivZJg",
+      "customer_id": "cust_bielzinnsousa07",
+      "customer_name": "Gabriel Henrique",
+      "amount": 27.99,
+      "status": "paid",
+      "payment_method": "pix",
+      "due_date": "2026-04-28T17:08:54.863Z",
+      "paid_date": "2026-04-28T17:08:54.863Z",
+      "created_at": "2026-05-05T11:40:03.570Z",
+      "source": "cakto_real"
+    },
+    {
+      "id": "4w5wNZs",
+      "customer_id": "cust_alisson.f.o",
+      "customer_name": "Alisson Freitas Oliveira",
+      "amount": 27.99,
+      "status": "paid",
+      "payment_method": "cc",
+      "due_date": "2026-04-28T16:56:07.853Z",
+      "paid_date": "2026-04-28T16:56:07.853Z",
+      "created_at": "2026-05-05T11:40:03.570Z",
+      "source": "cakto_real"
+    },
+    {
+      "id": "3Cexe74",
+      "customer_id": "cust_you.deserveweb",
+      "customer_name": "Cira da Silva Carrijo Boareti",
+      "amount": 2000.99,
+      "status": "paid",
+      "payment_method": "pix",
+      "due_date": "2026-04-28T16:46:53.884Z",
+      "paid_date": "2026-04-28T16:46:53.884Z",
+      "created_at": "2026-05-05T11:40:03.570Z",
+      "source": "cakto_real"
+    },
+    {
+      "id": "4cZ4r1y",
+      "customer_id": "cust_gabriel08rinaldi",
+      "customer_name": "Gabriel José Moreira Rinaldi",
+      "amount": 27.99,
+      "status": "paid",
+      "payment_method": "pix",
+      "due_date": "2026-04-28T16:15:01.267Z",
+      "paid_date": "2026-04-28T16:15:01.267Z",
+      "created_at": "2026-05-05T11:40:03.570Z",
+      "source": "cakto_real"
+    },
+    {
+      "id": "5Pn6hS5",
+      "customer_id": "cust_marcus.10.10",
+      "customer_name": "Marcus Vinicius Barbosa da Silva",
+      "amount": 27.99,
+      "status": "paid",
+      "payment_method": "pix",
+      "due_date": "2026-04-28T14:59:35.211Z",
+      "paid_date": "2026-04-28T14:59:35.211Z",
+      "created_at": "2026-05-05T11:40:03.570Z",
+      "source": "cakto_real"
+    },
+    {
+      "id": "91KaqJs",
+      "customer_id": "cust_filipe7ferro",
+      "customer_name": "Luis Filipe Leite Ferro",
+      "amount": 27.99,
+      "status": "paid",
+      "payment_method": "pix",
+      "due_date": "2026-04-28T12:30:07.580Z",
+      "paid_date": "2026-04-28T12:30:07.580Z",
+      "created_at": "2026-05-05T11:40:03.570Z",
+      "source": "cakto_real"
+    },
+    {
+      "id": "4gCNXxX",
+      "customer_id": "cust_felipevilaca3",
+      "customer_name": "Felipe Vilaça Silva",
+      "amount": 27.99,
+      "status": "paid",
+      "payment_method": "pix",
+      "due_date": "2026-04-28T12:10:55.121Z",
+      "paid_date": "2026-04-28T12:10:55.121Z",
+      "created_at": "2026-05-05T11:40:03.570Z",
+      "source": "cakto_real"
+    },
+    {
+      "id": "7jF8Z8A",
+      "customer_id": "cust_rsgomes0404",
+      "customer_name": "RODRIGO DE SOUSA GOMES",
+      "amount": 27.99,
+      "status": "paid",
+      "payment_method": "pix",
+      "due_date": "2026-04-28T11:34:46.195Z",
+      "paid_date": "2026-04-28T11:34:46.195Z",
+      "created_at": "2026-05-05T11:40:03.570Z",
+      "source": "cakto_real"
+    },
+    {
+      "id": "3BCwgwC",
+      "customer_id": "cust_jv4791503",
+      "customer_name": "Jose vitor Gonçalves",
+      "amount": 27.99,
+      "status": "paid",
+      "payment_method": "pix",
+      "due_date": "2026-04-28T11:02:15.262Z",
+      "paid_date": "2026-04-28T11:02:15.262Z",
+      "created_at": "2026-05-05T11:40:03.570Z",
+      "source": "cakto_real"
+    },
+    {
+      "id": "WNbZpZp",
+      "customer_id": "cust_wevertondsouza",
+      "customer_name": "Weverton de Souza Faria",
+      "amount": 27.99,
+      "status": "paid",
+      "payment_method": "pix",
+      "due_date": "2026-04-28T00:35:07.068Z",
+      "paid_date": "2026-04-28T00:35:07.068Z",
+      "created_at": "2026-05-05T11:40:03.570Z",
+      "source": "cakto_real"
+    },
+    {
+      "id": "7n1819B",
+      "customer_id": "cust_contato",
+      "customer_name": "Thiago Barbosa de Oliveira",
+      "amount": 27.99,
+      "status": "paid",
+      "payment_method": "pix",
+      "due_date": "2026-04-27T21:06:59.479Z",
+      "paid_date": "2026-04-27T21:06:59.479Z",
+      "created_at": "2026-05-05T11:40:03.570Z",
+      "source": "cakto_real"
+    },
+    {
+      "id": "9HJFS5S",
+      "customer_id": "cust_daniela.paula",
+      "customer_name": "A C SANTOS DO CARMO GONCALVES CONFECCAO  ME",
+      "amount": 2000.99,
+      "status": "paid",
+      "payment_method": "pix",
+      "due_date": "2026-04-27T20:53:42.996Z",
+      "paid_date": "2026-04-27T20:53:42.996Z",
+      "created_at": "2026-05-05T11:40:03.570Z",
+      "source": "cakto_real"
+    },
+    {
+      "id": "7rNd6hw",
+      "customer_id": "cust_gustavogabrielsilba",
+      "customer_name": "Letícia Ferreira Mota",
+      "amount": 27.99,
+      "status": "paid",
+      "payment_method": "pix",
+      "due_date": "2026-04-27T18:27:48.065Z",
+      "paid_date": "2026-04-27T18:27:48.065Z",
+      "created_at": "2026-05-05T11:40:03.570Z",
+      "source": "cakto_real"
+    },
+    {
+      "id": "76rCrgs",
+      "customer_id": "cust_fernandoalvarengaa14",
+      "customer_name": "Fernando José Alvarenga",
+      "amount": 27.99,
+      "status": "paid",
+      "payment_method": "pix",
+      "due_date": "2026-04-27T18:05:24.638Z",
+      "paid_date": "2026-04-27T18:05:24.638Z",
+      "created_at": "2026-05-05T11:40:03.570Z",
+      "source": "cakto_real"
+    },
+    {
+      "id": "811MDj6",
+      "customer_id": "cust_joaobindo07",
+      "customer_name": "João",
+      "amount": 27.99,
+      "status": "paid",
+      "payment_method": "pix",
+      "due_date": "2026-04-27T17:47:18.735Z",
+      "paid_date": "2026-04-27T17:47:18.735Z",
+      "created_at": "2026-05-05T11:40:03.570Z",
+      "source": "cakto_real"
+    },
+    {
+      "id": "5RuK9Fd",
+      "customer_id": "cust_joaobindo07",
+      "customer_name": "João",
+      "amount": 27.99,
+      "status": "paid",
+      "payment_method": "pix",
+      "due_date": "2026-04-27T17:44:27.368Z",
+      "paid_date": "2026-04-27T17:44:27.368Z",
+      "created_at": "2026-05-05T11:40:03.570Z",
+      "source": "cakto_real"
+    },
+    {
+      "id": "2SltYkj",
+      "customer_id": "cust_gstavos96",
+      "customer_name": "Gustavo Vinicius da Silva",
+      "amount": 27.99,
+      "status": "paid",
+      "payment_method": "pix",
+      "due_date": "2026-04-27T16:57:10.698Z",
+      "paid_date": "2026-04-27T16:57:10.698Z",
+      "created_at": "2026-05-05T11:40:03.570Z",
+      "source": "cakto_real"
+    },
+    {
+      "id": "27hpJPR",
+      "customer_id": "cust_jaquelineleme206",
+      "customer_name": "Jaqueline Lima Leme",
+      "amount": 2084.99,
+      "status": "paid",
+      "payment_method": "pix",
+      "due_date": "2026-04-27T16:45:53.675Z",
+      "paid_date": "2026-04-27T16:45:53.675Z",
+      "created_at": "2026-05-05T11:40:03.570Z",
+      "source": "cakto_real"
+    },
+    {
+      "id": "A6Hz6Dz",
+      "customer_id": "cust_fmachado699",
+      "customer_name": "Felipe Kofahl Machado",
+      "amount": 27.99,
+      "status": "paid",
+      "payment_method": "pix",
+      "due_date": "2026-04-27T16:05:29.262Z",
+      "paid_date": "2026-04-27T16:05:29.262Z",
+      "created_at": "2026-05-05T11:40:03.570Z",
+      "source": "cakto_real"
+    },
+    {
+      "id": "WEAe6ii",
+      "customer_id": "cust_anaagath",
+      "customer_name": "Agatha cristine Santos",
+      "amount": 27.99,
+      "status": "paid",
+      "payment_method": "pix",
+      "due_date": "2026-04-27T13:29:47.003Z",
+      "paid_date": "2026-04-27T13:29:47.003Z",
+      "created_at": "2026-05-05T11:40:03.570Z",
+      "source": "cakto_real"
+    },
+    {
+      "id": "5qk4Ehr",
+      "customer_id": "cust_gs7296566",
+      "customer_name": "Guilherme Souza",
+      "amount": 27.99,
+      "status": "paid",
+      "payment_method": "pix",
+      "due_date": "2026-04-26T22:26:57.340Z",
+      "paid_date": "2026-04-26T22:26:57.340Z",
+      "created_at": "2026-05-05T11:40:03.570Z",
+      "source": "cakto_real"
+    },
+    {
+      "id": "dmRZoHj",
+      "customer_id": "cust_anajulia.goulart.1996",
+      "customer_name": "Julia Goulart",
+      "amount": 27.99,
+      "status": "paid",
+      "payment_method": "pix",
+      "due_date": "2026-04-23T18:00:19.955Z",
+      "paid_date": "2026-04-23T18:00:19.955Z",
+      "created_at": "2026-05-05T11:40:03.570Z",
+      "source": "cakto_real"
+    },
+    {
+      "id": "2pttxpt",
+      "customer_id": "cust_7servicesltda",
+      "customer_name": "Lucas Lucena",
+      "amount": 27.99,
+      "status": "paid",
+      "payment_method": "pix",
+      "due_date": "2026-04-23T17:57:17.046Z",
+      "paid_date": "2026-04-23T17:57:17.046Z",
+      "created_at": "2026-05-05T11:40:03.570Z",
+      "source": "cakto_real"
+    },
+    {
+      "id": "29eySpv",
+      "customer_id": "cust_luisscarlos9184",
+      "customer_name": "Luis Carlos da Silva",
+      "amount": 27.99,
+      "status": "paid",
+      "payment_method": "pix",
+      "due_date": "2026-04-22T14:47:50.636Z",
+      "paid_date": "2026-04-22T14:47:50.636Z",
+      "created_at": "2026-05-05T11:40:03.570Z",
+      "source": "cakto_real"
+    },
+    {
+      "id": "5XJ7BSZ",
+      "customer_id": "cust_angelinaanjinha86",
+      "customer_name": "Angelina de Sousa Oliveira Silva",
+      "amount": 27.99,
+      "status": "paid",
+      "payment_method": "pix",
+      "due_date": "2026-04-22T14:46:11.233Z",
+      "paid_date": "2026-04-22T14:46:11.233Z",
+      "created_at": "2026-05-05T11:40:03.570Z",
+      "source": "cakto_real"
+    },
+    {
+      "id": "4bR8FLQ",
+      "customer_id": "cust_didispirandelli-10",
+      "customer_name": "Diego Spirandelli Soares",
+      "amount": 1600.99,
+      "status": "paid",
+      "payment_method": "pix",
+      "due_date": "2026-04-22T11:19:41.541Z",
+      "paid_date": "2026-04-22T11:19:41.541Z",
+      "created_at": "2026-05-05T11:40:03.570Z",
+      "source": "cakto_real"
+    },
+    {
+      "id": "76Hcqav",
+      "customer_id": "cust_ththiagoribeiro2509",
+      "customer_name": "Thiago Braga Ribeiro",
+      "amount": 1800.99,
+      "status": "paid",
+      "payment_method": "pix",
+      "due_date": "2026-04-20T21:50:25.496Z",
+      "paid_date": "2026-04-20T21:50:25.496Z",
+      "created_at": "2026-05-05T11:40:03.570Z",
+      "source": "cakto_real"
+    },
+    {
+      "id": "2gta4bM",
+      "customer_id": "cust_gramosgomes",
+      "customer_name": "Gislaine Ramos Gomes",
+      "amount": 2000.99,
+      "status": "paid",
+      "payment_method": "cc",
+      "due_date": "2026-04-20T19:26:35.791Z",
+      "paid_date": "2026-04-20T19:26:35.791Z",
+      "created_at": "2026-05-05T11:40:03.570Z",
+      "source": "cakto_real"
+    },
+    {
+      "id": "6TYmXvc",
+      "customer_id": "cust_ariellicoliveira",
+      "customer_name": "Arielli Cristina de Oliveira",
+      "amount": 27.99,
+      "status": "paid",
+      "payment_method": "cc",
+      "due_date": "2026-04-20T11:33:02.016Z",
+      "paid_date": "2026-04-20T11:33:02.016Z",
+      "created_at": "2026-05-05T11:40:03.570Z",
+      "source": "cakto_real"
+    },
+    {
+      "id": "64S2RMN",
+      "customer_id": "cust_elciomarcos99",
+      "customer_name": "Elcio Marcos Dias Junior",
+      "amount": 27.99,
+      "status": "paid",
+      "payment_method": "cc",
+      "due_date": "2026-04-20T11:31:32.204Z",
+      "paid_date": "2026-04-20T11:31:32.204Z",
+      "created_at": "2026-05-05T11:40:03.570Z",
+      "source": "cakto_real"
+    },
+    {
+      "id": "8U3mvrN",
+      "customer_id": "cust_edivaldofarias85",
+      "customer_name": "Edivaldo Farias de Souza",
+      "amount": 2000.99,
+      "status": "paid",
+      "payment_method": "pix",
+      "due_date": "2026-04-17T10:32:29.236Z",
+      "paid_date": "2026-04-17T10:32:29.236Z",
+      "created_at": "2026-05-05T11:40:03.570Z",
+      "source": "cakto_real"
+    },
+    {
+      "id": "9GeWm7T",
+      "customer_id": "cust_bruno",
+      "customer_name": "MTB CONFECÇÃO E COMERCIO",
+      "amount": 1000.99,
+      "status": "paid",
+      "payment_method": "pix",
+      "due_date": "2026-04-16T19:11:44.543Z",
+      "paid_date": "2026-04-16T19:11:44.543Z",
+      "created_at": "2026-05-05T11:40:03.570Z",
+      "source": "cakto_real"
+    },
+    {
+      "id": "7oFXRvp",
+      "customer_id": "cust_calcadosilva2020",
+      "customer_name": "Rodrigo Martins Da Silva",
+      "amount": 27.99,
+      "status": "paid",
+      "payment_method": "pix",
+      "due_date": "2026-04-16T18:57:22.370Z",
+      "paid_date": "2026-04-16T18:57:22.370Z",
+      "created_at": "2026-05-05T11:40:03.570Z",
+      "source": "cakto_real"
+    },
+    {
+      "id": "5uVNVQl",
+      "customer_id": "cust_erickoliveira1409",
+      "customer_name": "Erick rodrigo de Oliveira",
+      "amount": 500.99,
+      "status": "paid",
+      "payment_method": "pix",
+      "due_date": "2026-04-16T00:52:07.327Z",
+      "paid_date": "2026-04-16T00:52:07.327Z",
+      "created_at": "2026-05-05T11:40:03.570Z",
+      "source": "cakto_real"
+    },
+    {
+      "id": "7xzk7My",
+      "customer_id": "cust_felipekarol155",
+      "customer_name": "Felipe oliveira Souza cruz",
+      "amount": 2500.99,
+      "status": "paid",
+      "payment_method": "pix",
+      "due_date": "2026-04-15T21:05:23.256Z",
+      "paid_date": "2026-04-15T21:05:23.256Z",
+      "created_at": "2026-05-05T11:40:03.570Z",
+      "source": "cakto_real"
+    },
+    {
+      "id": "2wJLsiS",
+      "customer_id": "cust_matheusscintra",
+      "customer_name": "Matheus da silva Cintra",
+      "amount": 1600.99,
+      "status": "paid",
+      "payment_method": "pix",
+      "due_date": "2026-04-15T17:15:47.270Z",
+      "paid_date": "2026-04-15T17:15:47.270Z",
+      "created_at": "2026-05-05T11:40:03.570Z",
+      "source": "cakto_real"
+    },
+    {
+      "id": "45UEcvt",
+      "customer_id": "cust_angelborges91",
+      "customer_name": "ANGELA ROSA BORGES",
+      "amount": 27.99,
+      "status": "paid",
+      "payment_method": "pix",
+      "due_date": "2026-04-14T17:12:21.787Z",
+      "paid_date": "2026-04-14T17:12:21.787Z",
+      "created_at": "2026-05-05T11:40:03.570Z",
+      "source": "cakto_real"
+    },
+    {
+      "id": "3exfhwi",
+      "customer_id": "cust_financeiro.damarketing",
+      "customer_name": "WF Ecom Ltda",
+      "amount": 3500.99,
+      "status": "paid",
+      "payment_method": "pix",
+      "due_date": "2026-04-14T13:09:40.204Z",
+      "paid_date": "2026-04-14T13:09:40.204Z",
+      "created_at": "2026-05-05T11:40:03.570Z",
+      "source": "cakto_real"
+    },
+    {
+      "id": "6NdLfhR",
+      "customer_id": "cust_queiroozandre",
+      "customer_name": "Andre Queiroz",
+      "amount": 2000.99,
+      "status": "paid",
+      "payment_method": "pix",
+      "due_date": "2026-04-14T00:47:10.791Z",
+      "paid_date": "2026-04-14T00:47:10.791Z",
+      "created_at": "2026-05-05T11:40:03.570Z",
+      "source": "cakto_real"
+    },
+    {
+      "id": "7HDKe6X",
+      "customer_id": "cust_larissaap.antunes",
+      "customer_name": "Larissa Aparecida Silva Antunes",
+      "amount": 27.99,
+      "status": "paid",
+      "payment_method": "pix",
+      "due_date": "2026-04-13T16:56:46.215Z",
+      "paid_date": "2026-04-13T16:56:46.215Z",
+      "created_at": "2026-05-05T11:40:03.570Z",
+      "source": "cakto_real"
+    },
+    {
+      "id": "95jvs4Y",
+      "customer_id": "cust_erickoliveira1409",
+      "customer_name": "Erick rodrigo de Oliveira",
+      "amount": 1000.99,
+      "status": "paid",
+      "payment_method": "pix",
+      "due_date": "2026-04-13T13:47:03.316Z",
+      "paid_date": "2026-04-13T13:47:03.316Z",
+      "created_at": "2026-05-05T11:40:03.570Z",
+      "source": "cakto_real"
+    },
+    {
+      "id": "7ZRxvpx",
+      "customer_id": "cust_francienemendesrepresentacoes",
+      "customer_name": "FRANCIENE MENDES DE ALMEIDA SANTOS",
+      "amount": 2000.99,
+      "status": "paid",
+      "payment_method": "cc",
+      "due_date": "2026-04-10T13:10:37.158Z",
+      "paid_date": "2026-04-10T13:10:37.158Z",
+      "created_at": "2026-05-05T11:40:03.570Z",
+      "source": "cakto_real"
+    },
+    {
+      "id": "5vXpzn1",
+      "customer_id": "cust_camisgiovana2044",
+      "customer_name": "Camila Giovana Ferreira Silva",
+      "amount": 2169.99,
+      "status": "paid",
+      "payment_method": "cc",
+      "due_date": "2026-04-07T22:36:30.458Z",
+      "paid_date": "2026-04-07T22:36:30.458Z",
+      "created_at": "2026-05-05T11:40:03.570Z",
+      "source": "cakto_real"
+    },
+    {
+      "id": "5ju2p6j",
+      "customer_id": "cust_belalinatextil",
+      "customer_name": "Bruno Henrique",
+      "amount": 2100.99,
+      "status": "paid",
+      "payment_method": "pix",
+      "due_date": "2026-04-07T12:13:25.998Z",
+      "paid_date": "2026-04-07T12:13:25.998Z",
+      "created_at": "2026-05-05T11:40:03.570Z",
+      "source": "cakto_real"
+    },
+    {
+      "id": "3ZmxrTD",
+      "customer_id": "cust_mbl.jeferson",
+      "customer_name": "Jeferson Borges",
+      "amount": 2000.99,
+      "status": "paid",
+      "payment_method": "pix",
+      "due_date": "2026-04-02T19:42:02.922Z",
+      "paid_date": "2026-04-02T19:42:02.922Z",
+      "created_at": "2026-05-05T11:40:03.570Z",
+      "source": "cakto_real"
+    },
+    {
+      "id": "5rulo8P",
+      "customer_id": "cust_leonardolemosprincipal",
+      "customer_name": "Leonardo Lemos Damasceno",
+      "amount": 8750.49,
+      "status": "paid",
+      "payment_method": "cc",
+      "due_date": "2026-03-31T20:52:26.924Z",
+      "paid_date": "2026-03-31T20:52:26.924Z",
+      "created_at": "2026-05-05T11:40:03.570Z",
+      "source": "cakto_real"
+    },
+    {
+      "id": "7PvqYQ7",
+      "customer_id": "cust_matheusscintra",
+      "customer_name": "Matheus da silva Cintra",
+      "amount": 2000.99,
+      "status": "paid",
+      "payment_method": "pix",
+      "due_date": "2026-03-30T20:26:02.591Z",
+      "paid_date": "2026-03-30T20:26:02.591Z",
+      "created_at": "2026-05-05T11:40:03.570Z",
+      "source": "cakto_real"
+    },
+    {
+      "id": "4RLDHNt",
+      "customer_id": "cust_mary",
+      "customer_name": "Maryelle",
+      "amount": 1000.99,
+      "status": "paid",
+      "payment_method": "pix",
+      "due_date": "2026-03-26T17:33:39.717Z",
+      "paid_date": "2026-03-26T17:33:39.717Z",
+      "created_at": "2026-05-05T11:40:03.570Z",
+      "source": "cakto_real"
+    },
+    {
+      "id": "7sJXUPs",
+      "customer_id": "cust_daniela.paula",
+      "customer_name": "A C SANTOS DO CARMO GONCALVES CONFECCAO  ME",
+      "amount": 1000.99,
+      "status": "paid",
+      "payment_method": "pix",
+      "due_date": "2026-03-26T15:24:29.349Z",
+      "paid_date": "2026-03-26T15:24:29.349Z",
+      "created_at": "2026-05-05T11:40:03.570Z",
+      "source": "cakto_real"
+    },
+    {
+      "id": "8PAMjsg",
+      "customer_id": "cust_leticia.ccamargo",
+      "customer_name": "Letícia Caroline Norberto de Camargo Rodrigues",
+      "amount": 1917.65,
+      "status": "paid",
+      "payment_method": "pix",
+      "due_date": "2026-03-25T20:23:59.763Z",
+      "paid_date": "2026-03-25T20:23:59.763Z",
+      "created_at": "2026-05-05T11:40:03.570Z",
+      "source": "cakto_real"
+    },
+    {
+      "id": "6SznHDW",
+      "customer_id": "cust_jaquelineleme206",
+      "customer_name": "Jaqueline Lima Leme",
+      "amount": 2084.99,
+      "status": "paid",
+      "payment_method": "pix",
+      "due_date": "2026-03-25T16:53:57.922Z",
+      "paid_date": "2026-03-25T16:53:57.922Z",
+      "created_at": "2026-05-05T11:40:03.570Z",
+      "source": "cakto_real"
+    },
+    {
+      "id": "7jCWFsg",
+      "customer_id": "cust_martinsramon20",
+      "customer_name": "Ramon vinicius martins Bazante",
+      "amount": 2000.99,
+      "status": "paid",
+      "payment_method": "pix",
+      "due_date": "2026-03-24T16:38:04.803Z",
+      "paid_date": "2026-03-24T16:38:04.803Z",
+      "created_at": "2026-05-05T11:40:03.570Z",
+      "source": "cakto_real"
+    },
+    {
+      "id": "NG9atnJ",
+      "customer_id": "cust_roitsmoda",
+      "customer_name": "Italo Fabricio",
+      "amount": 2000.99,
+      "status": "paid",
+      "payment_method": "pix",
+      "due_date": "2026-03-24T16:32:01.076Z",
+      "paid_date": "2026-03-24T16:32:01.076Z",
+      "created_at": "2026-05-05T11:40:03.570Z",
+      "source": "cakto_real"
+    },
+    {
+      "id": "3Bh6AfJ",
+      "customer_id": "cust_ththiagoribeiro2509",
+      "customer_name": "Thiago Braga Ribeiro",
+      "amount": 1800.99,
+      "status": "paid",
+      "payment_method": "pix",
+      "due_date": "2026-03-20T16:16:45.117Z",
+      "paid_date": "2026-03-20T16:16:45.117Z",
+      "created_at": "2026-05-05T11:40:03.570Z",
+      "source": "cakto_real"
+    },
+    {
+      "id": "447lMfD",
+      "customer_id": "cust_daniela-oliver22",
+      "customer_name": "DANIELA BARSANULFO Alves de Oliveira",
+      "amount": 5000.99,
+      "status": "paid",
+      "payment_method": "pix",
+      "due_date": "2026-03-19T19:38:25.831Z",
+      "paid_date": "2026-03-19T19:38:25.831Z",
+      "created_at": "2026-05-05T11:40:03.570Z",
+      "source": "cakto_real"
+    },
+    {
+      "id": "377utCZ",
+      "customer_id": "cust_sr_marcos.1069",
+      "customer_name": "Marcos Adriano Dietrich",
+      "amount": 5000.99,
+      "status": "paid",
+      "payment_method": "pix",
+      "due_date": "2026-03-19T13:33:55.811Z",
+      "paid_date": "2026-03-19T13:33:55.811Z",
+      "created_at": "2026-05-05T11:40:03.570Z",
+      "source": "cakto_real"
+    },
+    {
+      "id": "36L5spq",
+      "customer_id": "cust_valtercidesjunior5",
+      "customer_name": "Valtercides Junior",
+      "amount": 2000.99,
+      "status": "paid",
+      "payment_method": "pix",
+      "due_date": "2026-03-18T18:24:01.594Z",
+      "paid_date": "2026-03-18T18:24:01.594Z",
+      "created_at": "2026-05-05T11:40:03.570Z",
+      "source": "cakto_real"
+    },
+    {
+      "id": "8KFtVkF",
+      "customer_id": "cust_rafaelfrc8",
+      "customer_name": "Rafael de paula cardoso",
+      "amount": 1000.99,
+      "status": "paid",
+      "payment_method": "pix",
+      "due_date": "2026-03-16T22:19:46.284Z",
+      "paid_date": "2026-03-16T22:19:46.284Z",
+      "created_at": "2026-05-05T11:40:03.570Z",
+      "source": "cakto_real"
+    },
+    {
+      "id": "86SuNT7",
+      "customer_id": "cust_financeiro1.slz",
+      "customer_name": "IS ANTUNES",
+      "amount": 1000.99,
+      "status": "paid",
+      "payment_method": "pix",
+      "due_date": "2026-03-13T18:48:07.158Z",
+      "paid_date": "2026-03-13T18:48:07.158Z",
+      "created_at": "2026-05-05T11:40:03.570Z",
+      "source": "cakto_real"
+    },
+    {
+      "id": "5w5mcjE",
+      "customer_id": "cust_financeiro.damarketing",
+      "customer_name": "WF Ecom Ltda",
+      "amount": 3500.99,
+      "status": "paid",
+      "payment_method": "pix",
+      "due_date": "2026-03-11T17:24:05.095Z",
+      "paid_date": "2026-03-11T17:24:05.095Z",
+      "created_at": "2026-05-05T11:40:03.570Z",
+      "source": "cakto_real"
+    },
+    {
+      "id": "57yq9cj",
+      "customer_id": "cust_danielsergio795",
+      "customer_name": "Daniel gomes",
+      "amount": 5000.99,
+      "status": "paid",
+      "payment_method": "pix",
+      "due_date": "2026-03-09T13:51:33.845Z",
+      "paid_date": "2026-03-09T13:51:33.845Z",
+      "created_at": "2026-05-05T11:40:03.571Z",
+      "source": "cakto_real"
+    }
+  ],
+  "subscriptions": []
+}

@@ -1,0 +1,625 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Reconciliação de Compensação - GPS.X</title>
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+      background: #f8f9fa;
+      color: #1a1a1a;
+    }
+
+    .header {
+      background: linear-gradient(135deg, #1a1a1a 0%, #333 100%);
+      color: #fff;
+      padding: 40px;
+      box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+    }
+
+    .header h1 {
+      font-size: 28px;
+      font-weight: 700;
+      margin-bottom: 8px;
+    }
+
+    .header p {
+      font-size: 14px;
+      opacity: 0.9;
+    }
+
+    .container {
+      max-width: 1600px;
+      margin: 0 auto;
+      padding: 40px;
+    }
+
+    .pipeline-section {
+      display: grid;
+      grid-template-columns: 1fr 1fr 1fr;
+      gap: 20px;
+      margin-bottom: 40px;
+    }
+
+    .pipeline-stage {
+      background: #fff;
+      border: 2px solid #e5e7eb;
+      border-radius: 8px;
+      padding: 20px;
+    }
+
+    .pipeline-stage h3 {
+      font-size: 13px;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+      color: #999;
+      margin-bottom: 15px;
+      padding-bottom: 10px;
+      border-bottom: 2px solid #f0f0f0;
+    }
+
+    .stage-stat {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 12px;
+      background: #f9f9f9;
+      border-radius: 6px;
+      margin-bottom: 10px;
+    }
+
+    .stat-label {
+      font-size: 13px;
+      color: #666;
+    }
+
+    .stat-value {
+      font-size: 18px;
+      font-weight: 700;
+      color: #000;
+    }
+
+    .stage-value {
+      font-size: 24px;
+      font-weight: 700;
+      color: #000;
+      margin-bottom: 10px;
+      padding: 15px;
+      background: #f0f0f0;
+      border-radius: 6px;
+      text-align: center;
+    }
+
+    .arrow {
+      position: relative;
+      height: 60px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 28px;
+      color: #ccc;
+    }
+
+    .arrow.warning {
+      color: #ea580c;
+    }
+
+    .gap-analysis {
+      background: #fff;
+      border: 2px solid #f5c6cb;
+      border-radius: 8px;
+      padding: 20px;
+      margin-bottom: 40px;
+    }
+
+    .gap-analysis h3 {
+      font-size: 14px;
+      font-weight: 700;
+      margin-bottom: 15px;
+      color: #721c24;
+    }
+
+    .gap-item {
+      padding: 12px;
+      background: #f8f9fa;
+      border-left: 4px solid #dc2626;
+      border-radius: 4px;
+      margin-bottom: 10px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+
+    .gap-item-name {
+      font-weight: 600;
+      color: #000;
+    }
+
+    .gap-item-amount {
+      font-weight: 700;
+      color: #dc2626;
+    }
+
+    .gap-item-date {
+      font-size: 12px;
+      color: #999;
+    }
+
+    .table-container {
+      background: #fff;
+      border-radius: 8px;
+      overflow: hidden;
+      margin-bottom: 30px;
+      border: 2px solid #e5e7eb;
+    }
+
+    .section-header {
+      background: #f3f4f6;
+      padding: 16px;
+      border-bottom: 2px solid #e5e7eb;
+      font-weight: 700;
+    }
+
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      font-size: 13px;
+    }
+
+    thead {
+      background: #f3f4f6;
+      border-bottom: 2px solid #e5e7eb;
+    }
+
+    th {
+      padding: 12px 16px;
+      text-align: left;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+      font-size: 11px;
+      color: #666;
+    }
+
+    td {
+      padding: 12px 16px;
+      border-bottom: 1px solid #e5e7eb;
+    }
+
+    tbody tr:hover {
+      background: #f9f9f9;
+    }
+
+    .status-badge {
+      display: inline-block;
+      padding: 4px 8px;
+      border-radius: 4px;
+      font-size: 11px;
+      font-weight: 700;
+    }
+
+    .status-approved {
+      background: #d4edda;
+      color: #155724;
+    }
+
+    .status-withdrawn {
+      background: #d1ecf1;
+      color: #0c5460;
+    }
+
+    .status-missing {
+      background: #f8d7da;
+      color: #721c24;
+    }
+
+    .status-pending {
+      background: #fff3cd;
+      color: #856404;
+    }
+
+    .currency {
+      font-weight: 600;
+      color: #000;
+    }
+
+    .health-card {
+      background: #fff;
+      border: 2px solid #e5e7eb;
+      border-radius: 8px;
+      padding: 20px;
+      text-align: center;
+      margin-bottom: 30px;
+    }
+
+    .health-score {
+      font-size: 48px;
+      font-weight: 700;
+      color: #000;
+      margin-bottom: 10px;
+    }
+
+    .health-label {
+      font-size: 13px;
+      color: #999;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+    }
+
+    .health-status {
+      margin-top: 15px;
+      font-size: 14px;
+      padding: 10px;
+      border-radius: 4px;
+      font-weight: 600;
+    }
+
+    .health-good {
+      background: #d4edda;
+      color: #155724;
+    }
+
+    .health-warning {
+      background: #fff3cd;
+      color: #856404;
+    }
+
+    .health-critical {
+      background: #f8d7da;
+      color: #721c24;
+    }
+
+    .empty-state {
+      text-align: center;
+      padding: 40px 20px;
+      color: #999;
+    }
+
+    .filter-bar {
+      background: #fff;
+      border-radius: 8px;
+      padding: 20px;
+      margin-bottom: 30px;
+      display: flex;
+      gap: 15px;
+      align-items: center;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+    }
+
+    .filter-input {
+      flex: 1;
+      padding: 10px 15px;
+      border: 2px solid #e5e7eb;
+      border-radius: 6px;
+      font-size: 14px;
+    }
+
+    .filter-input:focus {
+      outline: none;
+      border-color: #000;
+    }
+
+    button {
+      background: #000;
+      color: #fff;
+      border: none;
+      padding: 10px 20px;
+      border-radius: 6px;
+      cursor: pointer;
+      font-weight: 600;
+      transition: all 0.3s;
+    }
+
+    button:hover {
+      background: #333;
+    }
+  </style>
+</head>
+<body>
+  <div class="header">
+    <h1>💰 Reconciliação de Compensação</h1>
+    <p>Mapeamento de pagamentos aprovados vs saques realizados no Financeiro</p>
+  </div>
+
+  <div class="container">
+    <!-- Saúde Geral -->
+    <div class="health-card">
+      <div class="health-score" id="reconciliationScore">0</div>
+      <div class="health-label">Saúde da Reconciliação</div>
+      <div class="health-status" id="healthStatus"></div>
+    </div>
+
+    <!-- Pipeline de Compensação -->
+    <div class="pipeline-section">
+      <div class="pipeline-stage">
+        <h3>📊 Minhas Vendas</h3>
+        <div class="stage-value" id="totalApproved">R$ 0</div>
+        <div class="stage-stat">
+          <span class="stat-label">Pagamentos Aprovados</span>
+          <span class="stat-value" id="approvedCount">0</span>
+        </div>
+      </div>
+
+      <div class="arrow" id="pipelineArrow">→</div>
+
+      <div class="pipeline-stage">
+        <h3>⚙️ Pipeline</h3>
+        <div class="stage-value" id="inPipeline">R$ 0</div>
+        <div class="stage-stat">
+          <span class="stat-label">Em Processamento</span>
+          <span class="stat-value" id="pipelineCount">0</span>
+        </div>
+      </div>
+
+      <div class="arrow">→</div>
+
+      <div class="pipeline-stage">
+        <h3>✅ Financeiro Saques</h3>
+        <div class="stage-value" id="totalWithdrawn">R$ 0</div>
+        <div class="stage-stat">
+          <span class="stat-label">Saques Realizados</span>
+          <span class="stat-value" id="withdrawnCount">0</span>
+        </div>
+      </div>
+    </div>
+
+    <!-- Análise de Gaps -->
+    <div class="gap-analysis" id="gapAnalysis" style="display: none;">
+      <h3>🚨 Pagamentos Não Compensados</h3>
+      <div id="gapList"></div>
+    </div>
+
+    <!-- Filtro -->
+    <div class="filter-bar">
+      <input type="text" class="filter-input" id="filterInput" placeholder="Filtrar por cliente, email ou valor...">
+      <button onclick="applyFilter()">Filtrar</button>
+      <button onclick="clearFilter()">Limpar</button>
+    </div>
+
+    <!-- Tabela de Reconciliação -->
+    <div class="table-container">
+      <div class="section-header">
+        📋 Detalhamento de Pagamentos
+      </div>
+      <table>
+        <thead>
+          <tr>
+            <th>Cliente</th>
+            <th>Valor</th>
+            <th>Data Aprovação</th>
+            <th>Status Minhas Vendas</th>
+            <th>Status Saques</th>
+            <th>Discrepância</th>
+            <th>Ação</th>
+          </tr>
+        </thead>
+        <tbody id="reconciliationTable">
+        </tbody>
+      </table>
+    </div>
+
+    <!-- Tabela de Saques (Financeiro) -->
+    <div class="table-container">
+      <div class="section-header">
+        💳 Saques Realizados (Financeiro)
+      </div>
+      <table>
+        <thead>
+          <tr>
+            <th>Data Saque</th>
+            <th>Valor</th>
+            <th>Status</th>
+            <th>Origem de Pagamentos</th>
+          </tr>
+        </thead>
+        <tbody id="saqueTable">
+        </tbody>
+      </table>
+    </div>
+  </div>
+
+  <script>
+    let approvedPayments = [];
+    let withdrawalTransactions = [];
+    let filteredData = null;
+
+    async function loadData() {
+      try {
+        // Buscar dados de pagamentos aprovados (Minhas Vendas)
+        const chargesResponse = await fetch('/api/charges');
+        const chargesData = await chargesResponse.json();
+
+        approvedPayments = chargesData.filter(c => c.status === 'paid').map(c => ({
+          customer_id: c.customer_id,
+          customer_name: c.customer_name,
+          email: c.email,
+          charge_id: c.id,
+          amount: c.amount,
+          approved_date: c.paid_date,
+          payment_method: c.payment_method,
+          source: c.source,
+          status_minhas_vendas: 'PAGO'
+        }));
+
+        // Buscar dados de saques (Financeiro)
+        const saqueResponse = await fetch('/api/saques');
+        if (saqueResponse.ok) {
+          const saqueData = await saqueResponse.json();
+          withdrawalTransactions = saqueData.map(s => ({
+            date: s.date,
+            amount: s.amount,
+            status: s.status,
+            origin_charges: s.origin_charges || []
+          }));
+        }
+
+        // Mapear pagamentos aos saques
+        reconcilePayments();
+        renderDashboard();
+      } catch (error) {
+        console.error('Erro ao carregar dados:', error);
+      }
+    }
+
+    function reconcilePayments() {
+      // Agrupar saques por data para encontrar quais pagamentos foram compensados
+      const saquesByDate = {};
+      let totalWithdrawn = 0;
+
+      withdrawalTransactions.forEach(saque => {
+        const dateKey = new Date(saque.date).toLocaleDateString('pt-BR');
+        if (!saquesByDate[dateKey]) {
+          saquesByDate[dateKey] = [];
+        }
+        saquesByDate[dateKey].push(saque.amount);
+        totalWithdrawn += saque.amount;
+      });
+
+      // Marcar quais pagamentos foram compensados
+      approvedPayments.forEach(payment => {
+        const approvedDate = new Date(payment.approved_date);
+        const dateKey = approvedDate.toLocaleDateString('pt-BR');
+
+        // Verificar se há saque no mesmo dia
+        payment.withdrawn = false;
+        payment.withdrawn_date = null;
+
+        withdrawalTransactions.forEach(saque => {
+          const saqueDate = new Date(saque.date).toLocaleDateString('pt-BR');
+          // Considerar compensado se houver saque nos próximos 7 dias
+          const daysDiff = Math.floor((new Date(saque.date) - approvedDate) / (1000 * 60 * 60 * 24));
+          if (daysDiff >= 0 && daysDiff <= 7 && saque.amount >= payment.amount * 0.95) {
+            payment.withdrawn = true;
+            payment.withdrawn_date = saque.date;
+          }
+        });
+      });
+    }
+
+    function renderDashboard() {
+      const totalApproved = approvedPayments.reduce((sum, p) => sum + p.amount, 0);
+      const totalWithdrawn = withdrawalTransactions.reduce((sum, s) => sum + s.amount, 0);
+      const inPipelineAmount = totalApproved - totalWithdrawn;
+      const missingPayments = approvedPayments.filter(p => !p.withdrawn);
+
+      // Atualizar estatísticas do pipeline
+      document.getElementById('totalApproved').textContent = 'R$ ' + totalApproved.toLocaleString('pt-BR', {minimumFractionDigits: 2, maximumFractionDigits: 2});
+      document.getElementById('approvedCount').textContent = approvedPayments.length;
+      document.getElementById('totalWithdrawn').textContent = 'R$ ' + totalWithdrawn.toLocaleString('pt-BR', {minimumFractionDigits: 2, maximumFractionDigits: 2});
+      document.getElementById('withdrawnCount').textContent = withdrawalTransactions.length;
+      document.getElementById('inPipeline').textContent = 'R$ ' + inPipelineAmount.toLocaleString('pt-BR', {minimumFractionDigits: 2, maximumFractionDigits: 2});
+      document.getElementById('pipelineCount').textContent = missingPayments.length;
+
+      // Calcular saúde da reconciliação
+      const reconciliationRatio = totalApproved > 0 ? (totalWithdrawn / totalApproved) * 100 : 100;
+      const score = Math.round(reconciliationRatio);
+      document.getElementById('reconciliationScore').textContent = score;
+
+      const healthStatus = document.getElementById('healthStatus');
+      if (reconciliationRatio >= 95) {
+        healthStatus.textContent = '✅ Saudável - Reconciliação em dia';
+        healthStatus.className = 'health-status health-good';
+      } else if (reconciliationRatio >= 80) {
+        healthStatus.textContent = '⚠️ Atenção - Pagamentos em processamento';
+        healthStatus.className = 'health-status health-warning';
+      } else {
+        healthStatus.textContent = '🚨 Crítico - Pagamentos não compensados';
+        healthStatus.className = 'health-status health-critical';
+      }
+
+      // Mostrar análise de gaps
+      if (missingPayments.length > 0) {
+        document.getElementById('gapAnalysis').style.display = 'block';
+        const gapList = document.getElementById('gapList');
+        gapList.innerHTML = missingPayments.map(payment => {
+          const approvedDate = new Date(payment.approved_date);
+          const now = new Date();
+          const daysSinceApproval = Math.floor((now - approvedDate) / (1000 * 60 * 60 * 24));
+
+          return `
+            <div class="gap-item">
+              <div>
+                <div class="gap-item-name">${payment.customer_name}</div>
+                <div class="gap-item-date">Aprovado há ${daysSinceApproval} dias (${approvedDate.toLocaleDateString('pt-BR')})</div>
+              </div>
+              <div class="gap-item-amount">R$ ${payment.amount.toLocaleString('pt-BR', {minimumFractionDigits: 2})}</div>
+            </div>
+          `;
+        }).join('');
+      }
+
+      // Renderizar tabela de reconciliação
+      const tableBody = document.getElementById('reconciliationTable');
+      const dataToShow = filteredData || approvedPayments;
+
+      if (dataToShow.length === 0) {
+        tableBody.innerHTML = '<tr><td colspan="7" class="empty-state">Nenhum pagamento encontrado</td></tr>';
+      } else {
+        tableBody.innerHTML = dataToShow.map(payment => `
+          <tr>
+            <td><strong>${payment.customer_name}</strong><br><small>${payment.email}</small></td>
+            <td><span class="currency">R$ ${payment.amount.toLocaleString('pt-BR', {minimumFractionDigits: 2})}</span></td>
+            <td>${new Date(payment.approved_date).toLocaleDateString('pt-BR')}</td>
+            <td><span class="status-badge status-approved">PAGO</span></td>
+            <td>
+              ${payment.withdrawn ?
+                `<span class="status-badge status-withdrawn">SACADO</span><br><small>${new Date(payment.withdrawn_date).toLocaleDateString('pt-BR')}</small>` :
+                `<span class="status-badge status-missing">NÃO SACADO</span>`
+              }
+            </td>
+            <td>${payment.withdrawn ? '✅ OK' : '⚠️ PENDENTE'}</td>
+            <td>${payment.withdrawn ? '—' : '📊 Verificar'}</td>
+          </tr>
+        `).join('');
+      }
+
+      // Renderizar tabela de saques
+      const saqueTable = document.getElementById('saqueTable');
+      if (withdrawalTransactions.length === 0) {
+        saqueTable.innerHTML = '<tr><td colspan="4" class="empty-state">Nenhum saque registrado</td></tr>';
+      } else {
+        saqueTable.innerHTML = withdrawalTransactions.map(saque => `
+          <tr>
+            <td>${new Date(saque.date).toLocaleDateString('pt-BR')}</td>
+            <td><span class="currency">R$ ${saque.amount.toLocaleString('pt-BR', {minimumFractionDigits: 2})}</span></td>
+            <td><span class="status-badge status-approved">${saque.status || 'APROVADO'}</span></td>
+            <td><small>${saque.origin_charges?.length || '—'} pagamentos</small></td>
+          </tr>
+        `).join('');
+      }
+    }
+
+    function applyFilter() {
+      const filterValue = document.getElementById('filterInput').value.toLowerCase();
+      if (!filterValue) {
+        filteredData = null;
+        renderDashboard();
+        return;
+      }
+
+      filteredData = approvedPayments.filter(p =>
+        p.customer_name.toLowerCase().includes(filterValue) ||
+        p.email.toLowerCase().includes(filterValue) ||
+        p.amount.toString().includes(filterValue)
+      );
+      renderDashboard();
+    }
+
+    function clearFilter() {
+      document.getElementById('filterInput').value = '';
+      filteredData = null;
+      renderDashboard();
+    }
+
+    // Carregar dados ao abrir página
+    loadData();
+
+    // Auto-refresh a cada 30 segundos
+    setInterval(loadData, 30000);
+  </script>
+</body>
+</html>

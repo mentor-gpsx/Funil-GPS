@@ -1,0 +1,313 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Importar Dados Cakto - GPS.X</title>
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+      background: #0f1419;
+      color: #fff;
+      min-height: 100vh;
+      padding: 20px;
+    }
+    .container { max-width: 1000px; margin: 0 auto; }
+    header {
+      background: linear-gradient(135deg, #1a1f2e 0%, #0f1419 100%);
+      border-bottom: 1px solid #2a3447;
+      padding: 30px 0;
+      margin-bottom: 40px;
+      text-align: center;
+    }
+    header h1 { font-size: 32px; margin-bottom: 5px; }
+    header p { color: #888; }
+    .section {
+      background: #1a1f2e;
+      border: 1px solid #2a3447;
+      border-radius: 8px;
+      padding: 30px;
+      margin-bottom: 30px;
+    }
+    .section h2 {
+      font-size: 20px;
+      margin-bottom: 20px;
+      padding-bottom: 15px;
+      border-bottom: 1px solid #2a3447;
+    }
+    input[type="file"] {
+      display: block;
+      margin-bottom: 20px;
+      padding: 10px;
+      background: #0f1419;
+      border: 1px solid #2a3447;
+      border-radius: 6px;
+      color: #fff;
+      cursor: pointer;
+    }
+    textarea {
+      width: 100%;
+      height: 300px;
+      padding: 15px;
+      background: #0f1419;
+      border: 1px solid #2a3447;
+      border-radius: 6px;
+      color: #22c55e;
+      font-family: 'Courier New', monospace;
+      font-size: 12px;
+      resize: vertical;
+      margin-bottom: 20px;
+    }
+    button {
+      background: #22c55e;
+      color: #000;
+      border: none;
+      padding: 12px 30px;
+      border-radius: 6px;
+      font-weight: 600;
+      cursor: pointer;
+      font-size: 14px;
+      transition: all 0.3s;
+    }
+    button:hover { background: #16a34a; }
+    button:disabled { background: #888; cursor: not-allowed; }
+    .button-group { display: flex; gap: 10px; }
+    .alert {
+      padding: 15px;
+      border-radius: 6px;
+      margin-bottom: 20px;
+      border-left: 4px solid;
+    }
+    .alert-success {
+      background: rgba(34, 197, 94, 0.1);
+      border-color: #22c55e;
+      color: #22c55e;
+    }
+    .alert-error {
+      background: rgba(239, 68, 68, 0.1);
+      border-color: #ef4444;
+      color: #ef4444;
+    }
+    .alert-info {
+      background: rgba(59, 130, 246, 0.1);
+      border-color: #3b82f6;
+      color: #3b82f6;
+    }
+    .stats {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+      gap: 15px;
+      margin-top: 20px;
+    }
+    .stat-card {
+      background: #0f1419;
+      padding: 15px;
+      border-radius: 6px;
+      border-left: 3px solid #22c55e;
+    }
+    .stat-label { font-size: 12px; color: #888; text-transform: uppercase; }
+    .stat-value { font-size: 24px; font-weight: 700; color: #22c55e; margin-top: 5px; }
+    .spinner {
+      display: inline-block;
+      width: 16px;
+      height: 16px;
+      border: 2px solid #2a3447;
+      border-top-color: #fff;
+      border-radius: 50%;
+      animation: spin 0.8s linear infinite;
+      margin-right: 8px;
+    }
+    @keyframes spin { to { transform: rotate(360deg); } }
+    code { background: #0f1419; padding: 2px 6px; border-radius: 3px; font-size: 12px; }
+    .text-muted { color: #888; }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <header>
+      <h1>💾 Importador Cakto</h1>
+      <p>Importe dados reais da Cakto para o Dashboard Financeiro</p>
+    </header>
+
+    <div class="section">
+      <h2>1️⃣ Opção A: Fazer Upload de Arquivo JSON</h2>
+      <p class="text-muted" style="margin-bottom: 20px;">
+        Exporte seus dados da Cakto em JSON e upload aqui. O arquivo será validado e persistido no banco de dados.
+      </p>
+
+      <input type="file" id="fileInput" accept=".json" />
+
+      <button onclick="uploadFile()" id="uploadBtn">
+        <span id="uploadText">📤 Upload do Arquivo</span>
+      </button>
+    </div>
+
+    <div class="section">
+      <h2>2️⃣ Opção B: Colar JSON Diretamente</h2>
+      <p class="text-muted" style="margin-bottom: 20px;">
+        Cole o JSON dos dados aqui e clique em Importar.
+      </p>
+
+      <textarea id="jsonInput" placeholder="Cole o JSON aqui...
+Estrutura esperada:
+{
+  &quot;customers&quot;: [...],
+  &quot;charges&quot;: [...],
+  &quot;subscriptions&quot;: [...]
+}"></textarea>
+
+      <button onclick="importJson()" id="importBtn">
+        <span id="importText">📥 Importar JSON</span>
+      </button>
+    </div>
+
+    <div class="section">
+      <h2>3️⃣ Baixar Template</h2>
+      <p class="text-muted" style="margin-bottom: 20px;">
+        Baixe o template JSON para saber a estrutura correta dos dados.
+      </p>
+
+      <button onclick="downloadTemplate()">
+        📥 Baixar Template JSON
+      </button>
+    </div>
+
+    <div id="results"></div>
+
+    <div class="section">
+      <h2>📊 Status da Importação</h2>
+      <div id="statusDiv">
+        <p class="text-muted">Aguardando importação...</p>
+      </div>
+    </div>
+
+    <div class="section">
+      <h2>📖 Instruções</h2>
+      <ol style="margin-left: 20px; color: #888;">
+        <li style="margin-bottom: 10px;">
+          Exporte seus dados da Cakto em JSON (ou use o template)
+        </li>
+        <li style="margin-bottom: 10px;">
+          Cole o JSON na textarea acima ou faça upload do arquivo
+        </li>
+        <li style="margin-bottom: 10px;">
+          Clique em "Importar JSON" ou "Upload do Arquivo"
+        </li>
+        <li style="margin-bottom: 10px;">
+          Os dados serão validados e salvos no banco de dados
+        </li>
+        <li style="margin-bottom: 10px;">
+          Abra o <a href="/financial-dashboard.html" style="color: #22c55e;">Dashboard Financeiro</a> para ver os dados reais
+        </li>
+      </ol>
+    </div>
+  </div>
+
+  <script>
+    async function uploadFile() {
+      const file = document.getElementById('fileInput').files[0];
+      if (!file) {
+        showError('Selecione um arquivo JSON');
+        return;
+      }
+
+      const text = await file.text();
+      const data = JSON.parse(text);
+      await importData(data);
+    }
+
+    async function importJson() {
+      const jsonText = document.getElementById('jsonInput').value;
+      if (!jsonText.trim()) {
+        showError('Cole o JSON antes de importar');
+        return;
+      }
+
+      const data = JSON.parse(jsonText);
+      await importData(data);
+    }
+
+    async function importData(data) {
+      const btn = document.getElementById('importBtn') || document.getElementById('uploadBtn');
+      btn.disabled = true;
+      btn.innerHTML = '<span class="spinner"></span>Importando...';
+
+      try {
+        const response = await fetch('http://localhost:3001/api/import/data', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(data)
+        });
+
+        if (!response.ok) throw new Error(`HTTP ${response.status}`);
+        const result = await response.json();
+
+        if (result.success) {
+          showSuccess(result);
+          document.getElementById('jsonInput').value = '';
+          document.getElementById('fileInput').value = '';
+        } else {
+          showError(result.error);
+        }
+      } catch (error) {
+        showError(`Erro: ${error.message}`);
+      } finally {
+        btn.disabled = false;
+        btn.innerHTML = btn === document.getElementById('importBtn')
+          ? '<span id="importText">📥 Importar JSON</span>'
+          : '<span id="uploadText">📤 Upload do Arquivo</span>';
+      }
+    }
+
+    async function downloadTemplate() {
+      try {
+        const response = await fetch('http://localhost:3001/api/import/template');
+        const template = await response.json();
+
+        const json = JSON.stringify(template, null, 2);
+        const blob = new Blob([json], { type: 'application/json' });
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = 'cakto-template.json';
+        a.click();
+        URL.revokeObjectURL(url);
+      } catch (error) {
+        showError(`Erro ao baixar template: ${error.message}`);
+      }
+    }
+
+    function showSuccess(result) {
+      const html = `
+        <div class="alert alert-success">
+          ✅ Importação concluída com sucesso!
+        </div>
+        <div class="stats">
+          <div class="stat-card">
+            <div class="stat-label">Clientes</div>
+            <div class="stat-value">${result.customers?.inserted || 0}</div>
+          </div>
+          <div class="stat-card">
+            <div class="stat-label">Cobranças</div>
+            <div class="stat-value">${result.charges?.inserted || 0}</div>
+          </div>
+          <div class="stat-card">
+            <div class="stat-label">Assinaturas</div>
+            <div class="stat-value">${result.subscriptions?.inserted || 0}</div>
+          </div>
+        </div>
+        <p style="margin-top: 20px; color: #888;">
+          Agora você pode acessar o <a href="/financial-dashboard.html" style="color: #22c55e;">Dashboard Financeiro</a> com seus dados reais!
+        </p>
+      `;
+      document.getElementById('results').innerHTML = html;
+    }
+
+    function showError(message) {
+      const html = `<div class="alert alert-error">❌ ${message}</div>`;
+      document.getElementById('results').innerHTML = html;
+    }
+  </script>
+</body>
+</html>

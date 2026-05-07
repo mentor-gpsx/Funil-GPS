@@ -1,241 +1,302 @@
-# 🎯 Roleta System - Complete Implementation
+# 💰 Portal Financeiro - GPSX
 
-**Status:** ✅ Phase C Complete | Ready for Deployment | All Code Implemented
+Sistema de Conciliação Automática Multi-Gateway com Análise de Auditoria Avançada.
 
----
+**Suporta:** Cakto, Infinitepay e outras plataformas de pagamento.
 
-## 📚 DOCUMENTATION INDEX
+## 🚀 Quick Start
 
-**Choose your starting point:**
-
-### 🚀 Just Want to Deploy? (Start Here)
-**File:** [`QUICK_START.md`](QUICK_START.md)
-- 3 simple steps
-- 5 minutes to complete
-- Includes quick test
-
-### 📋 Need Detailed Deployment Guide?
-**File:** [`PHASE_C_FINAL_DEPLOYMENT.md`](PHASE_C_FINAL_DEPLOYMENT.md)
-- Step-by-step instructions
-- 9 comprehensive tests
-- Validation queries
-- Rollback procedures
-
-### 🏗️ Want to Understand Architecture?
-**File:** [`IMPLEMENTATION_SUMMARY.md`](IMPLEMENTATION_SUMMARY.md)
-- What was implemented
-- Feature list
-- System design
-- Testing coverage
-
-### 🔍 Need to Understand Previous Work?
-**Files:**
-- [`PHASE_A_IMPLEMENTATION.md`](PHASE_A_IMPLEMENTATION.md) - Auto-generation architecture
-- [`AGENTES_COORDENACAO_ROLETA.md`](AGENTES_COORDENACAO_ROLETA.md) - Agent coordination
-- [`INSTRUCOES_DEPLOYMENT_FASE_B.md`](INSTRUCOES_DEPLOYMENT_FASE_B.md) - Phase B guide
-
----
-
-## 🎯 WHAT'S INCLUDED
-
-### Code
-- ✅ **funil.html** - Complete frontend (dark mode + roleta system)
-- ✅ **3 Database migrations** - Ready to deploy
-
-### Automation
-- ✅ **DEPLOY.bat** - Windows automated deployment
-- ✅ **DEPLOY.sh** - macOS/Linux automated deployment
-
-### Documentation
-- ✅ **QUICK_START.md** - Fast deployment (3 steps)
-- ✅ **PHASE_C_FINAL_DEPLOYMENT.md** - Complete guide + 9 tests
-- ✅ **IMPLEMENTATION_SUMMARY.md** - What was built
-- ✅ **README.md** - This file
-
----
-
-## 🚀 QUICK DEPLOYMENT (5 minutes)
-
+### 1. Instalar Dependências
 ```bash
-# 1. Install Supabase CLI
-npm install -g supabase
-
-# 2. Login & link project
-supabase login
-supabase link --project-ref gmpdcgjsbbyqkuftohce
-
-# 3. Run deployment
-cd "C:\Users\venda\Documents\funil-gps"
-DEPLOY.bat  # Windows
-# OR
-bash DEPLOY.sh  # macOS/Linux
+npm install
 ```
 
-**That's it!** System is live. Open funil.html to test.
+### 2. Setup Inicial
+```bash
+npm run setup
+```
+
+Isso irá:
+- ✅ Criar banco de dados SQLite
+- ✅ Criar tabelas necessárias
+- ✅ Importar dados do CSV (orders_report.csv)
+- ✅ Exibir estatísticas de importação
+
+### 3. Iniciar Servidor
+```bash
+npm start
+```
+
+Servidor rodando em: `http://localhost:3000`
+
+### 4. Abrir Dashboard
+Acesse: `http://localhost:3000/dashboard.html`
 
 ---
 
-## ✨ FEATURES INCLUDED
+## 📊 Funcionalidades
 
-### Dark Mode
-- 🌙 Toggle button
-- 🎨 Complete color inversion
-- 🔄 Persistent (localStorage)
-- 📱 Logo color change
+### 6 Abas Principais
 
-### Roleta System
-- 🎡 Auto-generation from closings (≥R$9,900 = "alta", <R$9,900 = "baixa")
-- 🎁 Manual admin grants
-- 👤 Per-user permissions (NEW)
-- 🔒 Real-time authorization checks
-- 📊 Complete audit trail
-- ⚡ Race condition prevention
+1. **📊 Dashboard**
+   - 4 KPIs em tempo real (Esperado, Recebido, Discrepância, Taxa %)
+   - Últimas 10 cobranças com detalhes expansíveis
+   - Health Score do sistema
 
-### Security
-- 🔐 Row Level Security (RLS)
-- 🛡️ Authorization precedence
-- 📝 Audit logging
-- 🔒 Advisory locks for concurrency
+2. **💵 Receitas**
+   - Análise completa de cobranças
+   - Filtros por gateway e método
+   - Ticket médio, valores brutos e líquidos
 
-### Database
-- 📦 6 tables with proper relationships
-- 🔌 5 RPC functions for backend logic
-- 📈 Performance indexes
-- 🔄 Automated sync patterns
+3. **📈 Previsibilidade**
+   - Análise de 30 dias de histórico
+   - Estatísticas de receita diária
+   - Projeções e tendências
 
----
+4. **🔗 Conciliação**
+   - Status de todas as cobranças
+   - Identificação de não-conciliadas
+   - Resumo de pendências
 
-## 🧪 TESTING
+5. **🔍 Auditoria**
+   - Análise por método de pagamento
+   - Análise por gateway
+   - Análise por produto
+   - Resumo de taxas
 
-**Quick test (1 minute):**
-1. Open funil.html
-2. Click 🌙 button → Colors should invert
-3. Create a closing (≥R$9,900) → Roleta should appear
-4. Check browser console (F12) → Look for `[Roleta] ✓` messages
-
-**Complete test suite (21 minutes):**
-Follow **PHASE_C_FINAL_DEPLOYMENT.md** for 9 detailed test scenarios.
+6. **📋 Evidências**
+   - Lista completa de cobranças (charges)
+   - Lista completa de saques (withdrawals)
+   - Rastreamento de transações
 
 ---
 
-## 📁 FILE STRUCTURE
+## 📁 Estrutura de Pastas
 
 ```
 funil-gps/
-├── funil.html                          (Main application)
-├── README.md                           (This file)
-├── QUICK_START.md                      (Fast deployment)
-├── IMPLEMENTATION_SUMMARY.md           (What was built)
-├── PHASE_C_FINAL_DEPLOYMENT.md        (Complete guide)
-├── PHASE_A_IMPLEMENTATION.md           (Architecture)
-├── INSTRUCOES_DEPLOYMENT_FASE_B.md     (Phase B)
-├── AGENTES_COORDENACAO_ROLETA.md       (Agent coordination)
-├── DEPLOY.bat                          (Windows deployment)
-├── DEPLOY.sh                           (macOS/Linux deployment)
-├── deploy-migrations.js                (Node.js helper)
-└── migrations/
-    ├── 001_create_roleta_tables.sql
-    ├── 002_add_revoke_grant_safe_function.sql
-    ├── 003_add_roleta_user_permissions.sql
-    └── ROLETA_SETUP_UNIVERSAL.sql
+├── backend/
+│   ├── src/
+│   │   └── server.js          # API REST principal
+│   ├── scripts/
+│   │   ├── import-csv.js      # Importer do CSV
+│   │   ├── import-cakto-test-data.js
+│   │   └── import-cakto-manual.js
+│   └── .data/
+│       └── cakto.db           # Database SQLite
+├── dashboard.html             # Frontend principal (GPSX design)
+├── orders_report.csv          # Dados de entrada
+├── setup.js                   # Script de inicialização
+├── package.json
+└── README.md
 ```
 
 ---
 
-## 🔑 KEY TECHNICAL DETAILS
+## 🗄️ Banco de Dados
 
-### Supabase-First Pattern
-All changes write to database FIRST, then update localStorage:
-```javascript
-// ✓ Correct
-await UPDATE_SUPABASE()
-UPDATE_LOCALSTORAGE()
+### Tabelas
 
-// ✗ Wrong
-UPDATE_LOCALSTORAGE()
-await UPDATE_SUPABASE()  // If this fails, state is broken
-```
-
-### Per-User Authorization
-```javascript
-check_roleta_authorized(user_id, seller_key)
-// Returns TRUE only if:
-// 1. roleta_settings.roleta_ativa = TRUE (seller flag)
-// 2. AND roleta_user_permissions.is_enabled = TRUE (user flag)
-```
-
-### Race Condition Prevention
-PostgreSQL Advisory Locks prevent simultaneous updates:
+#### `customers`
 ```sql
-SELECT ... FOR UPDATE  -- Locks row, blocks other transactions
--- Only one update succeeds, others wait
+- id (PRIMARY KEY)
+- email (UNIQUE)
+- name
+- phone
+- document
+- total_spent (REAL)
+- created_at (TIMESTAMP)
+```
+
+#### `charges`
+```sql
+- id (PRIMARY KEY)
+- customer_id (FK → customers)
+- gateway (ENUM: infinitepay, cakto)
+- external_id (UNIQUE)
+- product_name
+- amount (REAL)
+- fee (REAL)
+- method
+- status (ENUM: paid, open, pending)
+- created_at
+- paid_at
+```
+
+#### `saques`
+```sql
+- id (PRIMARY KEY, AUTO INCREMENT)
+- cakto_id (UNIQUE)
+- data
+- amount (REAL)
+- taxa (REAL)
+- status (ENUM: APROVADO, PENDENTE)
+- tipo
+- descricao
+- created_at (TIMESTAMP)
 ```
 
 ---
 
-## 🆘 NEED HELP?
+## 🔌 API REST
 
-1. **For deployment issues:**
-   → Follow QUICK_START.md step-by-step
+### GET `/health`
+Status do servidor
 
-2. **For testing questions:**
-   → Check PHASE_C_FINAL_DEPLOYMENT.md § TESTING
+### GET `/api/dashboard`
+KPIs em tempo real
+```json
+{
+  "kpis": {
+    "expectedAmount": 95512.00,
+    "receivedAmount": 67610.00,
+    "discrepancyAmount": 27902.00,
+    "reconciliationRatio": 70.76,
+    "totalCustomers": 76,
+    "healthScore": 70.76
+  }
+}
+```
 
-3. **For code questions:**
-   → Review IMPLEMENTATION_SUMMARY.md or search funil.html
+### GET `/api/charges`
+Lista todas as cobranças
 
-4. **For architecture decisions:**
-   → Read PHASE_A_IMPLEMENTATION.md and AGENTES_COORDENACAO_ROLETA.md
+### GET `/api/saques`
+Lista todos os saques/withdrawals
 
----
+### GET `/api/reconciliation`
+Análise de conciliação
+```json
+{
+  "matched": 45,
+  "pending": 20,
+  "unmatched": 11,
+  "data": [...]
+}
+```
 
-## ✅ CHECKLIST BEFORE GOING LIVE
+### GET `/api/forecast`
+Previsibilidade de receitas (30 dias)
 
-- [ ] QUICK_START.md followed (3 steps complete)
-- [ ] Supabase CLI installed and linked
-- [ ] All 3 migrations deployed
-- [ ] No SQL errors in Supabase
-- [ ] funil.html loads without console errors
-- [ ] Dark mode toggle works
-- [ ] Roleta appears for authorized users
-- [ ] Admin can grant/revoke permissions
-- [ ] Quick test (1 minute) passes
+### GET `/api/customers`
+Análise por cliente
 
----
-
-## 🎓 DOCUMENTATION PRIORITY
-
-**If you have 5 minutes:**
-→ QUICK_START.md
-
-**If you have 30 minutes:**
-→ QUICK_START.md + PHASE_C_FINAL_DEPLOYMENT.md (first 3 sections)
-
-**If you have 1 hour:**
-→ Read IMPLEMENTATION_SUMMARY.md + QUICK_START.md + Run tests from PHASE_C_FINAL_DEPLOYMENT.md
-
-**If you want to understand everything:**
-→ Read in this order:
-1. QUICK_START.md (overview)
-2. IMPLEMENTATION_SUMMARY.md (what was built)
-3. PHASE_A_IMPLEMENTATION.md (architecture)
-4. PHASE_C_FINAL_DEPLOYMENT.md (testing)
-5. funil.html source code (implementation details)
+### GET `/api/audit`
+Dados de auditoria avançada
 
 ---
 
-## 🚀 YOU'RE READY!
+## 📝 Arquivo CSV
 
-Everything is implemented, tested, and documented.
+Formato esperado: `orders_report.csv`
 
-**Next step:** Open [QUICK_START.md](QUICK_START.md) and follow the 3 steps.
-
-System will be live in 5 minutes. ⚡
+Colunas necessárias:
+- `Email do Cliente`
+- `Nome do Cliente`
+- `Telefone do Cliente`
+- `Número do Documento do Cliente`
+- `Valor Pago pelo Cliente`
+- `Taxas`
+- `Método de Pagamento`
+- `Status da Venda`
+- `Produto`
+- `Data da Venda`
+- `Data de Pagamento`
+- `ID da Venda`
 
 ---
 
-**Version:** Phase C (2026-04-09)  
-**Status:** ✅ Complete & Ready  
-**Support:** All documentation included
+## 🎨 Design
 
-🎉 **Your roleta system awaits!**
+**Esquema de Cores GPSX:**
+- 🖤 Preto: Headers e elementos principais
+- ⚪ Branco: Fundo e cards
+- 🔴 Vermelho/Orange: Alertas e destaques (#ff4500)
+- ✅ Verde: Status positivos (#2ecc71)
+- 🔵 Azul: Status neutros (#3498db)
+
+---
+
+## 🛠️ Scripts Adicionais
+
+### Importar CSV
+```bash
+npm run import:csv
+```
+Importa dados do arquivo `backend/data/orders_report.csv`
+
+### Importar Dados de Teste Cakto
+```bash
+npm run import:cakto:test
+```
+Insere dados de teste para validação
+
+### Importar Dados Manuais Cakto
+```bash
+npm run import:cakto:manual
+```
+Permite inserir dados manualmente do dashboard Cakto
+
+---
+
+## 🔄 Fluxo de Sincronização
+
+1. **CSV Input** → `orders_report.csv`
+2. **Import** → Banco de dados SQLite
+3. **Processing** → Normalização e reconciliação
+4. **API** → REST endpoints
+5. **Frontend** → Dashboard interativo
+6. **Output** → Relatórios e análises
+
+---
+
+## 📊 Métricas Principais
+
+- **Taxa de Conciliação**: % de cobranças sincronizadas
+- **Discrepância**: Valor não sincronizado
+- **Health Score**: Score de saúde do sistema (0-100)
+- **Ticket Médio**: Valor médio por cobrança
+- **MRR**: Monthly Recurring Revenue (se aplicável)
+
+---
+
+## 🐛 Troubleshooting
+
+### Erro: "SQLITE_CANTOPEN"
+```bash
+# Criar diretório de dados
+mkdir -p .data
+npm run setup
+```
+
+### Erro: "orders_report.csv not found"
+```bash
+# Certifique-se que o arquivo está no diretório raiz
+ls orders_report.csv
+npm run setup
+```
+
+### Port 3000 em uso
+```bash
+PORT=3001 npm start
+# Então acesse: http://localhost:3001/dashboard.html
+```
+
+---
+
+## 📞 Suporte
+
+Para questões sobre discrepâncias e reconciliação:
+- Verifique a aba "Auditoria" para análise detalhada
+- Consulte "Evidências" para rastreamento de transações
+- Analise a "Conciliação" para status de sincronização
+
+---
+
+## 📄 Licença
+
+Proprietary • GPSX • 2026
+
+---
+
+**Última atualização:** 2026-05-05

@@ -201,22 +201,23 @@ async function loadFunilByUser() {
         valor: task.custom_fields?.find(f => f.id === 'valor')?.value || 0,
       };
 
-      // Adiciona tarefa para cada assignee
-      userNames.forEach(userName => {
-        if (!funilByUser[userName]) {
-          funilByUser[userName] = {
-            nome: userName,
+      // Adiciona tarefa apenas ao primeiro assignee (primary)
+      const primaryUser = userNames[0];
+      if (primaryUser) {
+        if (!funilByUser[primaryUser]) {
+          funilByUser[primaryUser] = {
+            nome: primaryUser,
             etapas: {}
           };
           ETAPAS.forEach(e => {
-            funilByUser[userName].etapas[e] = [];
+            funilByUser[primaryUser].etapas[e] = [];
           });
         }
 
-        if (funilByUser[userName].etapas[etapaMatch]) {
-          funilByUser[userName].etapas[etapaMatch].push(leadData);
+        if (funilByUser[primaryUser].etapas[etapaMatch]) {
+          funilByUser[primaryUser].etapas[etapaMatch].push(leadData);
         }
-      });
+      }
     });
 
     return funilByUser;

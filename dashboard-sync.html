@@ -1,0 +1,341 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Dashboard Sincronização - GPS.X</title>
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+      min-height: 100vh;
+      padding: 40px 20px;
+    }
+    .container { max-width: 1200px; margin: 0 auto; }
+    header {
+      background: rgba(255, 255, 255, 0.95);
+      border-radius: 16px;
+      padding: 40px;
+      margin-bottom: 40px;
+      box-shadow: 0 20px 60px rgba(0, 0, 0, 0.15);
+      text-align: center;
+    }
+    header h1 {
+      font-size: 2.5em;
+      color: #667eea;
+      margin-bottom: 10px;
+    }
+    header p { color: #666; font-size: 1.1em; }
+
+    .grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+      gap: 20px;
+      margin-bottom: 40px;
+    }
+
+    .card {
+      background: rgba(255, 255, 255, 0.95);
+      border-radius: 12px;
+      padding: 30px;
+      box-shadow: 0 10px 40px rgba(0, 0, 0, 0.1);
+      transition: transform 0.3s, box-shadow 0.3s;
+    }
+
+    .card:hover {
+      transform: translateY(-5px);
+      box-shadow: 0 15px 50px rgba(0, 0, 0, 0.15);
+    }
+
+    .card h3 {
+      color: #667eea;
+      font-size: 0.9em;
+      text-transform: uppercase;
+      letter-spacing: 1px;
+      margin-bottom: 15px;
+      color: #999;
+    }
+
+    .card .value {
+      font-size: 3em;
+      font-weight: 700;
+      color: #667eea;
+      margin: 10px 0;
+    }
+
+    .card .unit {
+      color: #999;
+      font-size: 0.9em;
+    }
+
+    .status-panel {
+      background: rgba(255, 255, 255, 0.95);
+      border-radius: 12px;
+      padding: 30px;
+      box-shadow: 0 10px 40px rgba(0, 0, 0, 0.1);
+    }
+
+    .status-item {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 15px 0;
+      border-bottom: 1px solid #eee;
+    }
+
+    .status-item:last-child {
+      border-bottom: none;
+    }
+
+    .status-label { color: #666; font-weight: 500; }
+    .status-value { font-weight: 700; color: #667eea; }
+
+    .badge {
+      display: inline-block;
+      padding: 6px 12px;
+      border-radius: 20px;
+      font-size: 0.85em;
+      font-weight: 600;
+    }
+
+    .badge-success {
+      background: #d4edda;
+      color: #155724;
+    }
+
+    .badge-warning {
+      background: #fff3cd;
+      color: #856404;
+    }
+
+    .badge-sync {
+      background: #cfe2ff;
+      color: #084298;
+      animation: pulse 1s infinite;
+    }
+
+    @keyframes pulse {
+      0%, 100% { opacity: 1; }
+      50% { opacity: 0.7; }
+    }
+
+    .button-group {
+      display: flex;
+      gap: 10px;
+      margin-top: 20px;
+    }
+
+    button {
+      flex: 1;
+      padding: 12px 20px;
+      border: none;
+      border-radius: 8px;
+      font-weight: 600;
+      cursor: pointer;
+      transition: all 0.3s;
+      font-size: 1em;
+    }
+
+    .btn-primary {
+      background: #667eea;
+      color: white;
+    }
+
+    .btn-primary:hover {
+      background: #5568d3;
+      transform: translateY(-2px);
+    }
+
+    .btn-secondary {
+      background: #f5f5f5;
+      color: #666;
+    }
+
+    .btn-secondary:hover {
+      background: #eee;
+    }
+
+    .chart-container {
+      background: rgba(255, 255, 255, 0.95);
+      border-radius: 12px;
+      padding: 30px;
+      box-shadow: 0 10px 40px rgba(0, 0, 0, 0.1);
+      margin-top: 40px;
+    }
+
+    .last-sync {
+      font-size: 0.9em;
+      color: #999;
+      margin-top: 15px;
+      text-align: center;
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <header>
+      <h1>📊 Dashboard de Sincronização</h1>
+      <p>Dados Importados da Cakto para GPS.X</p>
+    </header>
+
+    <div class="grid">
+      <div class="card">
+        <h3>Total de Clientes</h3>
+        <div class="value" id="totalCustomers">0</div>
+        <div class="unit">clientes importados</div>
+      </div>
+
+      <div class="card">
+        <h3>Total de Cobranças</h3>
+        <div class="value" id="totalCharges">0</div>
+        <div class="unit">cobranças registradas</div>
+      </div>
+
+      <div class="card">
+        <h3>Total de Assinaturas</h3>
+        <div class="value" id="totalSubscriptions">0</div>
+        <div class="unit">assinaturas ativas</div>
+      </div>
+
+      <div class="card">
+        <h3>Receita Confirmada</h3>
+        <div class="value" id="totalRevenuePaid">R$ 0</div>
+        <div class="unit">cobrado e recebido</div>
+      </div>
+
+      <div class="card">
+        <h3>Receita Pendente</h3>
+        <div class="value" id="totalRevenuePending">R$ 0</div>
+        <div class="unit">aguardando pagamento</div>
+      </div>
+
+      <div class="card">
+        <h3>Status de Sincronização</h3>
+        <div style="margin-top: 15px;">
+          <div id="syncStatus" class="badge badge-success">✓ Sincronizado</div>
+          <div class="last-sync" id="lastSync">Última atualização: agora</div>
+        </div>
+      </div>
+    </div>
+
+    <div class="status-panel">
+      <h3 style="margin-bottom: 20px; color: #667eea;">📋 Detalhes da Sincronização</h3>
+
+      <div class="status-item">
+        <span class="status-label">Clientes Importados:</span>
+        <span class="status-value" id="stat-customers">0</span>
+      </div>
+
+      <div class="status-item">
+        <span class="status-label">Cobranças Importadas:</span>
+        <span class="status-value" id="stat-charges">0</span>
+      </div>
+
+      <div class="status-item">
+        <span class="status-label">Assinaturas Ativas:</span>
+        <span class="status-value" id="stat-subscriptions">0</span>
+      </div>
+
+      <div class="status-item">
+        <span class="status-label">Receita Confirmada:</span>
+        <span class="status-value" id="stat-paid">R$ 0,00</span>
+      </div>
+
+      <div class="status-item">
+        <span class="status-label">Receita Pendente:</span>
+        <span class="status-value" id="stat-pending">R$ 0,00</span>
+      </div>
+
+      <div class="status-item">
+        <span class="status-label">Última Sincronização:</span>
+        <span class="status-value" id="stat-lastsync">-</span>
+      </div>
+
+      <div class="button-group">
+        <button class="btn-primary" onclick="syncNow()">🔄 Sincronizar Agora</button>
+        <button class="btn-secondary" onclick="goToDashboard()">📊 Ir para Dashboard</button>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    // Auto-refresh a cada 5 segundos
+    setInterval(updateStats, 5000);
+
+    // Carregar dados inicialmente
+    updateStats();
+
+    async function updateStats() {
+      try {
+        const response = await fetch('/api/sync-stats');
+        const data = await response.json();
+
+        if (data.success) {
+          const stats = data.stats;
+
+          // Atualizar cards principais
+          document.getElementById('totalCustomers').textContent = stats.total_customers;
+          document.getElementById('totalCharges').textContent = stats.total_charges;
+          document.getElementById('totalSubscriptions').textContent = stats.total_subscriptions;
+          document.getElementById('totalRevenuePaid').textContent = 'R$ ' + formatCurrency(stats.total_revenue_paid);
+          document.getElementById('totalRevenuePending').textContent = 'R$ ' + formatCurrency(stats.total_revenue_pending);
+
+          // Atualizar detalhes
+          document.getElementById('stat-customers').textContent = stats.total_customers;
+          document.getElementById('stat-charges').textContent = stats.total_charges;
+          document.getElementById('stat-subscriptions').textContent = stats.total_subscriptions;
+          document.getElementById('stat-paid').textContent = 'R$ ' + formatCurrency(stats.total_revenue_paid);
+          document.getElementById('stat-pending').textContent = 'R$ ' + formatCurrency(stats.total_revenue_pending);
+          document.getElementById('stat-lastsync').textContent = new Date(stats.last_sync).toLocaleString('pt-BR');
+          document.getElementById('lastSync').textContent = 'Última atualização: ' + getTimeAgo(stats.last_sync);
+        }
+      } catch (error) {
+        console.error('Erro ao carregar estatísticas:', error);
+      }
+    }
+
+    function formatCurrency(value) {
+      return (value || 0).toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+    }
+
+    function getTimeAgo(timestamp) {
+      const now = new Date();
+      const then = new Date(timestamp);
+      const seconds = Math.floor((now - then) / 1000);
+
+      if (seconds < 60) return 'agora';
+      if (seconds < 3600) return `${Math.floor(seconds / 60)}m atrás`;
+      if (seconds < 86400) return `${Math.floor(seconds / 3600)}h atrás`;
+      return `${Math.floor(seconds / 86400)}d atrás`;
+    }
+
+    async function syncNow() {
+      const btn = event.target;
+      btn.disabled = true;
+      btn.textContent = '⏳ Sincronizando...';
+
+      try {
+        const response = await fetch('/api/sync-now', { method: 'POST' });
+        const data = await response.json();
+
+        if (data.ok) {
+          btn.textContent = '✅ Sincronizado!';
+          setTimeout(() => {
+            btn.disabled = false;
+            btn.textContent = '🔄 Sincronizar Agora';
+            updateStats();
+          }, 2000);
+        }
+      } catch (error) {
+        btn.textContent = '❌ Erro na sincronização';
+        btn.disabled = false;
+      }
+    }
+
+    function goToDashboard() {
+      window.location.href = '/financial-dashboard.html';
+    }
+  </script>
+</body>
+</html>

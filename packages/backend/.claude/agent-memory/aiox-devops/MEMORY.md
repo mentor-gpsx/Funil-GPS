@@ -1,0 +1,1 @@
+- [Funil-GPS Repo & Push Policy](project_funil_gps_repo.md) — repo paths, force-push to main, selective staging required (legacy files clutter status)

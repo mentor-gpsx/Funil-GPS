@@ -1,0 +1,508 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Importar Dados Reais - GPS.X</title>
+  <style>
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
+      background: linear-gradient(135deg, #000000 0%, #1a1a1a 100%);
+      color: #ffffff;
+      min-height: 100vh;
+      padding: 20px;
+    }
+
+    .container {
+      max-width: 1200px;
+      margin: 0 auto;
+    }
+
+    .header {
+      text-align: center;
+      margin-bottom: 40px;
+      padding: 20px;
+      border-bottom: 2px solid #ffffff;
+    }
+
+    .header h1 {
+      font-size: 32px;
+      margin-bottom: 10px;
+    }
+
+    .header p {
+      font-size: 14px;
+      color: #cccccc;
+    }
+
+    .grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 20px;
+      margin-bottom: 40px;
+    }
+
+    @media (max-width: 800px) {
+      .grid {
+        grid-template-columns: 1fr;
+      }
+    }
+
+    .card {
+      background: #1a1a1a;
+      border: 1px solid #333333;
+      border-radius: 8px;
+      padding: 20px;
+      transition: border-color 0.3s;
+    }
+
+    .card:hover {
+      border-color: #ffffff;
+    }
+
+    .card h2 {
+      font-size: 18px;
+      margin-bottom: 15px;
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+
+    .section-icon {
+      font-size: 24px;
+    }
+
+    label {
+      display: block;
+      font-size: 12px;
+      font-weight: 600;
+      margin-bottom: 5px;
+      color: #aaaaaa;
+      text-transform: uppercase;
+    }
+
+    input, textarea {
+      width: 100%;
+      padding: 10px;
+      margin-bottom: 15px;
+      background: #0a0a0a;
+      border: 1px solid #333333;
+      border-radius: 4px;
+      color: #ffffff;
+      font-family: monospace;
+      font-size: 13px;
+    }
+
+    textarea {
+      min-height: 150px;
+      resize: vertical;
+      font-family: monospace;
+    }
+
+    input:focus, textarea:focus {
+      outline: none;
+      border-color: #ffffff;
+      background: #111111;
+    }
+
+    .button-group {
+      display: flex;
+      gap: 10px;
+      margin-top: 20px;
+    }
+
+    button {
+      flex: 1;
+      padding: 12px;
+      border: none;
+      border-radius: 4px;
+      font-size: 14px;
+      font-weight: 600;
+      cursor: pointer;
+      text-transform: uppercase;
+      transition: all 0.3s;
+    }
+
+    .btn-primary {
+      background: #ffffff;
+      color: #000000;
+    }
+
+    .btn-primary:hover {
+      background: #e0e0e0;
+      transform: scale(1.02);
+    }
+
+    .btn-secondary {
+      background: transparent;
+      color: #ffffff;
+      border: 1px solid #ffffff;
+    }
+
+    .btn-secondary:hover {
+      background: #ffffff;
+      color: #000000;
+    }
+
+    .status {
+      padding: 15px;
+      border-radius: 4px;
+      margin-top: 15px;
+      display: none;
+      font-size: 13px;
+    }
+
+    .status.success {
+      display: block;
+      background: rgba(76, 175, 80, 0.1);
+      border: 1px solid #4caf50;
+      color: #4caf50;
+    }
+
+    .status.error {
+      display: block;
+      background: rgba(244, 67, 54, 0.1);
+      border: 1px solid #f44336;
+      color: #f44336;
+    }
+
+    .info-box {
+      background: #0a0a0a;
+      border-left: 3px solid #ffffff;
+      padding: 15px;
+      margin-bottom: 20px;
+      border-radius: 4px;
+      font-size: 12px;
+      line-height: 1.6;
+    }
+
+    .preview {
+      background: #0a0a0a;
+      padding: 15px;
+      border-radius: 4px;
+      margin-top: 15px;
+      max-height: 300px;
+      overflow-y: auto;
+      font-size: 11px;
+      border: 1px solid #333333;
+    }
+
+    .preview code {
+      color: #4caf50;
+      font-family: monospace;
+    }
+
+    .divider {
+      height: 1px;
+      background: #333333;
+      margin: 30px 0;
+    }
+
+    .quick-fill {
+      background: #1a1a1a;
+      border: 1px solid #333333;
+      border-radius: 8px;
+      padding: 20px;
+      margin-bottom: 40px;
+    }
+
+    .quick-fill h3 {
+      margin-bottom: 15px;
+      font-size: 16px;
+    }
+
+    .quick-fill p {
+      font-size: 12px;
+      color: #aaaaaa;
+      margin-bottom: 15px;
+    }
+
+    .json-example {
+      background: #0a0a0a;
+      padding: 10px;
+      border-radius: 4px;
+      overflow-x: auto;
+      font-size: 11px;
+      border: 1px solid #333333;
+    }
+
+    .json-example code {
+      color: #4caf50;
+      font-family: monospace;
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <div class="header">
+      <h1>📊 Importar Dados Reais da Cakto</h1>
+      <p>Copie e cole os dados da sua conta Cakto aqui. Vamos estruturar e salvar automaticamente.</p>
+    </div>
+
+    <div class="quick-fill">
+      <h3>⚡ Forma Mais Rápida</h3>
+      <p>Cole o JSON completo dos dados da Cakto (customers, charges, subscriptions). Se não tiver em JSON, preencha os campos abaixo um por um.</p>
+
+      <label>Cole aqui se tiver JSON pronto:</label>
+      <textarea id="jsonInput" placeholder='{"customers": [...], "charges": [...], "subscriptions": [...]}'></textarea>
+
+      <button class="btn-primary" onclick="importJSON()">📥 Importar JSON</button>
+      <div class="status" id="jsonStatus"></div>
+    </div>
+
+    <div class="divider"></div>
+
+    <h2 style="margin-bottom: 20px;">Ou Preencha Manualmente:</h2>
+
+    <div class="grid">
+      <!-- Clientes -->
+      <div class="card">
+        <h2><span class="section-icon">👥</span>Clientes</h2>
+        <div class="info-box">
+          Cole cada cliente em uma linha (JSON array ou um por linha)
+        </div>
+        <label>Dados dos Clientes</label>
+        <textarea id="customersInput" placeholder="Exemplo: [&#10;  {&#10;    &quot;id&quot;: &quot;cust_001&quot;,&#10;    &quot;name&quot;: &quot;João Silva&quot;,&#10;    &quot;email&quot;: &quot;joao@example.com&quot;,&#10;    &quot;phone&quot;: &quot;11999999999&quot;,&#10;    &quot;created_at&quot;: &quot;2026-04-24&quot;&#10;  }&#10;]"></textarea>
+      </div>
+
+      <!-- Cobranças -->
+      <div class="card">
+        <h2><span class="section-icon">💰</span>Cobranças</h2>
+        <div class="info-box">
+          Cole cada cobrança com cliente_id, valor, status (paid/pending/failed)
+        </div>
+        <label>Dados das Cobranças</label>
+        <textarea id="chargesInput" placeholder="Exemplo: [&#10;  {&#10;    &quot;id&quot;: &quot;charge_001&quot;,&#10;    &quot;customer_id&quot;: &quot;cust_001&quot;,&#10;    &quot;customer_name&quot;: &quot;João Silva&quot;,&#10;    &quot;amount&quot;: 299.90,&#10;    &quot;status&quot;: &quot;paid&quot;,&#10;    &quot;due_date&quot;: &quot;2026-04-15&quot;,&#10;    &quot;paid_date&quot;: &quot;2026-04-16&quot;,&#10;    &quot;description&quot;: &quot;Assinatura Mensal&quot;,&#10;    &quot;payment_method&quot;: &quot;pix&quot;,&#10;    &quot;reference&quot;: &quot;REF-001&quot;&#10;  }&#10;]"></textarea>
+      </div>
+
+      <!-- Assinaturas -->
+      <div class="card">
+        <h2><span class="section-icon">🔄</span>Assinaturas</h2>
+        <div class="info-box">
+          Cole cada assinatura ativa com próxima data de cobrança
+        </div>
+        <label>Dados das Assinaturas</label>
+        <textarea id="subscriptionsInput" placeholder="Exemplo: [&#10;  {&#10;    &quot;id&quot;: &quot;sub_001&quot;,&#10;    &quot;customer_id&quot;: &quot;cust_001&quot;,&#10;    &quot;amount&quot;: 299.90,&#10;    &quot;status&quot;: &quot;active&quot;,&#10;    &quot;next_charge_date&quot;: &quot;2026-05-15&quot;,&#10;    &quot;plan&quot;: &quot;Pro&quot;&#10;  }&#10;]"></textarea>
+      </div>
+    </div>
+
+    <div class="divider"></div>
+
+    <div class="button-group">
+      <button class="btn-primary" onclick="saveData()">💾 Salvar Dados Estruturados</button>
+      <button class="btn-secondary" onclick="validateData()">✅ Validar Dados</button>
+    </div>
+
+    <div class="status" id="mainStatus"></div>
+
+    <div id="preview" class="preview" style="display: none;">
+      <strong>Preview do que será salvo:</strong>
+      <code id="previewContent"></code>
+    </div>
+  </div>
+
+  <script>
+    const colors = {
+      success: '#4caf50',
+      error: '#f44336',
+      info: '#2196F3',
+    };
+
+    function showStatus(message, type = 'success', elementId = 'mainStatus') {
+      const el = document.getElementById(elementId);
+      el.textContent = message;
+      el.className = `status ${type}`;
+    }
+
+    function parseJSON(str) {
+      try {
+        return JSON.parse(str);
+      } catch (e) {
+        return null;
+      }
+    }
+
+    function validateData() {
+      const customers = parseJSON(document.getElementById('customersInput').value);
+      const charges = parseJSON(document.getElementById('chargesInput').value);
+      const subscriptions = parseJSON(document.getElementById('subscriptionsInput').value);
+
+      if (!customers) {
+        showStatus('❌ Clientes: JSON inválido', 'error');
+        return;
+      }
+      if (!charges) {
+        showStatus('❌ Cobranças: JSON inválido', 'error');
+        return;
+      }
+      if (!subscriptions) {
+        showStatus('❌ Assinaturas: JSON inválido', 'error');
+        return;
+      }
+
+      const data = { customers, charges, subscriptions };
+
+      document.getElementById('previewContent').textContent = JSON.stringify(data, null, 2);
+      document.getElementById('preview').style.display = 'block';
+
+      showStatus(`✅ Dados válidos! ${customers.length} clientes, ${charges.length} cobranças, ${subscriptions.length} assinaturas`, 'success');
+    }
+
+    function convertCaktoOrders(caktoData) {
+      const customers = [];
+      const charges = [];
+      const subscriptions = [];
+      const customerMap = {};
+
+      const orders = caktoData.results || caktoData.orders || [];
+
+      orders.forEach((order, idx) => {
+        const customerId = order.buyer_id || order.customer_id || `cust_${idx}`;
+        const customerName = order.buyer_name || order.customer_name || order.buyer_email || 'Cliente';
+        const customerEmail = order.buyer_email || order.customer_email || `cliente${idx}@example.com`;
+
+        if (!customerMap[customerId]) {
+          customerMap[customerId] = true;
+          customers.push({
+            id: customerId,
+            name: customerName,
+            email: customerEmail,
+            phone: order.buyer_phone || order.phone || '',
+            created_at: order.created_at ? order.created_at.split('T')[0] : new Date().toISOString().split('T')[0],
+          });
+        }
+
+        charges.push({
+          id: order.id || `charge_${idx}`,
+          customer_id: customerId,
+          customer_name: customerName,
+          amount: parseFloat(order.total_amount || order.amount || 0),
+          status: ['completed', 'paid'].includes(order.status?.toLowerCase()) ? 'paid' : (order.status?.toLowerCase() === 'failed' || order.status?.toLowerCase() === 'cancelled' ? 'failed' : 'pending'),
+          due_date: order.created_at ? order.created_at.split('T')[0] : new Date().toISOString().split('T')[0],
+          paid_date: order.paid_at || order.completed_at ? (order.paid_at || order.completed_at).split('T')[0] : null,
+          description: order.product_name || order.description || 'Venda',
+          payment_method: order.payment_method?.toLowerCase() || 'pix',
+          reference: order.id || `ORDER-${idx}`,
+        });
+
+        if (order.is_subscription || order.recurring) {
+          subscriptions.push({
+            id: order.subscription_id || `sub_${customerId}_${idx}`,
+            customer_id: customerId,
+            amount: parseFloat(order.total_amount || order.amount || 0),
+            status: 'active',
+            next_charge_date: new Date(new Date(order.created_at).getTime() + 30*24*60*60*1000).toISOString().split('T')[0],
+            plan: order.plan_name || 'Padrão',
+          });
+        }
+      });
+
+      if (customers.length === 0) {
+        customers.push({ id: 'cust_default', name: 'Cliente', email: 'cliente@example.com', phone: '', created_at: new Date().toISOString().split('T')[0] });
+      }
+      if (charges.length === 0) {
+        charges.push({ id: 'charge_default', customer_id: customers[0].id, customer_name: customers[0].name, amount: 0, status: 'pending', due_date: new Date().toISOString().split('T')[0], paid_date: null, description: 'Sem dados', payment_method: 'pix', reference: 'DEFAULT' });
+      }
+      if (subscriptions.length === 0) {
+        subscriptions.push({ id: 'sub_default', customer_id: customers[0].id, amount: charges[0]?.amount || 0, status: 'active', next_charge_date: new Date(Date.now() + 30*24*60*60*1000).toISOString().split('T')[0], plan: 'Padrão' });
+      }
+
+      return { customers, charges, subscriptions };
+    }
+
+    function importJSON() {
+      const jsonStr = document.getElementById('jsonInput').value.trim();
+      if (!jsonStr) {
+        showStatus('❌ Cole um JSON válido', 'error', 'jsonStatus');
+        return;
+      }
+
+      let data = parseJSON(jsonStr);
+      if (!data) {
+        showStatus('❌ JSON inválido. Verifique a sintaxe', 'error', 'jsonStatus');
+        return;
+      }
+
+      // Se for data da Cakto (/orders), converter automaticamente
+      if (data.results || (data.orders && !data.customers)) {
+        showStatus('🔄 Convertendo dados do Cakto...', 'success', 'jsonStatus');
+        data = convertCaktoOrders(data);
+        setTimeout(() => showStatus('✅ Dados convertidos! Clique em "Salvar Dados"', 'success', 'jsonStatus'), 500);
+      }
+
+      if (data.customers) {
+        document.getElementById('customersInput').value = JSON.stringify(data.customers, null, 2);
+      }
+      if (data.charges) {
+        document.getElementById('chargesInput').value = JSON.stringify(data.charges, null, 2);
+      }
+      if (data.subscriptions) {
+        document.getElementById('subscriptionsInput').value = JSON.stringify(data.subscriptions, null, 2);
+      }
+
+      // Auto-validate
+      setTimeout(() => validateData(), 1000);
+    }
+
+    function saveData() {
+      const customers = parseJSON(document.getElementById('customersInput').value);
+      const charges = parseJSON(document.getElementById('chargesInput').value);
+      const subscriptions = parseJSON(document.getElementById('subscriptionsInput').value);
+
+      if (!customers || !charges || !subscriptions) {
+        showStatus('❌ Todos os campos devem ter JSON válido', 'error');
+        return;
+      }
+
+      const data = {
+        customers,
+        charges,
+        subscriptions,
+      };
+
+      // Enviar para servidor para salvar em data.json
+      fetch('/api/save-data', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(data),
+      })
+      .then(res => res.json())
+      .then(result => {
+        if (result.success) {
+          showStatus('🎉 ✅ Dados salvos com sucesso! Dashboard está atualizado.', 'success');
+          setTimeout(() => {
+            window.location.href = '/dashboard-interactive.html';
+          }, 2000);
+        } else {
+          showStatus(`❌ Erro: ${result.error}`, 'error');
+        }
+      })
+      .catch(err => {
+        showStatus(`❌ Erro ao salvar: ${err.message}`, 'error');
+      });
+    }
+
+    // Carregar dados ao abrir
+    window.addEventListener('load', () => {
+      fetch('/api/get-data')
+        .then(res => res.json())
+        .then(data => {
+          if (data.customers) {
+            document.getElementById('customersInput').value = JSON.stringify(data.customers, null, 2);
+            document.getElementById('chargesInput').value = JSON.stringify(data.charges, null, 2);
+            document.getElementById('subscriptionsInput').value = JSON.stringify(data.subscriptions, null, 2);
+          }
+        })
+        .catch(err => console.log('Nenhum dado anterior encontrado'));
+    });
+  </script>
+</body>
+</html>

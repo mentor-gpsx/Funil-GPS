@@ -1,0 +1,188 @@
+{
+  "customers": [],
+  "charges": [
+    {
+      "id": "5b2f2368-0849-4a04-b4c5-96a3ba8f2a21",
+      "customer_id": {
+        "name": "Joel Batista",
+        "email": "vendas@dlujo.com.br",
+        "birthDate": null,
+        "phone": "5516991249714",
+        "docType": "cpf",
+        "docNumber": "08154673894"
+      },
+      "amount": 2000.99,
+      "status": "waiting_payment",
+      "payment_method": "desconhecido",
+      "reference": "5b2f2368-0849-4a04-b4c5-96a3ba8f2a21",
+      "due_date": null,
+      "created_at": "2026-05-05T19:13:24.190Z",
+      "source": "cakto_api"
+    },
+    {
+      "id": "8a58ea8a-cefa-4c92-94b1-c3fb822b17d2",
+      "customer_id": {
+        "name": "Joel Batista",
+        "email": "vendas@dlujo.com.br",
+        "birthDate": null,
+        "phone": "5516991249714",
+        "docType": "cpf",
+        "docNumber": "08154673894"
+      },
+      "amount": 2000.99,
+      "status": "waiting_payment",
+      "payment_method": "desconhecido",
+      "reference": "8a58ea8a-cefa-4c92-94b1-c3fb822b17d2",
+      "due_date": null,
+      "created_at": "2026-05-05T19:13:24.190Z",
+      "source": "cakto_api"
+    },
+    {
+      "id": "0a1ab4b8-283d-497f-b93c-b37fb1ceaa9f",
+      "customer_id": {
+        "name": "Joel Batista",
+        "email": "vendas@dlujo.com.br",
+        "birthDate": null,
+        "phone": "5516991249714",
+        "docType": "cpf",
+        "docNumber": "08154673894"
+      },
+      "amount": 2000.99,
+      "status": "waiting_payment",
+      "payment_method": "desconhecido",
+      "reference": "0a1ab4b8-283d-497f-b93c-b37fb1ceaa9f",
+      "due_date": null,
+      "created_at": "2026-05-05T19:13:24.190Z",
+      "source": "cakto_api"
+    },
+    {
+      "id": "31b39760-8280-4a3d-9857-8dd08a06a6b6",
+      "customer_id": {
+        "name": "Letícia Caroline Norberto de Camargo Rodrigues",
+        "email": "leticia.ccamargo@outlook.com",
+        "birthDate": null,
+        "phone": "5516992822347",
+        "docType": "cpf",
+        "docNumber": "44758491879"
+      },
+      "amount": 1917.65,
+      "status": "paid",
+      "payment_method": "desconhecido",
+      "reference": "31b39760-8280-4a3d-9857-8dd08a06a6b6",
+      "due_date": null,
+      "created_at": "2026-05-05T19:13:24.190Z",
+      "source": "cakto_api"
+    },
+    {
+      "id": "84569c7f-2be8-4369-bc97-162cb5176537",
+      "customer_id": {
+        "name": "Letícia Caroline Norberto de Camargo Rodrigues",
+        "email": "leticia.ccamargo@outlook.com",
+        "birthDate": null,
+        "phone": "5516992822347",
+        "docType": "cpf",
+        "docNumber": "44758491879"
+      },
+      "amount": 1917.65,
+      "status": "refused",
+      "payment_method": "desconhecido",
+      "reference": "84569c7f-2be8-4369-bc97-162cb5176537",
+      "due_date": null,
+      "created_at": "2026-05-05T19:13:24.190Z",
+      "source": "cakto_api"
+    },
+    {
+      "id": "993ea10c-a09f-46cd-a216-238d624f352a",
+      "customer_id": {
+        "name": "SILAS  MAURICIO  DA SILVA",
+        "email": "silasmauriciodasilvas@yahoo.com.br",
+        "birthDate": null,
+        "phone": "5516981220395",
+        "docType": "cnpj",
+        "docNumber": "49267609000110"
+      },
+      "amount": 1000.99,
+      "status": "paid",
+      "payment_method": "desconhecido",
+      "reference": "993ea10c-a09f-46cd-a216-238d624f352a",
+      "due_date": null,
+      "created_at": "2026-05-05T19:13:24.190Z",
+      "source": "cakto_api"
+    },
+    {
+      "id": "2142b59a-2f66-42b0-a1be-23ea6ce4028b",
+      "customer_id": {
+        "name": "Guilherme Souza",
+        "email": "gs7296566@gmail.com",
+        "birthDate": null,
+        "phone": "5516993325252",
+        "docType": "cpf",
+        "docNumber": "45978885869"
+      },
+      "amount": 7000.59,
+      "status": "refunded",
+      "payment_method": "desconhecido",
+      "reference": "2142b59a-2f66-42b0-a1be-23ea6ce4028b",
+      "due_date": null,
+      "created_at": "2026-05-05T19:13:24.190Z",
+      "source": "cakto_api"
+    },
+    {
+      "id": "18a110ec-6711-4147-bd61-d7b5d8141408",
+      "customer_id": {
+        "name": "Guilherme Souza",
+        "email": "gs7296566@gmail.com",
+        "birthDate": null,
+        "phone": "5516993325252",
+        "docType": "cpf",
+        "docNumber": "45978885869"
+      },
+      "amount": 6000,
+      "status": "refused",
+      "payment_method": "desconhecido",
+      "reference": "18a110ec-6711-4147-bd61-d7b5d8141408",
+      "due_date": null,
+      "created_at": "2026-05-05T19:13:24.190Z",
+      "source": "cakto_api"
+    },
+    {
+      "id": "4becd437-a3e4-4038-ba31-849a95e463e0",
+      "customer_id": {
+        "name": "Leyriane Patrícia Gomes Amaral",
+        "email": "leyrigoojs@icloud.com",
+        "birthDate": null,
+        "phone": "5516997772204",
+        "docType": "cpf",
+        "docNumber": "14112104685"
+      },
+      "amount": 1000.99,
+      "status": "paid",
+      "payment_method": "desconhecido",
+      "reference": "4becd437-a3e4-4038-ba31-849a95e463e0",
+      "due_date": null,
+      "created_at": "2026-05-05T19:13:24.190Z",
+      "source": "cakto_api"
+    },
+    {
+      "id": "c329f317-8e3d-4aa5-98e5-5237dab19a7b",
+      "customer_id": {
+        "name": "ITHALO MARINGOLO",
+        "email": "ithalomaringolo18@gmail.com",
+        "birthDate": null,
+        "phone": "5516992080782",
+        "docType": "cnpj",
+        "docNumber": "57948050000112"
+      },
+      "amount": 1800.99,
+      "status": "paid",
+      "payment_method": "desconhecido",
+      "reference": "c329f317-8e3d-4aa5-98e5-5237dab19a7b",
+      "due_date": null,
+      "created_at": "2026-05-05T19:13:24.190Z",
+      "source": "cakto_api"
+    }
+  ],
+  "subscriptions": [],
+  "synced_at": "2026-05-05T19:13:24.191Z",
+  "source": "cakto_api"
+}

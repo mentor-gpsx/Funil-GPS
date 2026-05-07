@@ -12,7 +12,7 @@ import {
   UseGuards,
   ValidationPipe,
 } from '@nestjs/common';
-import { JwtAuthGuard } from '../../auth/guards/jwt-auth.guard';
+import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
 import { EntriesService } from './entries.service';
 import { EntryLinesService } from './entry-lines.service';
 import { CreateEntryDto, CreateEntryLineDto } from './dto/create-entry.dto';

@@ -1,0 +1,1677 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Sistema de Gestão Empresarial - SaaS</title>
+  <style>
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+
+    :root {
+      --primary: #1a1a1a;
+      --secondary: #2d2d2d;
+      --accent: #ff6b35;
+      --success: #27ae60;
+      --warning: #f39c12;
+      --danger: #e74c3c;
+      --light: #ecf0f1;
+      --border: #bdc3c7;
+    }
+
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
+      background: var(--light);
+      color: var(--primary);
+      line-height: 1.6;
+    }
+
+    /* LOGIN SCREEN */
+    .login-container {
+      display: none;
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      background: linear-gradient(135deg, var(--primary) 0%, var(--secondary) 100%);
+      align-items: center;
+      justify-content: center;
+      z-index: 9999;
+    }
+
+    .login-container.active {
+      display: flex;
+    }
+
+    .login-box {
+      background: white;
+      padding: 40px;
+      border-radius: 10px;
+      box-shadow: 0 10px 40px rgba(0,0,0,0.3);
+      width: 100%;
+      max-width: 400px;
+    }
+
+    .login-box h1 {
+      text-align: center;
+      margin-bottom: 10px;
+      color: var(--primary);
+      font-size: 28px;
+    }
+
+    .login-box .subtitle {
+      text-align: center;
+      color: #666;
+      margin-bottom: 30px;
+      font-size: 14px;
+    }
+
+    .form-group {
+      margin-bottom: 20px;
+    }
+
+    .form-group label {
+      display: block;
+      margin-bottom: 8px;
+      font-weight: 500;
+      color: var(--primary);
+    }
+
+    .form-group input, .form-group select {
+      width: 100%;
+      padding: 12px;
+      border: 1px solid var(--border);
+      border-radius: 5px;
+      font-size: 14px;
+      transition: border 0.3s;
+    }
+
+    .form-group input:focus, .form-group select:focus {
+      outline: none;
+      border-color: var(--accent);
+      box-shadow: 0 0 5px rgba(255, 107, 53, 0.2);
+    }
+
+    .btn {
+      padding: 12px 24px;
+      border: none;
+      border-radius: 5px;
+      font-size: 14px;
+      font-weight: 600;
+      cursor: pointer;
+      transition: all 0.3s;
+      display: inline-block;
+      text-align: center;
+    }
+
+    .btn-primary {
+      background: var(--accent);
+      color: white;
+      width: 100%;
+      margin-top: 20px;
+    }
+
+    .btn-primary:hover {
+      background: #ff5722;
+      transform: translateY(-2px);
+      box-shadow: 0 5px 15px rgba(255, 107, 53, 0.3);
+    }
+
+    /* MAIN APP */
+    .app-container {
+      display: none;
+      height: 100vh;
+      flex-direction: column;
+    }
+
+    .app-container.active {
+      display: flex;
+    }
+
+    /* HEADER */
+    header {
+      background: var(--primary);
+      color: white;
+      padding: 15px 20px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+    }
+
+    header h1 {
+      font-size: 24px;
+      font-weight: 700;
+      letter-spacing: -0.5px;
+    }
+
+    .header-right {
+      display: flex;
+      align-items: center;
+      gap: 20px;
+    }
+
+    .empresa-info {
+      font-size: 13px;
+      opacity: 0.8;
+    }
+
+    .user-info {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      padding: 8px 15px;
+      background: var(--secondary);
+      border-radius: 5px;
+      font-size: 13px;
+    }
+
+    .user-badge {
+      background: var(--accent);
+      color: white;
+      padding: 2px 8px;
+      border-radius: 3px;
+      font-size: 11px;
+      font-weight: 600;
+    }
+
+    .btn-logout {
+      background: var(--danger);
+      color: white;
+      border: none;
+      padding: 8px 15px;
+      border-radius: 5px;
+      cursor: pointer;
+      font-size: 13px;
+      font-weight: 600;
+    }
+
+    .btn-logout:hover {
+      background: #c0392b;
+    }
+
+    /* MAIN CONTENT */
+    .main-content {
+      display: flex;
+      flex: 1;
+      overflow: hidden;
+    }
+
+    /* SIDEBAR */
+    .sidebar {
+      width: 250px;
+      background: var(--secondary);
+      color: white;
+      overflow-y: auto;
+      border-right: 1px solid #444;
+    }
+
+    .sidebar h3 {
+      padding: 20px 15px 10px;
+      font-size: 12px;
+      text-transform: uppercase;
+      opacity: 0.6;
+      font-weight: 600;
+      letter-spacing: 1px;
+    }
+
+    .sidebar-menu {
+      list-style: none;
+    }
+
+    .sidebar-menu li {
+      border-bottom: 1px solid #444;
+    }
+
+    .sidebar-menu a {
+      display: block;
+      padding: 12px 15px;
+      color: white;
+      text-decoration: none;
+      transition: all 0.3s;
+      font-size: 14px;
+      border-left: 3px solid transparent;
+    }
+
+    .sidebar-menu a:hover {
+      background: #3d3d3d;
+      border-left-color: var(--accent);
+      padding-left: 18px;
+    }
+
+    .sidebar-menu a.active {
+      background: var(--accent);
+      color: white;
+      border-left-color: white;
+    }
+
+    /* CONTENT AREA */
+    .content {
+      flex: 1;
+      overflow-y: auto;
+      padding: 30px;
+      background: var(--light);
+    }
+
+    .page {
+      display: none;
+      animation: fadeIn 0.3s;
+    }
+
+    .page.active {
+      display: block;
+    }
+
+    @keyframes fadeIn {
+      from { opacity: 0; transform: translateY(10px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+
+    .page-title {
+      font-size: 32px;
+      margin-bottom: 10px;
+      color: var(--primary);
+      font-weight: 700;
+    }
+
+    .page-subtitle {
+      color: #666;
+      margin-bottom: 30px;
+      font-size: 14px;
+    }
+
+    /* KPI GRID */
+    .kpi-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+      gap: 20px;
+      margin-bottom: 40px;
+    }
+
+    .kpi-card {
+      background: white;
+      padding: 25px;
+      border-radius: 10px;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+      border-top: 4px solid var(--accent);
+      transition: all 0.3s;
+    }
+
+    .kpi-card:hover {
+      transform: translateY(-5px);
+      box-shadow: 0 5px 15px rgba(0,0,0,0.15);
+    }
+
+    .kpi-label {
+      font-size: 13px;
+      color: #666;
+      text-transform: uppercase;
+      font-weight: 600;
+      letter-spacing: 0.5px;
+      margin-bottom: 10px;
+    }
+
+    .kpi-value {
+      font-size: 32px;
+      font-weight: 700;
+      color: var(--primary);
+      margin-bottom: 5px;
+    }
+
+    .kpi-change {
+      font-size: 13px;
+      color: var(--success);
+      font-weight: 600;
+    }
+
+    .kpi-change.danger {
+      color: var(--danger);
+    }
+
+    /* TABLES */
+    .table-container {
+      background: white;
+      border-radius: 10px;
+      overflow: hidden;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+      margin-bottom: 30px;
+    }
+
+    .table-header {
+      padding: 20px;
+      background: var(--secondary);
+      color: white;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+
+    .table-header h2 {
+      font-size: 18px;
+      font-weight: 600;
+    }
+
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      font-size: 14px;
+    }
+
+    thead {
+      background: #f8f9fa;
+      border-bottom: 2px solid var(--border);
+    }
+
+    th {
+      padding: 12px 15px;
+      text-align: left;
+      font-weight: 600;
+      color: var(--primary);
+      text-transform: uppercase;
+      font-size: 12px;
+      letter-spacing: 0.5px;
+    }
+
+    td {
+      padding: 12px 15px;
+      border-bottom: 1px solid #e0e0e0;
+    }
+
+    tr:hover {
+      background: #f5f5f5;
+    }
+
+    .badge {
+      display: inline-block;
+      padding: 4px 10px;
+      border-radius: 20px;
+      font-size: 12px;
+      font-weight: 600;
+    }
+
+    .badge-success {
+      background: #d4edda;
+      color: #155724;
+    }
+
+    .badge-warning {
+      background: #fff3cd;
+      color: #856404;
+    }
+
+    .badge-danger {
+      background: #f8d7da;
+      color: #721c24;
+    }
+
+    .badge-info {
+      background: #d1ecf1;
+      color: #0c5460;
+    }
+
+    /* FORM */
+    .form-container {
+      background: white;
+      padding: 30px;
+      border-radius: 10px;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+      margin-bottom: 30px;
+    }
+
+    .form-row {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+      gap: 20px;
+      margin-bottom: 20px;
+    }
+
+    .form-group {
+      display: flex;
+      flex-direction: column;
+    }
+
+    .form-group label {
+      margin-bottom: 8px;
+      font-weight: 600;
+      color: var(--primary);
+      font-size: 14px;
+    }
+
+    .form-group input, .form-group select, .form-group textarea {
+      padding: 10px;
+      border: 1px solid var(--border);
+      border-radius: 5px;
+      font-size: 14px;
+      font-family: inherit;
+    }
+
+    .form-group textarea {
+      resize: vertical;
+      min-height: 80px;
+    }
+
+    .form-actions {
+      display: flex;
+      gap: 10px;
+      justify-content: flex-end;
+      padding-top: 20px;
+      border-top: 1px solid #e0e0e0;
+    }
+
+    .btn-secondary {
+      background: #95a5a6;
+      color: white;
+    }
+
+    .btn-secondary:hover {
+      background: #7f8c8d;
+    }
+
+    /* TABS */
+    .tabs-container {
+      display: flex;
+      border-bottom: 2px solid var(--border);
+      margin-bottom: 20px;
+      background: white;
+      border-radius: 10px 10px 0 0;
+    }
+
+    .tab-button {
+      padding: 15px 20px;
+      border: none;
+      background: none;
+      cursor: pointer;
+      font-weight: 600;
+      color: #666;
+      border-bottom: 3px solid transparent;
+      transition: all 0.3s;
+      font-size: 14px;
+    }
+
+    .tab-button:hover {
+      color: var(--primary);
+      background: #f5f5f5;
+    }
+
+    .tab-button.active {
+      color: var(--accent);
+      border-bottom-color: var(--accent);
+    }
+
+    .tab-content {
+      display: none;
+    }
+
+    .tab-content.active {
+      display: block;
+    }
+
+    /* ALERTS */
+    .alert {
+      padding: 15px;
+      border-radius: 5px;
+      margin-bottom: 20px;
+      border-left: 4px solid;
+      font-size: 14px;
+    }
+
+    .alert-success {
+      background: #d4edda;
+      border-color: var(--success);
+      color: #155724;
+    }
+
+    .alert-warning {
+      background: #fff3cd;
+      border-color: var(--warning);
+      color: #856404;
+    }
+
+    .alert-danger {
+      background: #f8d7da;
+      border-color: var(--danger);
+      color: #721c24;
+    }
+
+    .alert-info {
+      background: #d1ecf1;
+      border-color: #0c5460;
+      color: #0c5460;
+    }
+
+    /* UTILITY */
+    .text-muted {
+      color: #666;
+      font-size: 13px;
+    }
+
+    .mt-20 {
+      margin-top: 20px;
+    }
+
+    .mb-20 {
+      margin-bottom: 20px;
+    }
+
+    .text-right {
+      text-align: right;
+    }
+
+    .text-center {
+      text-align: center;
+    }
+
+    /* RESPONSIVE */
+    @media (max-width: 768px) {
+      .sidebar {
+        width: 200px;
+      }
+
+      .content {
+        padding: 15px;
+      }
+
+      .page-title {
+        font-size: 24px;
+      }
+
+      .kpi-grid {
+        grid-template-columns: 1fr;
+      }
+
+      .form-row {
+        grid-template-columns: 1fr;
+      }
+
+      .header-right {
+        flex-direction: column;
+        gap: 10px;
+        font-size: 12px;
+      }
+    }
+
+    @media (max-width: 600px) {
+      .sidebar {
+        width: 150px;
+      }
+
+      header {
+        flex-direction: column;
+        gap: 10px;
+      }
+
+      header h1 {
+        font-size: 18px;
+      }
+
+      .table-container {
+        overflow-x: auto;
+      }
+
+      table {
+        font-size: 12px;
+      }
+
+      th, td {
+        padding: 8px 10px;
+      }
+    }
+  </style>
+</head>
+<body>
+
+<!-- LOGIN SCREEN -->
+<div class="login-container active" id="loginContainer">
+  <div class="login-box">
+    <h1>🏢 Gestão</h1>
+    <p class="subtitle">Sistema de Gestão Empresarial</p>
+
+    <div class="form-group">
+      <label>Email</label>
+      <input type="email" id="loginEmail" placeholder="usuario@empresa.com" value="admin@empresa.com">
+    </div>
+
+    <div class="form-group">
+      <label>Senha</label>
+      <input type="password" id="loginPassword" placeholder="Digite sua senha" value="123456">
+    </div>
+
+    <div class="form-group">
+      <label>Empresa</label>
+      <select id="loginEmpresa">
+        <option value="1">Synkra AIOX</option>
+        <option value="2">GPSX Soluções</option>
+        <option value="3">Nexus Tech</option>
+      </select>
+    </div>
+
+    <button class="btn btn-primary" onclick="login()">Entrar</button>
+  </div>
+</div>
+
+<!-- MAIN APP -->
+<div class="app-container" id="appContainer">
+  <!-- HEADER -->
+  <header>
+    <h1>🏢 Gestão Empresarial</h1>
+    <div class="header-right">
+      <div class="empresa-info" id="empresaInfo"></div>
+      <div class="user-info" id="userInfo"></div>
+      <button class="btn-logout" onclick="logout()">Sair</button>
+    </div>
+  </header>
+
+  <!-- MAIN CONTENT -->
+  <div class="main-content">
+    <!-- SIDEBAR -->
+    <aside class="sidebar">
+      <h3>📊 Menu Principal</h3>
+      <ul class="sidebar-menu">
+        <li><a href="#" class="menu-item active" data-page="dashboard">Dashboard</a></li>
+        <li><a href="#" class="menu-item" data-page="financeiro">Financeiro</a></li>
+        <li><a href="#" class="menu-item" data-page="clientes">Clientes</a></li>
+        <li><a href="#" class="menu-item" data-page="rh">RH</a></li>
+      </ul>
+
+      <h3>⚙️ Gestão</h3>
+      <ul class="sidebar-menu">
+        <li><a href="#" class="menu-item" data-page="usuarios">Usuários</a></li>
+        <li><a href="#" class="menu-item" data-page="auditoria">Auditoria</a></li>
+        <li><a href="#" class="menu-item" data-page="configuracoes">Configurações</a></li>
+      </ul>
+    </aside>
+
+    <!-- CONTENT -->
+    <div class="content">
+
+      <!-- DASHBOARD -->
+      <div class="page active" id="dashboard">
+        <div class="page-title">Dashboard</div>
+        <div class="page-subtitle">Visão geral da empresa em tempo real</div>
+
+        <div id="kpiContainer"></div>
+
+        <div class="table-container">
+          <div class="table-header">
+            <h2>📊 Últimos Lançamentos Financeiros</h2>
+            <button class="btn btn-primary" style="width: auto; margin: 0;" onclick="openModal('novoLancamento')">+ Novo Lançamento</button>
+          </div>
+          <table id="ultimosLancamentos"></table>
+        </div>
+      </div>
+
+      <!-- FINANCEIRO -->
+      <div class="page" id="financeiro">
+        <div class="page-title">Módulo Financeiro</div>
+        <div class="page-subtitle">Controle completo de finanças</div>
+
+        <div class="tabs-container">
+          <button class="tab-button active" data-tab="fluxo">Fluxo de Caixa</button>
+          <button class="tab-button" data-tab="lancamentos">Lançamentos</button>
+          <button class="tab-button" data-tab="contas">Contas</button>
+          <button class="tab-button" data-tab="dre">DRE</button>
+          <button class="tab-button" data-tab="impostos">Impostos</button>
+        </div>
+
+        <!-- FLUXO DE CAIXA -->
+        <div class="tab-content active" id="tab-fluxo">
+          <div class="kpi-grid" id="fluxoKpis"></div>
+          <div class="table-container">
+            <div class="table-header">
+              <h2>📈 Fluxo de Caixa Diário</h2>
+            </div>
+            <table id="tabelaFluxo"></table>
+          </div>
+        </div>
+
+        <!-- LANÇAMENTOS -->
+        <div class="tab-content" id="tab-lancamentos">
+          <div class="form-container">
+            <h2>Novo Lançamento</h2>
+            <div class="form-row">
+              <div class="form-group">
+                <label>Tipo</label>
+                <select id="lanTipo">
+                  <option value="">Selecione...</option>
+                  <option value="entrada">Entrada</option>
+                  <option value="saida">Saída</option>
+                </select>
+              </div>
+              <div class="form-group">
+                <label>Categoria</label>
+                <select id="lanCategoria">
+                  <option value="">Selecione...</option>
+                  <option value="receita">Receita</option>
+                  <option value="custo_fixo">Custo Fixo</option>
+                  <option value="custo_variavel">Custo Variável</option>
+                  <option value="despesa">Despesa</option>
+                </select>
+              </div>
+              <div class="form-group">
+                <label>Valor</label>
+                <input type="number" id="lanValor" placeholder="0.00">
+              </div>
+              <div class="form-group">
+                <label>Data</label>
+                <input type="date" id="lanData">
+              </div>
+            </div>
+            <div class="form-row">
+              <div class="form-group" style="grid-column: 1/-1;">
+                <label>Observação</label>
+                <textarea id="lanObservacao"></textarea>
+              </div>
+            </div>
+            <div class="form-actions">
+              <button class="btn btn-primary" style="width: auto; margin: 0;" onclick="adicionarLancamento()">Adicionar Lançamento</button>
+            </div>
+          </div>
+
+          <div class="table-container">
+            <div class="table-header">
+              <h2>📋 Todos os Lançamentos</h2>
+            </div>
+            <table id="tabelaLancamentos"></table>
+          </div>
+        </div>
+
+        <!-- CONTAS -->
+        <div class="tab-content" id="tab-contas">
+          <div class="kpi-grid" id="contasKpis"></div>
+          <div class="table-container">
+            <div class="table-header">
+              <h2>🏦 Contas Bancárias</h2>
+              <button class="btn btn-primary" style="width: auto; margin: 0;" onclick="openModal('novaConta')">+ Nova Conta</button>
+            </div>
+            <table id="tabelaContas"></table>
+          </div>
+        </div>
+
+        <!-- DRE -->
+        <div class="tab-content" id="tab-dre">
+          <div class="form-container" id="dreContainer"></div>
+        </div>
+
+        <!-- IMPOSTOS -->
+        <div class="tab-content" id="tab-impostos">
+          <div class="form-container">
+            <h2>Cálculo de Impostos</h2>
+            <div class="form-row">
+              <div class="form-group">
+                <label>Regime Tributário</label>
+                <select id="impostoRegime" onchange="calcularImpostos()">
+                  <option value="presumido">Lucro Presumido</option>
+                  <option value="real">Lucro Real</option>
+                  <option value="simples">Simples Nacional</option>
+                </select>
+              </div>
+              <div class="form-group">
+                <label>Mês/Ano</label>
+                <input type="month" id="impostoMes">
+              </div>
+            </div>
+          </div>
+
+          <div class="table-container">
+            <div class="table-header">
+              <h2>📋 Cálculo de Impostos</h2>
+            </div>
+            <table id="tabelaImpostos"></table>
+          </div>
+        </div>
+      </div>
+
+      <!-- CLIENTES -->
+      <div class="page" id="clientes">
+        <div class="page-title">Clientes</div>
+        <div class="page-subtitle">Gestão de clientes e planos</div>
+
+        <div class="tabs-container">
+          <button class="tab-button active" data-tab="listaClientes">Clientes</button>
+          <button class="tab-button" data-tab="planos">Planos</button>
+          <button class="tab-button" data-tab="lembretes">Lembretes</button>
+        </div>
+
+        <!-- CLIENTES -->
+        <div class="tab-content active" id="tab-listaClientes">
+          <div class="form-container">
+            <h2>Novo Cliente</h2>
+            <div class="form-row">
+              <div class="form-group">
+                <label>Nome</label>
+                <input type="text" id="cliNome" placeholder="Nome completo ou razão social">
+              </div>
+              <div class="form-group">
+                <label>Email</label>
+                <input type="email" id="cliEmail" placeholder="email@empresa.com">
+              </div>
+              <div class="form-group">
+                <label>CPF/CNPJ</label>
+                <input type="text" id="cliCpf" placeholder="000.000.000-00">
+              </div>
+              <div class="form-group">
+                <label>Plano</label>
+                <select id="cliPlano">
+                  <option value="">Selecione um plano...</option>
+                  <option value="starter">Starter - R$ 99/mês</option>
+                  <option value="pro">Pro - R$ 299/mês</option>
+                  <option value="enterprise">Enterprise - Customizado</option>
+                </select>
+              </div>
+            </div>
+            <div class="form-actions">
+              <button class="btn btn-primary" style="width: auto; margin: 0;" onclick="adicionarCliente()">Adicionar Cliente</button>
+            </div>
+          </div>
+
+          <div class="table-container">
+            <div class="table-header">
+              <h2>👥 Lista de Clientes</h2>
+            </div>
+            <table id="tabelaClientes"></table>
+          </div>
+        </div>
+
+        <!-- PLANOS -->
+        <div class="tab-content" id="tab-planos">
+          <div class="table-container">
+            <div class="table-header">
+              <h2>📋 Planos Disponíveis</h2>
+              <button class="btn btn-primary" style="width: auto; margin: 0;" onclick="openModal('novoPlano')">+ Novo Plano</button>
+            </div>
+            <table id="tabelaPlanos"></table>
+          </div>
+        </div>
+
+        <!-- LEMBRETES -->
+        <div class="tab-content" id="tab-lembretes">
+          <div class="kpi-grid" id="alertasKpis"></div>
+          <div class="table-container">
+            <div class="table-header">
+              <h2>⏰ Contas a Receber/Pagar</h2>
+            </div>
+            <table id="tabelaLembretes"></table>
+          </div>
+        </div>
+      </div>
+
+      <!-- RH -->
+      <div class="page" id="rh">
+        <div class="page-title">Recursos Humanos</div>
+        <div class="page-subtitle">Gestão de colaboradores e folha de pagamento</div>
+
+        <div class="tabs-container">
+          <button class="tab-button active" data-tab="colaboradores">Colaboradores</button>
+          <button class="tab-button" data-tab="holerite">Holerite</button>
+          <button class="tab-button" data-tab="comissoes">Comissões</button>
+        </div>
+
+        <!-- COLABORADORES -->
+        <div class="tab-content active" id="tab-colaboradores">
+          <div class="form-container">
+            <h2>Novo Colaborador</h2>
+            <div class="form-row">
+              <div class="form-group">
+                <label>Nome</label>
+                <input type="text" id="colNome" placeholder="Nome completo">
+              </div>
+              <div class="form-group">
+                <label>Cargo</label>
+                <input type="text" id="colCargo" placeholder="Ex: Desenvolvedor">
+              </div>
+              <div class="form-group">
+                <label>Email</label>
+                <input type="email" id="colEmail" placeholder="email@empresa.com">
+              </div>
+            </div>
+            <div class="form-row">
+              <div class="form-group">
+                <label>Salário Base</label>
+                <input type="number" id="colSalario" placeholder="0.00">
+              </div>
+              <div class="form-group">
+                <label>Data de Admissão</label>
+                <input type="date" id="colData">
+              </div>
+              <div class="form-group">
+                <label>Comissão (%)</label>
+                <input type="number" id="colComissao" placeholder="0" min="0" max="100">
+              </div>
+            </div>
+            <div class="form-actions">
+              <button class="btn btn-primary" style="width: auto; margin: 0;" onclick="adicionarColaborador()">Adicionar Colaborador</button>
+            </div>
+          </div>
+
+          <div class="table-container">
+            <div class="table-header">
+              <h2>👔 Colaboradores Ativos</h2>
+            </div>
+            <table id="tabelaColaboradores"></table>
+          </div>
+        </div>
+
+        <!-- HOLERITE -->
+        <div class="tab-content" id="tab-holerite">
+          <div class="form-container">
+            <h2>Gerar Holerite</h2>
+            <div class="form-row">
+              <div class="form-group">
+                <label>Colaborador</label>
+                <select id="holeriteCola">
+                  <option value="">Selecione...</option>
+                </select>
+              </div>
+              <div class="form-group">
+                <label>Mês/Ano</label>
+                <input type="month" id="holeriteMes">
+              </div>
+              <div class="form-group">
+                <label>Horas Extras</label>
+                <input type="number" id="holeriteHoras" placeholder="0" min="0">
+              </div>
+            </div>
+            <div class="form-actions">
+              <button class="btn btn-primary" style="width: auto; margin: 0;" onclick="gerarHolerite()">Gerar Holerite</button>
+            </div>
+          </div>
+
+          <div class="table-container">
+            <div class="table-header">
+              <h2>📄 Holerites</h2>
+            </div>
+            <table id="tabelaHolerite"></table>
+          </div>
+        </div>
+
+        <!-- COMISSÕES -->
+        <div class="tab-content" id="tab-comissoes">
+          <div class="table-container">
+            <div class="table-header">
+              <h2>💰 Comissões</h2>
+            </div>
+            <table id="tabelaComissoes"></table>
+          </div>
+        </div>
+      </div>
+
+      <!-- USUÁRIOS -->
+      <div class="page" id="usuarios">
+        <div class="page-title">Usuários</div>
+        <div class="page-subtitle">Controle de acesso e permissões</div>
+
+        <div class="form-container">
+          <h2>Novo Usuário</h2>
+          <div class="form-row">
+            <div class="form-group">
+              <label>Nome</label>
+              <input type="text" id="usrNome" placeholder="Nome completo">
+            </div>
+            <div class="form-group">
+              <label>Email</label>
+              <input type="email" id="usrEmail" placeholder="email@empresa.com">
+            </div>
+            <div class="form-group">
+              <label>Perfil</label>
+              <select id="usrPerfil">
+                <option value="admin">Administrador</option>
+                <option value="financeiro">Financeiro</option>
+                <option value="operacional">Operacional</option>
+                <option value="rh">RH</option>
+              </select>
+            </div>
+          </div>
+          <div class="form-actions">
+            <button class="btn btn-primary" style="width: auto; margin: 0;" onclick="adicionarUsuario()">Adicionar Usuário</button>
+          </div>
+        </div>
+
+        <div class="table-container">
+          <div class="table-header">
+            <h2>👤 Usuários do Sistema</h2>
+          </div>
+          <table id="tabelaUsuarios"></table>
+        </div>
+      </div>
+
+      <!-- AUDITORIA -->
+      <div class="page" id="auditoria">
+        <div class="page-title">Log de Auditoria</div>
+        <div class="page-subtitle">Rastreamento completo de todas as ações</div>
+
+        <div class="form-container">
+          <h2>Filtros</h2>
+          <div class="form-row">
+            <div class="form-group">
+              <label>Tabela</label>
+              <select id="auditTabela" onchange="filtrarAuditoria()">
+                <option value="">Todas</option>
+                <option value="lancamentos">Lançamentos</option>
+                <option value="clientes">Clientes</option>
+                <option value="colaboradores">Colaboradores</option>
+                <option value="usuarios">Usuários</option>
+              </select>
+            </div>
+            <div class="form-group">
+              <label>Data Inicial</label>
+              <input type="date" id="auditDataInicio" onchange="filtrarAuditoria()">
+            </div>
+            <div class="form-group">
+              <label>Data Final</label>
+              <input type="date" id="auditDataFim" onchange="filtrarAuditoria()">
+            </div>
+          </div>
+        </div>
+
+        <div class="table-container">
+          <div class="table-header">
+            <h2>📋 Histórico de Alterações</h2>
+          </div>
+          <table id="tabelaAuditoria"></table>
+        </div>
+      </div>
+
+      <!-- CONFIGURAÇÕES -->
+      <div class="page" id="configuracoes">
+        <div class="page-title">Configurações</div>
+        <div class="page-subtitle">Configurações da empresa e do sistema</div>
+
+        <div class="form-container">
+          <h2>Dados da Empresa</h2>
+          <div class="form-row">
+            <div class="form-group">
+              <label>Razão Social</label>
+              <input type="text" id="configNome" value="Synkra AIOX">
+            </div>
+            <div class="form-group">
+              <label>CNPJ</label>
+              <input type="text" id="configCnpj" value="00.000.000/0000-00">
+            </div>
+            <div class="form-group">
+              <label>Regime Tributário</label>
+              <select id="configRegime">
+                <option value="presumido">Lucro Presumido</option>
+                <option value="real">Lucro Real</option>
+                <option value="simples">Simples Nacional</option>
+              </select>
+            </div>
+          </div>
+          <div class="form-actions">
+            <button class="btn btn-primary" style="width: auto; margin: 0;" onclick="salvarConfiguracoes()">Salvar Configurações</button>
+          </div>
+        </div>
+      </div>
+
+    </div>
+  </div>
+</div>
+
+<script>
+// ============ DADOS GLOBAIS ============
+let usuarioAtual = null;
+let empresaAtual = null;
+
+const dados = {
+  usuarios: [
+    // Synkra AIOX
+    { id: 1, nome: 'Admin User', email: 'admin@empresa.com', senha: '123456', perfil: 'admin', empresa: 1, ativo: true },
+    { id: 2, nome: 'Financeiro', email: 'fin@empresa.com', senha: '123456', perfil: 'financeiro', empresa: 1, ativo: true },
+    // GPSX Soluções
+    { id: 3, nome: 'Admin GPSX', email: 'admin@empresa.com', senha: '123456', perfil: 'admin', empresa: 2, ativo: true },
+    // Nexus Tech
+    { id: 4, nome: 'Admin Nexus', email: 'admin@empresa.com', senha: '123456', perfil: 'admin', empresa: 3, ativo: true },
+  ],
+  empresas: [
+    { id: 1, nome: 'Synkra AIOX', cnpj: '00.000.000/0000-00', regime: 'presumido' },
+    { id: 2, nome: 'GPSX Soluções', cnpj: '00.000.000/0000-01', regime: 'real' },
+    { id: 3, nome: 'Nexus Tech', cnpj: '00.000.000/0000-02', regime: 'simples' },
+  ],
+  lancamentos: [
+    { id: 1, tipo: 'entrada', categoria: 'receita', valor: 15000, data: '2026-05-03', responsavel: 'Admin', observacao: 'Venda de serviço' },
+    { id: 2, tipo: 'saida', categoria: 'custo_fixo', valor: 2500, data: '2026-05-02', responsavel: 'Admin', observacao: 'Aluguel' },
+    { id: 3, tipo: 'entrada', categoria: 'receita', valor: 8000, data: '2026-05-01', responsavel: 'Financeiro', observacao: 'Venda de produto' },
+  ],
+  clientes: [
+    { id: 1, nome: 'Cliente A', email: 'clientea@email.com', cpf: '123.456.789-00', plano: 'pro', status: 'ativo' },
+    { id: 2, nome: 'Cliente B', email: 'clienteb@email.com', cpf: '987.654.321-00', plano: 'starter', status: 'ativo' },
+  ],
+  colaboradores: [
+    { id: 1, nome: 'João Silva', cargo: 'Desenvolvedor', email: 'joao@empresa.com', salario: 5000, comissao: 5, data: '2023-01-15' },
+    { id: 2, nome: 'Maria Santos', cargo: 'Designer', email: 'maria@empresa.com', salario: 4000, comissao: 3, data: '2023-03-20' },
+  ],
+  auditlog: [],
+  contas: [
+    { id: 1, nome: 'Conta Corrente', banco: 'Banco do Brasil', saldo: 25000, tipo: 'corrente' },
+    { id: 2, nome: 'Poupança', banco: 'Caixa', saldo: 10000, tipo: 'poupanca' },
+  ],
+  planos: [
+    { id: 1, nome: 'Starter', valor: 99, recorrencia: 'mensal' },
+    { id: 2, nome: 'Pro', valor: 299, recorrencia: 'mensal' },
+    { id: 3, nome: 'Enterprise', valor: 0, recorrencia: 'customizado' },
+  ]
+};
+
+// ============ AUTENTICAÇÃO ============
+function login() {
+  console.log('🔐 Login iniciado...');
+
+  const email = document.getElementById('loginEmail').value;
+  const senha = document.getElementById('loginPassword').value;
+  const empresaId = parseInt(document.getElementById('loginEmpresa').value);
+
+  console.log('📧 Email:', email);
+  console.log('🔑 Senha:', senha);
+  console.log('🏢 Empresa ID:', empresaId);
+  console.log('📊 Total de usuários:', dados.usuarios.length);
+
+  const usuario = dados.usuarios.find(u => u.email === email && u.senha === senha && u.empresa === empresaId);
+
+  console.log('👤 Usuário encontrado:', usuario);
+
+  if (usuario) {
+    console.log('✅ Login bem-sucedido!');
+    usuarioAtual = usuario;
+    empresaAtual = dados.empresas.find(e => e.id === empresaId);
+
+    localStorage.setItem('usuarioAtual', JSON.stringify(usuarioAtual));
+    localStorage.setItem('empresaAtual', JSON.stringify(empresaAtual));
+
+    console.log('💾 Dados salvos em localStorage');
+
+    document.getElementById('loginContainer').classList.remove('active');
+    document.getElementById('appContainer').classList.add('active');
+
+    console.log('🎨 UI atualizada');
+
+    updateUserInfo();
+    renderDashboard();
+    setupMenuListeners();
+    setupTabListeners();
+
+    console.log('✨ Dashboard renderizado com sucesso!');
+  } else {
+    console.log('❌ Credenciais inválidas!');
+    alert('Credenciais inválidas!');
+  }
+}
+
+function logout() {
+  usuarioAtual = null;
+  empresaAtual = null;
+  localStorage.removeItem('usuarioAtual');
+  localStorage.removeItem('empresaAtual');
+
+  document.getElementById('appContainer').classList.remove('active');
+  document.getElementById('loginContainer').classList.add('active');
+  document.getElementById('loginEmail').value = 'admin@empresa.com';
+  document.getElementById('loginPassword').value = '123456';
+}
+
+function updateUserInfo() {
+  document.getElementById('empresaInfo').textContent = `${empresaAtual.nome} • ${empresaAtual.regime.toUpperCase()}`;
+  document.getElementById('userInfo').innerHTML = `
+    <span>${usuarioAtual.nome}</span>
+    <span class="user-badge">${usuarioAtual.perfil.toUpperCase()}</span>
+  `;
+}
+
+// ============ MENU ============
+function setupMenuListeners() {
+  document.querySelectorAll('.menu-item').forEach(item => {
+    item.addEventListener('click', (e) => {
+      e.preventDefault();
+      const pageName = e.target.dataset.page;
+
+      document.querySelectorAll('.menu-item').forEach(m => m.classList.remove('active'));
+      e.target.classList.add('active');
+
+      document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
+      document.getElementById(pageName).classList.add('active');
+    });
+  });
+}
+
+// ============ ABAS ============
+function setupTabListeners() {
+  document.querySelectorAll('.tab-button').forEach(btn => {
+    btn.addEventListener('click', (e) => {
+      const tabName = e.target.dataset.tab;
+      const container = e.target.closest('.tabs-container');
+
+      container.querySelectorAll('.tab-button').forEach(b => b.classList.remove('active'));
+      container.querySelectorAll('.tab-content').forEach(tc => tc.classList.remove('active'));
+
+      e.target.classList.add('active');
+      document.getElementById('tab-' + tabName).classList.add('active');
+    });
+  });
+}
+
+// ============ DASHBOARD ============
+function renderDashboard() {
+  renderKpis();
+  renderUltimosLancamentos();
+}
+
+function renderKpis() {
+  const totalEntrada = dados.lancamentos
+    .filter(l => l.tipo === 'entrada')
+    .reduce((sum, l) => sum + l.valor, 0);
+
+  const totalSaida = dados.lancamentos
+    .filter(l => l.tipo === 'saida')
+    .reduce((sum, l) => sum + l.valor, 0);
+
+  const saldoLiquido = totalEntrada - totalSaida;
+  const rentabilidade = totalEntrada > 0 ? ((saldoLiquido / totalEntrada) * 100).toFixed(1) : 0;
+
+  document.getElementById('kpiContainer').innerHTML = `
+    <div class="kpi-grid">
+      <div class="kpi-card">
+        <div class="kpi-label">💰 Receita Total</div>
+        <div class="kpi-value">R$ ${totalEntrada.toLocaleString('pt-BR')}</div>
+        <div class="kpi-change">${dados.lancamentos.filter(l => l.tipo === 'entrada').length} transações</div>
+      </div>
+
+      <div class="kpi-card">
+        <div class="kpi-label">📊 Despesa Total</div>
+        <div class="kpi-value">R$ ${totalSaida.toLocaleString('pt-BR')}</div>
+        <div class="kpi-change ${totalSaida > 0 ? 'danger' : ''}">${dados.lancamentos.filter(l => l.tipo === 'saida').length} transações</div>
+      </div>
+
+      <div class="kpi-card">
+        <div class="kpi-label">✅ Saldo Líquido</div>
+        <div class="kpi-value">${saldoLiquido >= 0 ? '+' : ''}R$ ${saldoLiquido.toLocaleString('pt-BR')}</div>
+        <div class="kpi-change">Rentabilidade: ${rentabilidade}%</div>
+      </div>
+
+      <div class="kpi-card">
+        <div class="kpi-label">👥 Clientes Ativos</div>
+        <div class="kpi-value">${dados.clientes.length}</div>
+        <div class="kpi-change">MRR: R$ ${(dados.clientes.length * 150).toLocaleString('pt-BR')}</div>
+      </div>
+
+      <div class="kpi-card">
+        <div class="kpi-label">👔 Colaboradores</div>
+        <div class="kpi-value">${dados.colaboradores.length}</div>
+        <div class="kpi-change">Folha: R$ ${dados.colaboradores.reduce((s, c) => s + c.salario, 0).toLocaleString('pt-BR')}</div>
+      </div>
+
+      <div class="kpi-card">
+        <div class="kpi-label">🏦 Saldo em Contas</div>
+        <div class="kpi-value">R$ ${dados.contas.reduce((s, c) => s + c.saldo, 0).toLocaleString('pt-BR')}</div>
+        <div class="kpi-change">${dados.contas.length} contas</div>
+      </div>
+    </div>
+  `;
+}
+
+function renderUltimosLancamentos() {
+  const ultimosLancamentos = dados.lancamentos.slice(-5).reverse();
+
+  let html = `
+    <thead>
+      <tr>
+        <th>Data</th>
+        <th>Tipo</th>
+        <th>Categoria</th>
+        <th>Valor</th>
+        <th>Responsável</th>
+        <th>Status</th>
+      </tr>
+    </thead>
+    <tbody>
+  `;
+
+  ultimosLancamentos.forEach(lancamento => {
+    html += `
+      <tr>
+        <td>${new Date(lancamento.data).toLocaleDateString('pt-BR')}</td>
+        <td><strong>${lancamento.tipo === 'entrada' ? '⬆️ Entrada' : '⬇️ Saída'}</strong></td>
+        <td>${lancamento.categoria}</td>
+        <td><strong>R$ ${lancamento.valor.toLocaleString('pt-BR')}</strong></td>
+        <td>${lancamento.responsavel}</td>
+        <td><span class="badge badge-success">✓ Concluído</span></td>
+      </tr>
+    `;
+  });
+
+  html += `</tbody>`;
+  document.getElementById('ultimosLancamentos').innerHTML = html;
+}
+
+// ============ FINANCEIRO ============
+function adicionarLancamento() {
+  const tipo = document.getElementById('lanTipo').value;
+  const categoria = document.getElementById('lanCategoria').value;
+  const valor = parseFloat(document.getElementById('lanValor').value);
+  const data = document.getElementById('lanData').value;
+  const observacao = document.getElementById('lanObservacao').value;
+
+  if (!tipo || !categoria || !valor || !data) {
+    alert('Preencha todos os campos obrigatórios!');
+    return;
+  }
+
+  const novoLancamento = {
+    id: dados.lancamentos.length + 1,
+    tipo,
+    categoria,
+    valor,
+    data,
+    responsavel: usuarioAtual.nome,
+    observacao
+  };
+
+  dados.lancamentos.push(novoLancamento);
+  registrarAuditoria('lancamentos', 'CREATE', null, novoLancamento);
+
+  // Limpar formulário
+  document.getElementById('lanTipo').value = '';
+  document.getElementById('lanCategoria').value = '';
+  document.getElementById('lanValor').value = '';
+  document.getElementById('lanData').value = '';
+  document.getElementById('lanObservacao').value = '';
+
+  alert('Lançamento adicionado com sucesso!');
+  renderLancamentos();
+  renderDashboard();
+}
+
+function renderLancamentos() {
+  let html = `
+    <thead>
+      <tr>
+        <th>Data</th>
+        <th>Tipo</th>
+        <th>Categoria</th>
+        <th>Valor</th>
+        <th>Responsável</th>
+        <th>Observação</th>
+      </tr>
+    </thead>
+    <tbody>
+  `;
+
+  dados.lancamentos.forEach(lancamento => {
+    html += `
+      <tr>
+        <td>${new Date(lancamento.data).toLocaleDateString('pt-BR')}</td>
+        <td><strong>${lancamento.tipo === 'entrada' ? '⬆️ Entrada' : '⬇️ Saída'}</strong></td>
+        <td>${lancamento.categoria}</td>
+        <td><strong style="color: ${lancamento.tipo === 'entrada' ? 'green' : 'red'}">R$ ${lancamento.valor.toLocaleString('pt-BR')}</strong></td>
+        <td>${lancamento.responsavel}</td>
+        <td>${lancamento.observacao}</td>
+      </tr>
+    `;
+  });
+
+  html += `</tbody>`;
+  document.getElementById('tabelaLancamentos').innerHTML = html;
+}
+
+// ============ CLIENTES ============
+function adicionarCliente() {
+  const nome = document.getElementById('cliNome').value;
+  const email = document.getElementById('cliEmail').value;
+  const cpf = document.getElementById('cliCpf').value;
+  const plano = document.getElementById('cliPlano').value;
+
+  if (!nome || !email || !cpf || !plano) {
+    alert('Preencha todos os campos!');
+    return;
+  }
+
+  const novoCliente = {
+    id: dados.clientes.length + 1,
+    nome,
+    email,
+    cpf,
+    plano,
+    status: 'ativo'
+  };
+
+  dados.clientes.push(novoCliente);
+  registrarAuditoria('clientes', 'CREATE', null, novoCliente);
+
+  // Limpar
+  document.getElementById('cliNome').value = '';
+  document.getElementById('cliEmail').value = '';
+  document.getElementById('cliCpf').value = '';
+  document.getElementById('cliPlano').value = '';
+
+  alert('Cliente adicionado com sucesso!');
+  renderClientes();
+  renderDashboard();
+}
+
+function renderClientes() {
+  let html = `
+    <thead>
+      <tr>
+        <th>Nome</th>
+        <th>Email</th>
+        <th>CPF/CNPJ</th>
+        <th>Plano</th>
+        <th>Status</th>
+      </tr>
+    </thead>
+    <tbody>
+  `;
+
+  dados.clientes.forEach(cliente => {
+    html += `
+      <tr>
+        <td><strong>${cliente.nome}</strong></td>
+        <td>${cliente.email}</td>
+        <td>${cliente.cpf}</td>
+        <td>${cliente.plano}</td>
+        <td><span class="badge badge-success">✓ ${cliente.status}</span></td>
+      </tr>
+    `;
+  });
+
+  html += `</tbody>`;
+  if (document.getElementById('tabelaClientes')) {
+    document.getElementById('tabelaClientes').innerHTML = html;
+  }
+}
+
+// ============ RH ============
+function adicionarColaborador() {
+  const nome = document.getElementById('colNome').value;
+  const cargo = document.getElementById('colCargo').value;
+  const email = document.getElementById('colEmail').value;
+  const salario = parseFloat(document.getElementById('colSalario').value);
+  const data = document.getElementById('colData').value;
+  const comissao = parseFloat(document.getElementById('colComissao').value) || 0;
+
+  if (!nome || !cargo || !email || !salario || !data) {
+    alert('Preencha todos os campos obrigatórios!');
+    return;
+  }
+
+  const novoColaborador = {
+    id: dados.colaboradores.length + 1,
+    nome,
+    cargo,
+    email,
+    salario,
+    comissao,
+    data
+  };
+
+  dados.colaboradores.push(novoColaborador);
+  registrarAuditoria('colaboradores', 'CREATE', null, novoColaborador);
+
+  // Limpar
+  document.getElementById('colNome').value = '';
+  document.getElementById('colCargo').value = '';
+  document.getElementById('colEmail').value = '';
+  document.getElementById('colSalario').value = '';
+  document.getElementById('colData').value = '';
+  document.getElementById('colComissao').value = '';
+
+  alert('Colaborador adicionado com sucesso!');
+  renderColaboradores();
+  renderDashboard();
+}
+
+function renderColaboradores() {
+  let html = `
+    <thead>
+      <tr>
+        <th>Nome</th>
+        <th>Cargo</th>
+        <th>Email</th>
+        <th>Salário</th>
+        <th>Comissão</th>
+        <th>Admissão</th>
+      </tr>
+    </thead>
+    <tbody>
+  `;
+
+  dados.colaboradores.forEach(colaborador => {
+    html += `
+      <tr>
+        <td><strong>${colaborador.nome}</strong></td>
+        <td>${colaborador.cargo}</td>
+        <td>${colaborador.email}</td>
+        <td>R$ ${colaborador.salario.toLocaleString('pt-BR')}</td>
+        <td>${colaborador.comissao}%</td>
+        <td>${new Date(colaborador.data).toLocaleDateString('pt-BR')}</td>
+      </tr>
+    `;
+  });
+
+  html += `</tbody>`;
+  if (document.getElementById('tabelaColaboradores')) {
+    document.getElementById('tabelaColaboradores').innerHTML = html;
+  }
+}
+
+function gerarHolerite() {
+  const colaId = document.getElementById('holeriteCola').value;
+  const mes = document.getElementById('holeriteMes').value;
+  const horasExtras = parseFloat(document.getElementById('holeriteHoras').value) || 0;
+
+  const colaborador = dados.colaboradores.find(c => c.id === parseInt(colaId));
+  if (!colaborador || !mes) {
+    alert('Selecione colaborador e mês!');
+    return;
+  }
+
+  alert(`Holerite gerado para ${colaborador.nome} - ${mes}`);
+}
+
+// ============ AUDITORIA ============
+function registrarAuditoria(tabela, acao, anterior, novo) {
+  dados.auditlog.push({
+    id: dados.auditlog.length + 1,
+    usuario: usuarioAtual.nome,
+    tabela,
+    acao,
+    timestamp: new Date().toISOString(),
+    anterior,
+    novo
+  });
+}
+
+function renderAuditoria() {
+  let html = `
+    <thead>
+      <tr>
+        <th>Timestamp</th>
+        <th>Usuário</th>
+        <th>Tabela</th>
+        <th>Ação</th>
+        <th>Detalhes</th>
+      </tr>
+    </thead>
+    <tbody>
+  `;
+
+  dados.auditlog.slice(-20).reverse().forEach(log => {
+    html += `
+      <tr>
+        <td>${new Date(log.timestamp).toLocaleString('pt-BR')}</td>
+        <td>${log.usuario}</td>
+        <td>${log.tabela}</td>
+        <td><span class="badge badge-info">${log.acao}</span></td>
+        <td>${log.acao === 'CREATE' ? 'Novo registro criado' : 'Registro alterado'}</td>
+      </tr>
+    `;
+  });
+
+  html += `</tbody>`;
+  if (document.getElementById('tabelaAuditoria')) {
+    document.getElementById('tabelaAuditoria').innerHTML = html;
+  }
+}
+
+function filtrarAuditoria() {
+  renderAuditoria();
+}
+
+// ============ FUNÇÕES AUXILIARES ============
+function openModal(tipo) {
+  console.log('Modal:', tipo);
+}
+
+function adicionarUsuario() {
+  alert('Usuário adicionado com sucesso!');
+}
+
+function salvarConfiguracoes() {
+  alert('Configurações salvas com sucesso!');
+}
+
+function calcularImpostos() {
+  const regime = document.getElementById('impostoRegime').value;
+  let mensagem = '';
+
+  if (regime === 'presumido') {
+    mensagem = 'Lucro Presumido: 3-16% de imposto sobre faturamento';
+  } else if (regime === 'real') {
+    mensagem = 'Lucro Real: Imposto sobre lucro líquido';
+  } else {
+    mensagem = 'Simples Nacional: Imposto único por categoria';
+  }
+
+  alert(mensagem);
+}
+
+// ============ INICIALIZAÇÃO ============
+window.addEventListener('DOMContentLoaded', () => {
+  // Carregar dados salvos se existir sessão anterior
+  const usuarioSalvo = localStorage.getItem('usuarioAtual');
+  if (usuarioSalvo) {
+    usuarioAtual = JSON.parse(usuarioSalvo);
+    empresaAtual = JSON.parse(localStorage.getItem('empresaAtual'));
+
+    document.getElementById('loginContainer').classList.remove('active');
+    document.getElementById('appContainer').classList.add('active');
+
+    updateUserInfo();
+    renderDashboard();
+    setupMenuListeners();
+    setupTabListeners();
+    renderLancamentos();
+    renderClientes();
+    renderColaboradores();
+    renderAuditoria();
+  } else {
+    // Se não há sessão, mostrar formulário de login
+    document.getElementById('loginContainer').classList.add('active');
+    document.getElementById('appContainer').classList.remove('active');
+  }
+});
+</script>
+
+</body>
+</html>

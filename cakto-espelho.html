@@ -1,0 +1,722 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Cakto Espelho - Dashboard em Tempo Real</title>
+  <style>
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+      background: #0f1419;
+      color: #ffffff;
+      line-height: 1.6;
+    }
+
+    .container {
+      max-width: 1400px;
+      margin: 0 auto;
+      padding: 20px;
+    }
+
+    /* ════════════════════════════════════════════════════════════════ */
+    /* HEADER */
+    /* ════════════════════════════════════════════════════════════════ */
+
+    header {
+      background: linear-gradient(135deg, #1a1f2e 0%, #0f1419 100%);
+      border-bottom: 1px solid #2a3447;
+      padding: 20px 0;
+      margin-bottom: 30px;
+    }
+
+    .header-content {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 0 20px;
+    }
+
+    .logo {
+      font-size: 24px;
+      font-weight: 700;
+      color: #fff;
+    }
+
+    .logo-small {
+      font-size: 12px;
+      color: #888;
+    }
+
+    .sync-status {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      font-size: 12px;
+      color: #888;
+    }
+
+    .status-dot {
+      width: 8px;
+      height: 8px;
+      border-radius: 50%;
+      background: #22c55e;
+      animation: pulse 2s infinite;
+    }
+
+    @keyframes pulse {
+      0%, 100% { opacity: 1; }
+      50% { opacity: 0.5; }
+    }
+
+    .sync-time {
+      font-size: 11px;
+      color: #666;
+    }
+
+    /* ════════════════════════════════════════════════════════════════ */
+    /* MÉTRICAS PRINCIPAIS (Hero Stats) */
+    /* ════════════════════════════════════════════════════════════════ */
+
+    .metrics-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+      gap: 15px;
+      margin-bottom: 30px;
+    }
+
+    .metric-card {
+      background: #1a1f2e;
+      border: 1px solid #2a3447;
+      border-radius: 8px;
+      padding: 20px;
+      transition: all 0.3s ease;
+    }
+
+    .metric-card:hover {
+      border-color: #3a4557;
+      background: #1f252f;
+    }
+
+    .metric-label {
+      font-size: 12px;
+      color: #888;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+      margin-bottom: 8px;
+    }
+
+    .metric-value {
+      font-size: 28px;
+      font-weight: 700;
+      color: #fff;
+      margin-bottom: 5px;
+    }
+
+    .metric-change {
+      font-size: 12px;
+      color: #22c55e;
+    }
+
+    .metric-change.negative {
+      color: #ef4444;
+    }
+
+    /* ════════════════════════════════════════════════════════════════ */
+    /* TABS */
+    /* ════════════════════════════════════════════════════════════════ */
+
+    .tabs {
+      display: flex;
+      gap: 20px;
+      border-bottom: 1px solid #2a3447;
+      margin-bottom: 30px;
+      overflow-x: auto;
+    }
+
+    .tab {
+      padding: 15px 0;
+      border: none;
+      background: transparent;
+      color: #888;
+      cursor: pointer;
+      font-size: 14px;
+      font-weight: 500;
+      border-bottom: 2px solid transparent;
+      transition: all 0.3s ease;
+      white-space: nowrap;
+    }
+
+    .tab.active {
+      color: #fff;
+      border-bottom-color: #3b82f6;
+    }
+
+    .tab:hover {
+      color: #ccc;
+    }
+
+    /* ════════════════════════════════════════════════════════════════ */
+    /* TABELAS */
+    /* ════════════════════════════════════════════════════════════════ */
+
+    .tab-content {
+      display: none;
+    }
+
+    .tab-content.active {
+      display: block;
+    }
+
+    .table-wrapper {
+      background: #1a1f2e;
+      border: 1px solid #2a3447;
+      border-radius: 8px;
+      overflow: hidden;
+    }
+
+    .data-table {
+      width: 100%;
+      border-collapse: collapse;
+      font-size: 13px;
+    }
+
+    .data-table thead {
+      background: #0f1419;
+      border-bottom: 1px solid #2a3447;
+    }
+
+    .data-table th {
+      padding: 12px 15px;
+      text-align: left;
+      color: #888;
+      font-weight: 500;
+      text-transform: uppercase;
+      font-size: 11px;
+      letter-spacing: 0.5px;
+    }
+
+    .data-table td {
+      padding: 12px 15px;
+      border-bottom: 1px solid #2a3447;
+    }
+
+    .data-table tbody tr:hover {
+      background: #1f252f;
+    }
+
+    .status-badge {
+      display: inline-block;
+      padding: 4px 10px;
+      border-radius: 4px;
+      font-size: 11px;
+      font-weight: 600;
+      text-transform: uppercase;
+    }
+
+    .status-paid {
+      background: rgba(34, 197, 94, 0.1);
+      color: #22c55e;
+    }
+
+    .status-pending {
+      background: rgba(251, 146, 60, 0.1);
+      color: #fb923c;
+    }
+
+    .status-failed {
+      background: rgba(239, 68, 68, 0.1);
+      color: #ef4444;
+    }
+
+    .status-active {
+      background: rgba(59, 130, 246, 0.1);
+      color: #3b82f6;
+    }
+
+    .text-right {
+      text-align: right;
+    }
+
+    .text-center {
+      text-align: center;
+    }
+
+    /* ════════════════════════════════════════════════════════════════ */
+    /* LOADER */
+    /* ════════════════════════════════════════════════════════════════ */
+
+    .loading {
+      text-align: center;
+      padding: 40px 20px;
+      color: #888;
+    }
+
+    .spinner {
+      display: inline-block;
+      width: 20px;
+      height: 20px;
+      border: 2px solid #2a3447;
+      border-top-color: #3b82f6;
+      border-radius: 50%;
+      animation: spin 0.8s linear infinite;
+    }
+
+    @keyframes spin {
+      to { transform: rotate(360deg); }
+    }
+
+    /* ════════════════════════════════════════════════════════════════ */
+    /* EMPTY STATE */
+    /* ════════════════════════════════════════════════════════════════ */
+
+    .empty-state {
+      text-align: center;
+      padding: 60px 20px;
+      color: #888;
+    }
+
+    .empty-state-icon {
+      font-size: 48px;
+      margin-bottom: 15px;
+      opacity: 0.5;
+    }
+
+    /* ════════════════════════════════════════════════════════════════ */
+    /* FOOTER */
+    /* ════════════════════════════════════════════════════════════════ */
+
+    footer {
+      margin-top: 40px;
+      padding-top: 20px;
+      border-top: 1px solid #2a3447;
+      text-align: center;
+      font-size: 12px;
+      color: #666;
+    }
+
+  </style>
+</head>
+<body>
+
+  <!-- ═══════════════════════════════════════════════════════════════ -->
+  <!-- HEADER -->
+  <!-- ═══════════════════════════════════════════════════════════════ -->
+
+  <header>
+    <div class="header-content">
+      <div>
+        <div class="logo">
+          Cakto
+          <span class="logo-small">Espelho em Tempo Real</span>
+        </div>
+      </div>
+      <div class="sync-status">
+        <span class="status-dot"></span>
+        <span id="sync-label">Sincronizando...</span>
+        <span class="sync-time" id="sync-time"></span>
+      </div>
+    </div>
+  </header>
+
+  <!-- ═══════════════════════════════════════════════════════════════ -->
+  <!-- CONTEÚDO PRINCIPAL -->
+  <!-- ═══════════════════════════════════════════════════════════════ -->
+
+  <div class="container">
+
+    <!-- MÉTRICAS PRINCIPAIS -->
+    <div class="metrics-grid" id="metrics-grid">
+      <div class="metric-card">
+        <div class="metric-label">Vendas Encontradas</div>
+        <div class="metric-value" id="metric-sales">—</div>
+        <div class="metric-change" id="metric-sales-change"></div>
+      </div>
+      <div class="metric-card">
+        <div class="metric-label">Valor Líquido</div>
+        <div class="metric-value" id="metric-revenue">—</div>
+        <div class="metric-change" id="metric-revenue-change"></div>
+      </div>
+      <div class="metric-card">
+        <div class="metric-label">Vendas PIX</div>
+        <div class="metric-value" id="metric-pix">—</div>
+        <div class="metric-change" id="metric-pix-change"></div>
+      </div>
+      <div class="metric-card">
+        <div class="metric-label">Boletos em Aberto</div>
+        <div class="metric-value" id="metric-boleto">—</div>
+        <div class="metric-change" id="metric-boleto-change"></div>
+      </div>
+    </div>
+
+    <!-- TABS -->
+    <div class="tabs">
+      <button class="tab active" data-tab="vendas">Todas as Vendas</button>
+      <button class="tab" data-tab="clientes">Clientes</button>
+      <button class="tab" data-tab="cobrancas">Cobranças</button>
+      <button class="tab" data-tab="assinaturas">Assinaturas</button>
+      <button class="tab" data-tab="analise">Análise</button>
+    </div>
+
+    <!-- ABA: VENDAS -->
+    <div id="vendas" class="tab-content active">
+      <div class="table-wrapper">
+        <table class="data-table">
+          <thead>
+            <tr>
+              <th>ID</th>
+              <th>Cliente</th>
+              <th>Valor</th>
+              <th>Método</th>
+              <th>Status</th>
+              <th>Data</th>
+            </tr>
+          </thead>
+          <tbody id="vendas-tbody">
+            <tr>
+              <td colspan="6" class="text-center">
+                <div class="loading">
+                  <div class="spinner"></div>
+                  <p style="margin-top: 10px;">Carregando vendas...</p>
+                </div>
+              </td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+
+    <!-- ABA: CLIENTES -->
+    <div id="clientes" class="tab-content">
+      <div class="table-wrapper">
+        <table class="data-table">
+          <thead>
+            <tr>
+              <th>Cliente</th>
+              <th>Email</th>
+              <th>Telefone</th>
+              <th>Total de Vendas</th>
+              <th>Valor Total</th>
+              <th>Última Venda</th>
+            </tr>
+          </thead>
+          <tbody id="clientes-tbody">
+            <tr>
+              <td colspan="6" class="text-center">
+                <div class="loading">
+                  <div class="spinner"></div>
+                </div>
+              </td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+
+    <!-- ABA: COBRANÇAS -->
+    <div id="cobrancas" class="tab-content">
+      <div class="table-wrapper">
+        <table class="data-table">
+          <thead>
+            <tr>
+              <th>ID</th>
+              <th>Cliente</th>
+              <th>Valor</th>
+              <th>Status</th>
+              <th>Vencimento</th>
+              <th>Pago em</th>
+              <th>Descricao</th>
+            </tr>
+          </thead>
+          <tbody id="cobrancas-tbody">
+            <tr>
+              <td colspan="7" class="text-center">
+                <div class="loading">
+                  <div class="spinner"></div>
+                </div>
+              </td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+
+    <!-- ABA: ASSINATURAS -->
+    <div id="assinaturas" class="tab-content">
+      <div class="table-wrapper">
+        <table class="data-table">
+          <thead>
+            <tr>
+              <th>ID</th>
+              <th>Cliente</th>
+              <th>Plano</th>
+              <th>Valor/Mês</th>
+              <th>Status</th>
+              <th>Próxima Cobrança</th>
+            </tr>
+          </thead>
+          <tbody id="assinaturas-tbody">
+            <tr>
+              <td colspan="6" class="text-center">
+                <div class="loading">
+                  <div class="spinner"></div>
+                </div>
+              </td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+
+    <!-- ABA: ANÁLISE -->
+    <div id="analise" class="tab-content">
+      <div class="metrics-grid">
+        <div class="metric-card">
+          <div class="metric-label">Taxa de Sucesso</div>
+          <div class="metric-value" id="analise-success-rate">—</div>
+        </div>
+        <div class="metric-card">
+          <div class="metric-label">Ticket Médio</div>
+          <div class="metric-value" id="analise-avg-ticket">—</div>
+        </div>
+        <div class="metric-card">
+          <div class="metric-label">Clientes Ativos</div>
+          <div class="metric-value" id="analise-active-customers">—</div>
+        </div>
+        <div class="metric-card">
+          <div class="metric-label">MRR (Receita Recorrente)</div>
+          <div class="metric-value" id="analise-mrr">—</div>
+        </div>
+        <div class="metric-card">
+          <div class="metric-label">Pendências</div>
+          <div class="metric-value" id="analise-pending">—</div>
+        </div>
+        <div class="metric-card">
+          <div class="metric-label">Método de Pagamento Preferido</div>
+          <div class="metric-value" id="analise-preferred-method">—</div>
+        </div>
+      </div>
+    </div>
+
+  </div>
+
+  <footer>
+    Cakto Espelho © 2026 | Atualização automática a cada 30 segundos | Dados sincronizados em tempo real
+  </footer>
+
+  <!-- ═══════════════════════════════════════════════════════════════ -->
+  <!-- SCRIPT -->
+  <!-- ═══════════════════════════════════════════════════════════════ -->
+
+  <script>
+    class CaktoEspelho {
+      constructor() {
+        this.data = {
+          customers: [],
+          charges: [],
+          subscriptions: [],
+          synced_at: null
+        };
+        this.lastSync = null;
+        this.initEventListeners();
+        this.loadData();
+        this.setupAutoRefresh();
+      }
+
+      initEventListeners() {
+        document.querySelectorAll('.tab').forEach(tab => {
+          tab.addEventListener('click', (e) => {
+            const tabName = e.target.dataset.tab;
+            this.switchTab(tabName);
+          });
+        });
+      }
+
+      switchTab(tabName) {
+        // Atualizar abas ativas
+        document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+        document.querySelectorAll('.tab-content').forEach(c => c.classList.remove('active'));
+
+        document.querySelector(`[data-tab="${tabName}"]`).classList.add('active');
+        document.getElementById(tabName).classList.add('active');
+
+        // Renderizar conteúdo
+        this.render();
+      }
+
+      async loadData() {
+        try {
+          this.updateSyncStatus('Sincronizando...', 'syncing');
+
+          const response = await fetch('/api/get-data');
+          const data = await response.json();
+
+          this.data = data;
+          this.lastSync = new Date();
+
+          this.updateSyncStatus('Atualizado agora', 'synced');
+          this.render();
+
+        } catch (error) {
+          console.error('Erro ao carregar dados:', error);
+          this.updateSyncStatus('Erro na sincronização', 'error');
+        }
+      }
+
+      render() {
+        this.renderMetrics();
+        this.renderTabs();
+      }
+
+      renderMetrics() {
+        const { customers = [], charges = [], subscriptions = [] } = this.data;
+
+        // Métricas principais
+        const totalSales = charges.length;
+        const totalRevenue = charges.reduce((sum, c) => sum + (c.amount || 0), 0);
+        const pixSales = charges.filter(c => c.payment_method === 'pix').reduce((sum, c) => sum + (c.amount || 0), 0);
+        const pendingBoletos = charges.filter(c => c.payment_method === 'boleto' && c.status === 'pending').length;
+
+        document.getElementById('metric-sales').textContent = totalSales;
+        document.getElementById('metric-revenue').textContent = this.formatCurrency(totalRevenue);
+        document.getElementById('metric-pix').textContent = this.formatCurrency(pixSales);
+        document.getElementById('metric-boleto').textContent = pendingBoletos;
+
+        // Análise
+        const paidCount = charges.filter(c => c.status === 'paid').length;
+        const successRate = totalSales > 0 ? ((paidCount / totalSales) * 100).toFixed(1) : 0;
+        const avgTicket = totalSales > 0 ? (totalRevenue / totalSales).toFixed(2) : 0;
+        const activeCustomers = customers.length;
+        const mrrValue = subscriptions.filter(s => s.status === 'active').reduce((sum, s) => sum + (s.amount || 0), 0);
+        const pendingValue = charges.filter(c => c.status === 'pending').reduce((sum, c) => sum + (c.amount || 0), 0);
+
+        document.getElementById('analise-success-rate').textContent = `${successRate}%`;
+        document.getElementById('analise-avg-ticket').textContent = this.formatCurrency(avgTicket);
+        document.getElementById('analise-active-customers').textContent = activeCustomers;
+        document.getElementById('analise-mrr').textContent = this.formatCurrency(mrrValue);
+        document.getElementById('analise-pending').textContent = this.formatCurrency(pendingValue);
+
+        const paymentMethods = charges.reduce((acc, c) => {
+          acc[c.payment_method] = (acc[c.payment_method] || 0) + 1;
+          return acc;
+        }, {});
+        const preferredMethod = Object.keys(paymentMethods).reduce((a, b) => paymentMethods[a] > paymentMethods[b] ? a : b, 'N/A');
+        document.getElementById('analise-preferred-method').textContent = preferredMethod.toUpperCase();
+      }
+
+      renderTabs() {
+        const { customers = [], charges = [], subscriptions = [] } = this.data;
+
+        // TAB: VENDAS
+        const vendasHTML = charges.map(charge => `
+          <tr>
+            <td>${charge.id}</td>
+            <td>${charge.customer_name}</td>
+            <td class="text-right">${this.formatCurrency(charge.amount)}</td>
+            <td>${this.formatPaymentMethod(charge.payment_method)}</td>
+            <td><span class="status-badge status-${charge.status}">${charge.status.toUpperCase()}</span></td>
+            <td>${charge.due_date}</td>
+          </tr>
+        `).join('');
+
+        document.getElementById('vendas-tbody').innerHTML = vendasHTML || '<tr><td colspan="6" class="text-center">Nenhuma venda encontrada</td></tr>';
+
+        // TAB: CLIENTES
+        const clientesHTML = customers.map(customer => {
+          const clientCharges = charges.filter(c => c.customer_id === customer.id);
+          const totalSales = clientCharges.length;
+          const totalValue = clientCharges.reduce((sum, c) => sum + (c.amount || 0), 0);
+          const lastSale = clientCharges.length > 0 ? clientCharges[0].due_date : 'N/A';
+
+          return `
+            <tr>
+              <td>${customer.name}</td>
+              <td>${customer.email}</td>
+              <td>${customer.phone}</td>
+              <td class="text-center">${totalSales}</td>
+              <td class="text-right">${this.formatCurrency(totalValue)}</td>
+              <td>${lastSale}</td>
+            </tr>
+          `;
+        }).join('');
+
+        document.getElementById('clientes-tbody').innerHTML = clientesHTML || '<tr><td colspan="6" class="text-center">Nenhum cliente encontrado</td></tr>';
+
+        // TAB: COBRANÇAS
+        const cobancasHTML = charges.map(charge => `
+          <tr>
+            <td>${charge.id}</td>
+            <td>${charge.customer_name}</td>
+            <td class="text-right">${this.formatCurrency(charge.amount)}</td>
+            <td><span class="status-badge status-${charge.status}">${charge.status.toUpperCase()}</span></td>
+            <td>${charge.due_date}</td>
+            <td>${charge.paid_date || '—'}</td>
+            <td>${charge.description}</td>
+          </tr>
+        `).join('');
+
+        document.getElementById('cobrancas-tbody').innerHTML = cobancasHTML || '<tr><td colspan="7" class="text-center">Nenhuma cobrança encontrada</td></tr>';
+
+        // TAB: ASSINATURAS
+        const assinaturasHTML = subscriptions.map(sub => `
+          <tr>
+            <td>${sub.id}</td>
+            <td>${customers.find(c => c.id === sub.customer_id)?.name || 'N/A'}</td>
+            <td>${sub.plan}</td>
+            <td class="text-right">${this.formatCurrency(sub.amount)}</td>
+            <td><span class="status-badge status-${sub.status}">${sub.status.toUpperCase()}</span></td>
+            <td>${sub.next_charge_date}</td>
+          </tr>
+        `).join('');
+
+        document.getElementById('assinaturas-tbody').innerHTML = assinaturasHTML || '<tr><td colspan="6" class="text-center">Nenhuma assinatura encontrada</td></tr>';
+      }
+
+      updateSyncStatus(label, status) {
+        document.getElementById('sync-label').textContent = label;
+        document.getElementById('sync-time').textContent = this.lastSync ? `(${this.lastSync.toLocaleTimeString()})` : '';
+
+        const dot = document.querySelector('.status-dot');
+        dot.style.background = status === 'synced' ? '#22c55e' : status === 'error' ? '#ef4444' : '#3b82f6';
+      }
+
+      setupAutoRefresh() {
+        setInterval(() => this.loadData(), 30000); // A cada 30 segundos
+      }
+
+      formatCurrency(value) {
+        return new Intl.NumberFormat('pt-BR', {
+          style: 'currency',
+          currency: 'BRL',
+          minimumFractionDigits: 2
+        }).format(value || 0);
+      }
+
+      formatPaymentMethod(method) {
+        const map = {
+          'pix': 'PIX',
+          'boleto': 'Boleto',
+          'cc': 'Cartão',
+          'transferencia': 'Transferência',
+          'desconhecido': 'Outro'
+        };
+        return map[method] || method.toUpperCase();
+      }
+    }
+
+    // ═══════════════════════════════════════════════════════════════
+    // INICIALIZAR
+    // ═══════════════════════════════════════════════════════════════
+
+    document.addEventListener('DOMContentLoaded', () => {
+      new CaktoEspelho();
+    });
+  </script>
+
+</body>
+</html>
