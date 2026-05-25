@@ -158,11 +158,18 @@ const server = http.createServer(async (req, res) => {
   }
 
   if (pathname === '/api/roleta/grant' && req.method === 'POST') {
-    return res.end(JSON.stringify({ ok: true }));
+    const grantHandler = require('./api/roleta/grant');
+    return grantHandler(req, res);
   }
 
   if (pathname === '/api/roleta/revoke' && req.method === 'POST') {
-    return res.end(JSON.stringify({ ok: true }));
+    const revokeHandler = require('./api/roleta/revoke');
+    return revokeHandler(req, res);
+  }
+
+  if (pathname === '/api/roleta/delete' && req.method === 'POST') {
+    const deleteHandler = require('./api/roleta/delete');
+    return deleteHandler(req, res);
   }
 
   // NEW: Funil por Usuário (Nova Estrutura)

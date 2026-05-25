@@ -187,6 +187,53 @@ module.exports = async (req, res) => {
     return;
   }
 
+  // DELETE /api/tab-permissions — Resetar permissões de um usuário
+  if (req.method === 'DELETE') {
+    if (caller.role !== 'admin') {
+      res.writeHead(403);
+      return res.end(JSON.stringify({ error: 'Apenas admins podem deletar permissões' }));
+    }
+
+    let body = '';
+    req.on('data', chunk => { body += chunk.toString(); });
+    req.on('end', async () => {
+      try {
+        const { userId } = JSON.parse(body || '{}');
+
+        if (!userId) {
+          res.writeHead(400);
+          return res.end(JSON.stringify({ error: 'userId obrigatório' }));
+        }
+
+        // Deletar todas as permissões do usuário (reset)
+        const { error: delErr } = await supabase
+          .from('tab_permissions')
+          .delete()
+          .eq('user_id', userId);
+
+        if (delErr) throw delErr;
+
+        // Registrar auditoria
+        await supabase.from('permission_audit_log').insert({
+          admin_id: caller.id,
+          admin_name: caller.display_name,
+          tab_key: 'all',
+          user_id: userId,
+          action: 'reset',
+          timestamp: new Date().toISOString(),
+        }).catch(() => {});
+
+        res.writeHead(200);
+        return res.end(JSON.stringify({ ok: true, message: 'Permissões resetadas' }));
+      } catch (error) {
+        console.error('Erro ao resetar permissões:', error.message);
+        res.writeHead(500);
+        return res.end(JSON.stringify({ error: error.message }));
+      }
+    });
+    return;
+  }
+
   res.writeHead(405);
   return res.end(JSON.stringify({ error: 'Método não suportado' }));
 };

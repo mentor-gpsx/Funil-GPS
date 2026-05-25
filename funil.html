@@ -1225,6 +1225,7 @@ canvas.roleta-canvas{border-radius:50%;box-shadow:0 8px 32px rgba(0,0,0,.18);}
   <button class="tb"    id="tb-analise"     onclick="switchTab('analise')">Análise do Funil</button>
   <button class="tb"    id="tb-avaliador"   onclick="switchTab('avaliador')">Avaliador</button>
   <button class="tb"    id="tb-crmscore"    onclick="switchTab('crmscore')">CRM Score <span class="tb-pill" id="pill-crmscore">–</span></button>
+  <button class="tb"    id="tb-distribuicao" onclick="switchTab('distribuicao')">Distribuição</button>
   <button class="tb admin-only" id="tb-roletas" onclick="switchTab('roletas')">Roletas</button>
   <button class="tb admin-only" id="tb-perms" onclick="switchTab('perms')">⚙️ Gerenciar Permissões</button>
 </nav>
@@ -3662,6 +3663,28 @@ const ALL_MANAGED_FEATURES = [
   { key: 'roleta', label: 'Roleta de Prêmios' },
 ];
 
+// Cache local de permissões (AJUSTE 02: Centralização)
+let _tabPermissionsCache = {};
+
+// Função para verificar permissão de aba (AJUSTE 02: usa nova tabela tab_permissions)
+async function checkTabPermissionFromDB(tabKey) {
+  if (_userProfile?.role === 'admin') return true; // admins: acesso total
+
+  try {
+    const { data, error } = await _sb
+      .from('tab_permissions')
+      .select('has_access')
+      .eq('user_id', _userProfile.id)
+      .eq('tab_key', tabKey)
+      .single();
+
+    if (error) return false;
+    return data?.has_access || false;
+  } catch {
+    return false;
+  }
+}
+
 function getPermissions() {
   if (_userProfile?.role === 'admin') return null; // admins: acesso total
   const p = _userProfile?.permissions;
@@ -3677,6 +3700,12 @@ function hasTabPermission(key) {
   if (_userProfile?.permissions?.admin_override) return true; // acesso elevado
   if (!_userProfile?.seller_key) return false; // seller sem seller_key: acesso bloqueado
   if (key === _userProfile.seller_key) return true; // aba própria: sempre
+
+  // Tentar usar cache primeiro, depois fallback
+  if (_tabPermissionsCache[key] !== undefined) {
+    return _tabPermissionsCache[key];
+  }
+
   const perms = getPermissions();
   return (perms?.tabs || []).includes(key);
 }
@@ -3695,37 +3724,56 @@ async function renderPermissionsPanel() {
   if (!el) return;
   el.innerHTML = '<p style="color:var(--muted);font-size:13px">Carregando...</p>';
 
-  const { data: { session } } = await _sb.auth.getSession();
-  const token = session?.access_token || '';
-  const resp = await fetch('/api/permissions', { headers: { Authorization: `Bearer ${token}` } });
-  if (!resp.ok) { el.innerHTML = '<p style="color:var(--red)">Erro ao carregar perfis.</p>'; return; }
-  const sellers = await resp.json();
-  const error = null;
+  try {
+    const { data: { session } } = await _sb.auth.getSession();
+    if (!session?.access_token) { el.innerHTML = '<p style="color:var(--red)">Erro de autenticação.</p>'; return; }
 
-  if (!sellers) { el.innerHTML = '<p style="color:var(--red)">Erro ao carregar perfis.</p>'; return; }
+    // ──────────────────────────────────────────────────────────────
+    // Buscar todos os usuários (sellers + admins)
+    // ──────────────────────────────────────────────────────────────
+    const { data: allUsers, error: usersErr } = await _sb
+      .from('profiles')
+      .select('id, email, display_name, role')
+      .order('display_name');
 
-  if (sellers.length === 0) {
-    el.innerHTML = '<p style="color:var(--muted);font-size:13px">Nenhum seller cadastrado.</p>';
-    return;
-  }
+    if (usersErr || !allUsers) {
+      el.innerHTML = '<p style="color:var(--red)">Erro ao carregar perfis.</p>';
+      return;
+    }
 
-  // Lista unificada: tabs + features para exibir no painel
-  const ALL_PERMISSION_ITEMS = [
-    { category: 'tabs',     key: 'fechamentos', label: 'Fechamentos',      icon: '📋' },
-    { category: 'tabs',     key: 'avaliador',   label: 'Avaliador',        icon: '⭐' },
-    { category: 'tabs',     key: 'analise',     label: 'Análise do Funil', icon: '📊' },
-    { category: 'tabs',     key: 'cmp',         label: 'Comparativo',      icon: '🔀' },
-    { category: 'features', key: 'roleta',      label: 'Roleta de Prêmios',icon: '🎰' },
-  ];
+    if (allUsers.length === 0) {
+      el.innerHTML = '<p style="color:var(--muted);font-size:13px">Nenhum usuário cadastrado.</p>';
+      return;
+    }
 
-  el.innerHTML = sellers.map(s => {
-    const p           = s.permissions || {};
-    const tabs        = p.tabs     ?? SELLER_DEFAULT_PERMISSIONS.tabs;
-    const features    = p.features ?? SELLER_DEFAULT_PERMISSIONS.features;
-    const adminOvr    = p.admin_override === true;
-    const name        = s.display_name || s.email;
-    const initials    = name.split(' ').map(w => w[0]).slice(0,2).join('').toUpperCase();
+    // ──────────────────────────────────────────────────────────────
+    // Buscar permissões de abas (tab_permissions)
+    // ──────────────────────────────────────────────────────────────
+    const { data: tabPerms, error: permsErr } = await _sb
+      .from('tab_permissions')
+      .select('*');
 
+    if (permsErr) {
+      console.error('[Perms] Erro ao buscar tab_permissions:', permsErr);
+      el.innerHTML = '<p style="color:var(--red)">Erro ao carregar permissões.</p>';
+      return;
+    }
+
+    // ──────────────────────────────────────────────────────────────
+    // Lista de todas as abas/features disponíveis (AJUSTE 02)
+    // ──────────────────────────────────────────────────────────────
+    const ALL_TABS = [
+      { key: 'fechamentos', label: 'Fechamentos',       icon: '📋' },
+      { key: 'comparativos', label: 'Comparativos',     icon: '🔀' },
+      { key: 'analise',     label: 'Análise do Funil',  icon: '📊' },
+      { key: 'avaliador',   label: 'Avaliador',         icon: '⭐' },
+      { key: 'crm-score',   label: 'CRM Score',         icon: '📈' },
+      { key: 'roletas',     label: 'Roletas',           icon: '🎰' },
+      { key: 'distribuicao',label: 'Distribuição',     icon: '🔄' },
+      { key: 'gerenciar-perms', label: 'Gerenciar Permissões', icon: '⚙️' },
+    ];
+
+    // Helper para renderizar toggle
     const mkToggle = (isOn, onchange) => `
       <label style="position:relative;display:inline-block;width:40px;height:22px;cursor:pointer;flex-shrink:0">
         <input type="checkbox" ${isOn ? 'checked' : ''} onchange="${onchange}"
@@ -3734,95 +3782,137 @@ async function renderPermissionsPanel() {
         <span style="position:absolute;top:3px;left:${isOn ? '21px' : '3px'};width:16px;height:16px;border-radius:50%;background:#fff;box-shadow:0 1px 3px rgba(0,0,0,.2)"></span>
       </label>`;
 
-    const adminOvrToggle = `
-      <div style="display:flex;align-items:center;justify-content:space-between;padding:12px 14px;background:${adminOvr ? '#fef3c7' : 'var(--silver)'};border-radius:var(--r-sm);margin-bottom:10px;border:${adminOvr ? '1px solid #f59e0b' : '1px solid transparent'}">
-        <div>
-          <div style="font-size:13px;font-weight:700">👑 Acesso equivalente ao ADMIN</div>
-          <div style="font-size:11px;color:var(--muted);margin-top:2px">Ignora todas as restrições abaixo</div>
-        </div>
-        ${mkToggle(adminOvr, `toggleAdminOverride('${s.id}',this.checked)`)}
-      </div>`;
+    // ──────────────────────────────────────────────────────────────
+    // Renderizar cartão para cada usuário
+    // ──────────────────────────────────────────────────────────────
+    el.innerHTML = allUsers.map(user => {
+      const name = user.display_name || user.email;
+      const initials = name.split(' ').map(w => w[0]).slice(0, 2).join('').toUpperCase();
 
-    const items = ALL_PERMISSION_ITEMS.map(item => {
-      const isOn = item.category === 'tabs'
-        ? tabs.includes(item.key)
-        : features.includes(item.key);
-      return `
-        <div style="display:flex;align-items:center;justify-content:space-between;padding:10px 14px;background:var(--silver);border-radius:var(--r-sm);margin-bottom:6px;${adminOvr ? 'opacity:.4;pointer-events:none' : ''}">
-          <span style="font-size:13px;font-weight:600">${item.icon} ${item.label}</span>
-          ${mkToggle(isOn, `togglePermission('${s.id}','${item.category}','${item.key}',this.checked)`)}
-        </div>`;
+      // Buscar permissões deste usuário
+      const userPerms = tabPerms.filter(p => p.user_id === user.id);
+      const getAccess = (tabKey) => {
+        const perm = userPerms.find(p => p.tab_key === tabKey);
+        return perm ? perm.has_access : false;
+      };
+
+      // Renderizar linhas de permissões
+      const permRows = ALL_TABS.map(tab => {
+        const hasAccess = getAccess(tab.key);
+        return `
+          <div style="display:flex;align-items:center;justify-content:space-between;padding:10px 14px;background:var(--silver);border-radius:var(--r-sm);margin-bottom:6px">
+            <span style="font-size:13px;font-weight:600">${tab.icon} ${tab.label}</span>
+            ${mkToggle(hasAccess, `updateUserTabPermission('${user.id}', '${tab.key}', this.checked)`)}
+          </div>`;
+      }).join('');
+
+      // Botão reset (opcional)
+      const resetBtn = `<button onclick="resetUserPermissions('${user.id}')" style="margin-top:12px;padding:8px 12px;background:#fee2e2;color:#dc2626;border:none;border-radius:4px;font-size:11px;font-weight:600;cursor:pointer">🔄 Resetar Permissões</button>`;
+
+      return `<div class="ctrl-card" style="margin-bottom:14px;padding:20px">
+        <div style="display:flex;align-items:center;gap:12px;margin-bottom:16px">
+          <div style="width:38px;height:38px;border-radius:50%;background:var(--accent,#6366f1);color:#fff;display:flex;align-items:center;justify-content:center;font-weight:800;font-size:14px;flex-shrink:0">${initials}</div>
+          <div>
+            <div style="font-weight:800;font-size:14px;line-height:1.2">${name}</div>
+            <div style="font-size:11px;color:var(--muted)">${user.email}</div>
+            <div style="font-size:10px;color:var(--muted);margin-top:2px">Role: <strong>${user.role}</strong></div>
+          </div>
+        </div>
+        <div style="font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.6px;color:var(--muted);margin-bottom:10px">Acessos por Aba (AJUSTE 02)</div>
+        ${permRows}
+        ${resetBtn}
+      </div>`;
     }).join('');
 
-    return `<div class="ctrl-card" style="margin-bottom:14px;padding:20px">
-      <div style="display:flex;align-items:center;gap:12px;margin-bottom:16px">
-        <div style="width:38px;height:38px;border-radius:50%;background:var(--accent,#6366f1);color:#fff;display:flex;align-items:center;justify-content:center;font-weight:800;font-size:14px;flex-shrink:0">${initials}</div>
-        <div>
-          <div style="font-weight:800;font-size:14px;line-height:1.2">${name}</div>
-          <div style="font-size:11px;color:var(--muted)">${s.email}</div>
-        </div>
-      </div>
-      ${adminOvrToggle}
-      <div style="font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.6px;color:var(--muted);margin-bottom:10px">Acessos individuais</div>
-      ${items}
-    </div>`;
-  }).join('');
+  } catch (error) {
+    console.error('[Perms] Erro:', error);
+    el.innerHTML = '<p style="color:var(--red)">Erro ao carregar permissões.</p>';
+  }
 }
 
-// Salvar alteração de permissão no Supabase
+// ── AJUSTE 02: Centralizar Permissões ────────────────────────────
+// Atualizar permissão de aba para um usuário (NOVO)
+async function updateUserTabPermission(userId, tabKey, hasAccess) {
+  try {
+    const { data: { session } } = await _sb.auth.getSession();
+    if (!session?.access_token) {
+      alert('Sessão expirada. Faça login novamente.');
+      return;
+    }
+
+    const resp = await fetch('/api/tab-permissions', {
+      method: 'PATCH',
+      headers: {
+        Authorization: `Bearer ${session.access_token}`,
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({ userId, tabKey, hasAccess }),
+    });
+
+    if (!resp.ok) {
+      const err = await resp.json();
+      console.error('[Permissões] Erro ao atualizar:', err.error);
+      alert(`Erro: ${err.error}`);
+      return;
+    }
+
+    console.log(`✅ Permissão atualizada: ${tabKey} para ${userId} = ${hasAccess}`);
+    renderPermissionsPanel();
+  } catch (error) {
+    console.error('[Permissões] Erro:', error);
+    alert(`Erro: ${error.message}`);
+  }
+}
+
+// Resetar todas as permissões de um usuário
+async function resetUserPermissions(userId) {
+  if (!confirm('Tem certeza que deseja resetar TODAS as permissões deste usuário?')) return;
+
+  try {
+    const { data: { session } } = await _sb.auth.getSession();
+    if (!session?.access_token) {
+      alert('Sessão expirada. Faça login novamente.');
+      return;
+    }
+
+    const resp = await fetch('/api/tab-permissions', {
+      method: 'DELETE',
+      headers: {
+        Authorization: `Bearer ${session.access_token}`,
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({ userId }),
+    });
+
+    if (!resp.ok) {
+      const err = await resp.json();
+      console.error('[Permissões] Erro ao resetar:', err.error);
+      alert(`Erro: ${err.error}`);
+      return;
+    }
+
+    alert('✓ Permissões resetadas com sucesso');
+    renderPermissionsPanel();
+  } catch (error) {
+    console.error('[Permissões] Erro:', error);
+    alert(`Erro: ${error.message}`);
+  }
+}
+
+// ── LEGACY: Manter compatibilidade com código antigo (deprecated) ──
 async function togglePermission(profileId, category, key, enabled) {
-  // Buscar permissões atuais do painel (DOM) para evitar outra chamada de rede
-  const { data: { session } } = await _sb.auth.getSession();
-  const token = session?.access_token || '';
-
-  const resp = await fetch('/api/permissions', { headers: { Authorization: `Bearer ${token}` } });
-  if (!resp.ok) { console.error('[Permissões] Erro ao buscar perfis'); return; }
-  const sellers = await resp.json();
-  const prof = sellers.find(s => s.id === profileId);
-
-  const perms   = prof?.permissions || {};
-  const current = perms[category] ?? SELLER_DEFAULT_PERMISSIONS[category] ?? [];
-  const updated = enabled
-    ? [...new Set([...current, key])]
-    : current.filter(k => k !== key);
-
-  const patchResp = await fetch('/api/permissions', {
-    method: 'PATCH',
-    headers: { Authorization: `Bearer ${token}`, 'Content-Type': 'application/json' },
-    body: JSON.stringify({ profileId, permissions: { ...perms, [category]: updated } }),
-  });
-
-  if (!patchResp.ok) {
-    const err = await patchResp.json().catch(() => ({}));
-    console.error('[Permissões] Erro ao salvar:', err.error);
-  } else {
-    renderPermissionsPanel();
-  }
+  console.warn('[DEPRECATED] togglePermission() — use updateUserTabPermission() instead');
+  // Redirecionar para novo sistema
+  const tabKeyMap = {
+    'cmp': 'comparativos',
+    'roleta': 'roletas',
+  };
+  const tabKey = tabKeyMap[key] || key;
+  await updateUserTabPermission(profileId, tabKey, enabled);
 }
 
-// Elevar/rebaixar acesso de seller para nível admin-like
 async function toggleAdminOverride(profileId, enabled) {
-  const { data: { session } } = await _sb.auth.getSession();
-  const token = session?.access_token || '';
-
-  const resp = await fetch('/api/permissions', { headers: { Authorization: `Bearer ${token}` } });
-  if (!resp.ok) { console.error('[Permissões] Erro ao buscar perfis'); return; }
-  const sellers = await resp.json();
-  const prof = sellers.find(s => s.id === profileId);
-
-  const perms = prof?.permissions || {};
-  const patchResp = await fetch('/api/permissions', {
-    method: 'PATCH',
-    headers: { Authorization: `Bearer ${token}`, 'Content-Type': 'application/json' },
-    body: JSON.stringify({ profileId, permissions: { ...perms, admin_override: enabled } }),
-  });
-
-  if (!patchResp.ok) {
-    const err = await patchResp.json().catch(() => ({}));
-    console.error('[Permissões] Erro ao elevar acesso:', err.error);
-  } else {
-    renderPermissionsPanel();
-  }
+  console.warn('[DEPRECATED] toggleAdminOverride() — migrate to new permission system');
 }
 
 // ================================================================
@@ -4319,6 +4409,54 @@ async function grantSpin() {
   renderQueueGrid();
 }
 
+// ── Deletar prêmio (ajuste 01) ────────────────────────────────────
+async function deleteRoleta(prizeId) {
+  if (_userProfile?.role !== 'admin') {
+    alert('Apenas admins podem deletar roletas');
+    return;
+  }
+
+  const reason = prompt('Motivo da exclusão (opcional):');
+  if (reason === null) return; // Cancelado
+
+  try {
+    const { data: { session } } = await _sb.auth.getSession();
+    if (!session?.access_token) {
+      alert('Sessão expirada. Faça login novamente.');
+      return;
+    }
+
+    const resp = await fetch('/api/roleta/delete', {
+      method: 'POST',
+      headers: {
+        Authorization: `Bearer ${session.access_token}`,
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({ prizeId, reason: reason || null }),
+    });
+
+    if (!resp.ok) {
+      const err = await resp.json();
+      alert(`Erro ao deletar: ${err.error || 'Erro desconhecido'}`);
+      return;
+    }
+
+    const result = await resp.json();
+    alert(`✓ Prêmio deletado com sucesso`);
+
+    // Atualizar histórico de prêmios
+    if (document.getElementById('ar-history')) {
+      renderAdminRoletas();
+    }
+    if (document.getElementById('rh-list')) {
+      renderPrizeHistory();
+    }
+  } catch (error) {
+    console.error('[Roleta] Erro ao deletar prêmio:', error);
+    alert(`Erro: ${error.message}`);
+  }
+}
+
 // ── Controle admin de roletas (aba Roletas) ──────────────────────
 async function renderAdminRoletas() {
   if (_userProfile?.role !== 'admin') return;
@@ -4347,7 +4485,7 @@ async function renderAdminRoletas() {
   if (!histEl) return;
   histEl.innerHTML = '<p style="color:var(--muted);font-size:13px;padding:12px 0">Carregando...</p>';
 
-  let query = _sb.from('prize_history').select('*').order('created_at', { ascending: false }).limit(500);
+  let query = _sb.from('prize_history').select('*').eq('is_deleted', false).order('created_at', { ascending: false }).limit(500);
   const arMonth = document.getElementById('ar-month')?.value;
   if (arMonth && arMonth !== 'all') {
     const [y, m] = arMonth.split('-');
@@ -4380,6 +4518,9 @@ async function renderAdminRoletas() {
     const src = r.source === 'auto'
       ? '<span style="background:#dcfce7;color:#15803d;padding:2px 7px;border-radius:4px;font-size:11px;font-weight:700">Auto</span>'
       : '<span style="background:#fef3c7;color:#92400e;padding:2px 7px;border-radius:4px;font-size:11px;font-weight:700">Manual</span>';
+    const deleteBtn = _userProfile?.role === 'admin'
+      ? `<button onclick="deleteRoleta('${r.id}')" title="Deletar este prêmio" style="background:#fee2e2;color:#dc2626;border:none;border-radius:4px;padding:4px 8px;font-size:11px;font-weight:600;cursor:pointer">🗑️ Deletar</button>`
+      : '';
     return `<tr style="border-bottom:1px solid var(--border)">
       <td style="padding:9px 12px;color:var(--mid);white-space:nowrap">${dtS}</td>
       <td style="padding:9px 12px;font-weight:600">${r.seller_name || r.seller_key}</td>
@@ -4389,6 +4530,7 @@ async function renderAdminRoletas() {
       </td>
       <td style="padding:9px 12px">${src}</td>
       <td style="padding:9px 12px;color:var(--mid)">${r.closing_name || '—'}</td>
+      <td style="padding:9px 12px;text-align:center">${deleteBtn}</td>
     </tr>`;
   }).join('');
 
@@ -4408,6 +4550,7 @@ async function renderAdminRoletas() {
             <th style="text-align:left;padding:8px 12px;font-size:11px;color:var(--muted);font-weight:700">PRÊMIO</th>
             <th style="text-align:left;padding:8px 12px;font-size:11px;color:var(--muted);font-weight:700">ORIGEM</th>
             <th style="text-align:left;padding:8px 12px;font-size:11px;color:var(--muted);font-weight:700">FECHAMENTO</th>
+            <th style="text-align:center;padding:8px 12px;font-size:11px;color:var(--muted);font-weight:700">AÇÕES</th>
           </tr>
         </thead>
         <tbody>${rows}</tbody>
@@ -4622,7 +4765,7 @@ async function renderPrizeHistory() {
   if (!el) return;
   el.innerHTML = '<p style="color:var(--muted);font-size:13px;padding:12px 0">Carregando...</p>';
 
-  let query = _sb.from('prize_history').select('*').order('created_at', { ascending: false }).limit(200);
+  let query = _sb.from('prize_history').select('*').eq('is_deleted', false).order('created_at', { ascending: false }).limit(200);
 
   // Sellers restritos veem apenas os próprios registros
   if (_userProfile?.role === 'seller' && !_userProfile?.permissions?.admin_override && _userProfile.seller_key) {
@@ -4659,6 +4802,9 @@ async function renderPrizeHistory() {
       ? '<span style="background:#dcfce7;color:#15803d;padding:2px 7px;border-radius:4px;font-size:11px;font-weight:700">Auto</span>'
       : '<span style="background:#fef3c7;color:#92400e;padding:2px 7px;border-radius:4px;font-size:11px;font-weight:700">Manual</span>';
     const dot = `<span style="width:10px;height:10px;border-radius:50%;background:${r.prize_color||'#94a3b8'};display:inline-block;margin-right:6px;vertical-align:middle"></span>`;
+    const deleteBtn = _userProfile?.role === 'admin'
+      ? `<button onclick="deleteRoleta('${r.id}')" title="Deletar este prêmio" style="background:#fee2e2;color:#dc2626;border:none;border-radius:4px;padding:4px 8px;font-size:11px;font-weight:600;cursor:pointer">🗑️ Deletar</button>`
+      : '';
     return `<tr style="border-bottom:1px solid var(--border)">
       <td style="padding:9px 12px;color:var(--mid);white-space:nowrap">${dtS}</td>
       <td style="padding:9px 12px;font-weight:600">${r.seller_name || r.seller_key}</td>
@@ -4666,6 +4812,7 @@ async function renderPrizeHistory() {
       <td style="padding:9px 12px">${dot}${r.prize_label}</td>
       <td style="padding:9px 12px">${src}</td>
       <td style="padding:9px 12px;color:var(--mid)">${r.closing_name || '—'}</td>
+      <td style="padding:9px 12px;text-align:center">${deleteBtn}</td>
     </tr>`;
   }).join('');
 
@@ -4679,6 +4826,7 @@ async function renderPrizeHistory() {
           <th style="text-align:left;padding:8px 12px;font-size:11px;color:var(--muted);font-weight:700">PRÊMIO</th>
           <th style="text-align:left;padding:8px 12px;font-size:11px;color:var(--muted);font-weight:700">ORIGEM</th>
           <th style="text-align:left;padding:8px 12px;font-size:11px;color:var(--muted);font-weight:700">FECHAMENTO</th>
+          <th style="text-align:center;padding:8px 12px;font-size:11px;color:var(--muted);font-weight:700">AÇÕES</th>
         </tr>
       </thead>
       <tbody>${rows}</tbody>
@@ -4906,6 +5054,25 @@ async function logout() {
   const hdrUser = document.getElementById('hdr-user');
   if (hdrUser) hdrUser.textContent = _userProfile.display_name || session.user.email;
 
+  // ──────────────────────────────────────────────────────────────
+  // AJUSTE 02: Carregar permissões de abas do novo sistema
+  // ──────────────────────────────────────────────────────────────
+  let userTabPermissions = {};
+  try {
+    const { data: tabPerms, error } = await _sb
+      .from('tab_permissions')
+      .select('tab_key, has_access')
+      .eq('user_id', session.user.id);
+
+    if (!error && tabPerms) {
+      tabPerms.forEach(perm => {
+        userTabPermissions[perm.tab_key] = perm.has_access;
+      });
+    }
+  } catch (e) {
+    console.warn('[INIT] Erro ao carregar tab_permissions:', e);
+  }
+
   // Exibir elementos exclusivos de admin (inclui sellers com acesso elevado)
   const isAdminLike = _userProfile.role === 'admin' || _userProfile.permissions?.admin_override;
   if (isAdminLike) {
@@ -4920,10 +5087,31 @@ async function logout() {
     // Se seller sem seller_key: nenhuma aba liberada (conta não configurada)
     const allowedTabs = sk ? new Set([sk, ...(perms?.tabs || [])]) : new Set();
 
+    // ──────────────────────────────────────────────────────────────
+    // AJUSTE 02: Adicionar permissões do novo sistema tab_permissions
+    // Mapeamento: tab_key (em tab_permissions) → tabId (no HTML)
+    // ──────────────────────────────────────────────────────────────
+    const tabKeyToIdMap = {
+      'fechamentos': 'fechamentos',
+      'comparativos': 'cmp',
+      'analise': 'analise',
+      'avaliador': 'avaliador',
+      'crm-score': 'crmscore',
+      'roletas': 'roletas',
+      'distribuicao': 'distribuicao',
+      'gerenciar-perms': 'perms',
+    };
+
+    Object.entries(tabKeyToIdMap).forEach(([tabKey, tabId]) => {
+      if (userTabPermissions[tabKey] === true) {
+        allowedTabs.add(tabId);
+      }
+    });
+
     // Ocultar abas sem permissão (sellers individuais + abas gerais restritas)
     const allTabIds = [
       ...Object.keys(CONFIG.SELLERS),
-      'fechamentos', 'cmp', 'analise', 'avaliador', 'crmscore', 'roletas',
+      'fechamentos', 'cmp', 'analise', 'avaliador', 'crmscore', 'roletas', 'perms', 'distribuicao',
     ];
     allTabIds.forEach(tabKey => {
       const tab = document.getElementById(`tb-${tabKey}`);
