@@ -1739,8 +1739,7 @@ async function loadSellersFromSupabase() {
   try {
     const { data: profiles } = await _sb
       .from('profiles')
-      .select('id, email, display_name, seller_key, is_active')
-      .eq('is_active', true)
+      .select('id, email, display_name, seller_key')
       .order('display_name');
 
     if (profiles && profiles.length > 0) {
