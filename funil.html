@@ -4735,19 +4735,13 @@ async function reloadUserProfile() {
     let session = { user: { id: 'sandbox', email: 'admin@sandbox.local' } };
     if (!session) return;
 
-    // SANDBOX: const { data: profile } = await _sb
-      .from('profiles')
-      .select('seller_key, display_name, role, permissions')
-      .eq('id', session.user.id)
-      .single();
+    // SANDBOX MODE - usar profile mock
+    _userProfile = { role: 'admin', seller_key: 'maria', display_name: 'Admin Sandbox' };
 
-    if (profile) {
-      _userProfile = profile;
-      // Atualizar UI após recarregar
-      const hdrUser = document.getElementById('hdr-user');
-      if (hdrUser) hdrUser.textContent = _userProfile.display_name || session.user.email;
-      updateRoletaNotif();
-    }
+    // Atualizar UI
+    const hdrUser = document.getElementById('hdr-user');
+    if (hdrUser) hdrUser.textContent = _userProfile.display_name || session.user.email;
+    updateRoletaNotif();
   } catch(e) {
     console.error('[Sync] Erro ao recarregar perfil:', e);
   }
