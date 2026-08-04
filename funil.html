@@ -1736,42 +1736,58 @@ let dynamicSellers = {};
 let autoRefreshInterval = null;
 
 async function loadSellersFromSupabase() {
+  console.log('[DEBUG] loadSellersFromSupabase() iniciado');
   try {
-    const { data: profiles } = await _sb
+    console.log('[DEBUG] _sb disponível:', !!_sb);
+
+    const { data: profiles, error } = await _sb
       .from('profiles')
-      .select('id, email, display_name, seller_key')
+      .select('id, email, display_name')
       .order('display_name');
 
-    if (profiles && profiles.length > 0) {
-      // Atualizar CONFIG.SELLERS e CONFIG.SELLER_META dinamicamente
-      profiles.forEach(profile => {
-        const key = (profile.seller_key || profile.email.split('@')[0]).toLowerCase();
-        const name = profile.display_name || profile.email;
-        const init = name.split(' ').map(w => w[0]).join('').substring(0, 2).toUpperCase();
+    console.log('[DEBUG] Resposta Supabase:', { count: profiles?.length, error });
 
-        dynamicSellers[key] = {
-          id: profile.id,
-          email: profile.email,
-          name: name,
-          init: init,
-          is_active: true
-        };
-
-        CONFIG.SELLERS[key] = [key, profile.email.split('@')[0]];
-        CONFIG.SELLER_META[key] = {
-          name: name,
-          init: init,
-          roleta_ativa: true,
-          roleta_existe: true
-        };
-      });
-
-      // Renderizar abas dinamicamente
-      renderDynamicTabs();
-      console.log(`✅ ${profiles.length} usuários carregados dinamicamente`);
+    if (error) {
+      console.error('[ERROR] Supabase error:', error.message);
+      return;
     }
+
+    if (!profiles || profiles.length === 0) {
+      console.warn('[WARN] Nenhum perfil encontrado');
+      return;
+    }
+
+    console.log('[DEBUG] Processando', profiles.length, 'perfis');
+
+    // Atualizar CONFIG.SELLERS e CONFIG.SELLER_META dinamicamente
+    profiles.forEach(profile => {
+      const key = profile.email.split('@')[0].toLowerCase();
+      const name = profile.display_name || profile.email;
+      const init = name.split(' ').map(w => w[0]).join('').substring(0, 2).toUpperCase();
+
+      dynamicSellers[key] = {
+        id: profile.id,
+        email: profile.email,
+        name: name,
+        init: init
+      };
+
+      CONFIG.SELLERS[key] = [key, profile.email.split('@')[0]];
+      CONFIG.SELLER_META[key] = {
+        name: name,
+        init: init,
+        roleta_ativa: true,
+        roleta_existe: true
+      };
+
+      console.log('[DEBUG] Adicionado:', key, name);
+    });
+
+    // Renderizar abas dinamicamente
+    renderDynamicTabs();
+    console.log(`✅ ${profiles.length} usuários carregados com sucesso`);
   } catch (err) {
-    console.error('[SANDBOX] Erro ao carregar vendedores:', err.message);
+    console.error('[ERROR] Exceção:', err);
   }
 }
 
