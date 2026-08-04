@@ -1730,6 +1730,116 @@ const CONFIG = {
 // NOTA: Para produção, mova API_KEY para proxy backend.
 
 // ================================================================
+// CARREGAMENTO DINÂMICO DE USUÁRIOS DO SUPABASE
+// ================================================================
+let dynamicSellers = {};
+let autoRefreshInterval = null;
+
+async function loadSellersFromSupabase() {
+  try {
+    const { data: profiles } = await _sb
+      .from('profiles')
+      .select('id, email, display_name, seller_key, is_active')
+      .eq('is_active', true)
+      .order('display_name');
+
+    if (profiles && profiles.length > 0) {
+      // Atualizar CONFIG.SELLERS e CONFIG.SELLER_META dinamicamente
+      profiles.forEach(profile => {
+        const key = (profile.seller_key || profile.email.split('@')[0]).toLowerCase();
+        const name = profile.display_name || profile.email;
+        const init = name.split(' ').map(w => w[0]).join('').substring(0, 2).toUpperCase();
+
+        dynamicSellers[key] = {
+          id: profile.id,
+          email: profile.email,
+          name: name,
+          init: init,
+          is_active: true
+        };
+
+        CONFIG.SELLERS[key] = [key, profile.email.split('@')[0]];
+        CONFIG.SELLER_META[key] = {
+          name: name,
+          init: init,
+          roleta_ativa: true,
+          roleta_existe: true
+        };
+      });
+
+      // Renderizar abas dinamicamente
+      renderDynamicTabs();
+      console.log(`✅ ${profiles.length} usuários carregados dinamicamente`);
+    }
+  } catch (err) {
+    console.error('[SANDBOX] Erro ao carregar vendedores:', err.message);
+  }
+}
+
+function renderDynamicTabs() {
+  const tabBar = document.querySelector('.tab-bar');
+  if (!tabBar) return;
+
+  // Limpar abas de vendedores (manter as globais)
+  const globalTabs = ['fechamentos', 'cmp', 'analise', 'avaliador', 'crmscore', 'roletas', 'perms', 'distribuicao'];
+  Array.from(tabBar.querySelectorAll('.tb')).forEach(tab => {
+    const onclick = tab.getAttribute('onclick');
+    if (onclick && !globalTabs.some(g => onclick.includes(`'${g}'`))) {
+      tab.remove();
+    }
+  });
+
+  // Adicionar abas dinâmicas para cada vendedor
+  Object.entries(dynamicSellers).forEach(([key, seller]) => {
+    if (!document.getElementById(`tb-${key}`)) {
+      const tab = document.createElement('button');
+      tab.className = 'tb';
+      tab.id = `tb-${key}`;
+      tab.setAttribute('onclick', `switchTab('${key}')`);
+      tab.innerHTML = `${seller.name} <span class="tb-pill" id="pill-${key}">–</span>`;
+
+      // Inserir antes do divisor
+      const divider = tabBar.querySelector('.tab-divider');
+      if (divider) {
+        divider.parentNode.insertBefore(tab, divider);
+      } else {
+        tabBar.appendChild(tab);
+      }
+
+      // Criar view correspondente
+      if (!document.getElementById(`view-${key}`)) {
+        const viewContainer = document.querySelector('.page').parentElement;
+        const view = document.createElement('div');
+        view.className = 'view';
+        view.id = `view-${key}`;
+        view.innerHTML = `
+          <div class="page">
+            <div class="hero">
+              <div class="hero-id">
+                <div class="avatar">${seller.init}</div>
+                <div>
+                  <div class="hero-name">${seller.name}</div>
+                  <div class="hero-sub">CRM-VENDAS · Carregando...</div>
+                </div>
+              </div>
+              <div class="kpi-row" id="kpi-${key}"></div>
+            </div>
+            <div class="chart-wrap"><canvas id="chart-${key}"></canvas></div>
+          </div>
+        `;
+        viewContainer.appendChild(view);
+      }
+    }
+  });
+}
+
+// Auto-refresh a cada 30 segundos para detectar novos usuários/exclusões
+function startAutoRefresh() {
+  if (autoRefreshInterval) clearInterval(autoRefreshInterval);
+  autoRefreshInterval = setInterval(loadSellersFromSupabase, 30000);
+}
+
+// ================================================================
 // FUNIL — Stages dinâmicos (lidos da API do ClickUp)
 // ================================================================
 let STAGES = []; // preenchido por buildStages() após cada fetch
@@ -4887,6 +4997,11 @@ async function logout() {
 (async () => {
   let session = { user: { id: 'sandbox', email: 'admin@sandbox.local' } };
   if (!session) { console.log('SANDBOX MODE: usando mock'); session = { user: { id: 'sandbox', email: 'admin@sandbox' } }; }
+
+  // ===== NOVO: Carregar vendedores dinamicamente do Supabase =====
+  await loadSellersFromSupabase();
+  startAutoRefresh();
+  // ===============================================================
 
   // Carregar perfil do usuário
   // SANDBOX: const { data: profile } = await _sb

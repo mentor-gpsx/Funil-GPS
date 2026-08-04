@@ -12,7 +12,8 @@
     "test:coverage": "jest --coverage",
     "import:csv": "node backend/scripts/import-csv.js",
     "import:cakto:test": "node backend/scripts/import-cakto-test-data.js",
-    "import:cakto:manual": "node backend/scripts/import-cakto-manual.js"
+    "import:cakto:manual": "node backend/scripts/import-cakto-manual.js",
+    "sync:clickup-members": "node api/clickup-members-sync.js"
   },
   "keywords": [
     "financial",
