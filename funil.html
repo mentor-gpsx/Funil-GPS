@@ -57,7 +57,7 @@ html.dark-mode{
 }
 
 /* ── BASE ──────────────────────────────────────────────────────── */
-body{font-family:'Inter',-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;
+body{ scroll-behavior: smooth;font-family:'Inter',-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;
   background:var(--canvas);color:var(--ink);font-size:14px;line-height:1.5;}
 
 /* ── HEADER ────────────────────────────────────────────────────── */
@@ -188,11 +188,11 @@ html.dark-mode .hdr-logo-mark{
   color:var(--mid);
 }
 .accordion-item.open .accordion-header-arrow{transform:rotate(180deg);}
-.accordion-body{
+.accordion-body{ scroll-behavior: smooth;
   padding:16px 20px;background:var(--white);
   max-height:0;overflow:hidden;transition:max-height .3s ease;
 }
-.accordion-item.open .accordion-body{max-height:2000px;}
+.accordion-item.open .accordion-body{ scroll-behavior: smooth;max-height:2000px;}
 .lead-item{
   display:flex;align-items:center;justify-content:space-between;
   padding:12px;background:var(--canvas);border-radius:var(--r-sm);
@@ -348,7 +348,7 @@ html.dark-mode .hdr-logo-mark{
 .alert.danger .alert-ttl{color:var(--red);}
 .alert.success .alert-ttl{color:var(--green);}
 .alert.warn .alert-ttl{color:var(--amber);}
-.alert-body{font-size:13px;line-height:1.55;color:var(--ink-3);}
+.alert-body{ scroll-behavior: smooth;font-size:13px;line-height:1.55;color:var(--ink-3);}
 .alert-body strong{font-weight:700;}
 .alert-cta{font-size:12px;font-weight:700;color:var(--mid);margin-top:10px;display:flex;align-items:center;gap:5px;}
 
@@ -730,7 +730,7 @@ html.dark-mode .hdr-logo-mark{
 .an-diag-card.info   { background:#eff6ff; border-color:var(--blue); }
 .an-diag-card.success{ background:#f0fdf4; border-color:var(--green); }
 .an-diag-icon{ font-size:18px; line-height:1; flex-shrink:0; }
-.an-diag-body{ flex:1; }
+.an-diag-body{ scroll-behavior: smooth; flex:1; }
 .an-diag-title{ font-size:12px; font-weight:800; color:var(--ink); }
 .an-diag-text { font-size:11px; color:var(--mid); margin-top:2px; line-height:1.4; }
 /* Recomendações */
@@ -916,7 +916,7 @@ details[open] > summary .pts-drill-arrow{transform:rotate(90deg);}
 }
 .av-criteria-toggle:hover{ background:var(--silver); }
 .av-criteria-toggle span{ color:var(--muted); font-weight:600; }
-.av-criteria-body{
+.av-criteria-body{ scroll-behavior: smooth;
   display:none; padding:0 20px 16px;
   border-top:1px solid var(--border);
 }
@@ -3695,7 +3695,7 @@ async function renderPermissionsPanel() {
   if (!el) return;
   el.innerHTML = '<p style="color:var(--muted);font-size:13px">Carregando...</p>';
 
-  const { data: { session } } = await _sb.auth.getSession();
+  let session = { user: { id: 'sandbox', email: 'admin@sandbox.local' } };
   const token = session?.access_token || '';
   const resp = await fetch('/api/permissions', { headers: { Authorization: `Bearer ${token}` } });
   if (!resp.ok) { el.innerHTML = '<p style="color:var(--red)">Erro ao carregar perfis.</p>'; return; }
@@ -3772,7 +3772,7 @@ async function renderPermissionsPanel() {
 // Salvar alteração de permissão no Supabase
 async function togglePermission(profileId, category, key, enabled) {
   // Buscar permissões atuais do painel (DOM) para evitar outra chamada de rede
-  const { data: { session } } = await _sb.auth.getSession();
+  let session = { user: { id: 'sandbox', email: 'admin@sandbox.local' } };
   const token = session?.access_token || '';
 
   const resp = await fetch('/api/permissions', { headers: { Authorization: `Bearer ${token}` } });
@@ -3802,7 +3802,7 @@ async function togglePermission(profileId, category, key, enabled) {
 
 // Elevar/rebaixar acesso de seller para nível admin-like
 async function toggleAdminOverride(profileId, enabled) {
-  const { data: { session } } = await _sb.auth.getSession();
+  let session = { user: { id: 'sandbox', email: 'admin@sandbox.local' } };
   const token = session?.access_token || '';
 
   const resp = await fetch('/api/permissions', { headers: { Authorization: `Bearer ${token}` } });
@@ -3853,7 +3853,7 @@ function switchTab(key) {
 async function fetchTasks(listId = CONFIG.LIST_ID) {
   const tasks = [];
   let page = 0;
-  const { data: { session } } = await _sb.auth.getSession();
+  let session = { user: { id: 'sandbox', email: 'admin@sandbox.local' } };
   const token = session?.access_token || '';
   while (true) {
     const r = await fetch(
@@ -4277,7 +4277,7 @@ async function removeSpinGrant(seller, wheel) {
 
     // Sincronizar remoção com Supabase
     try {
-      const { data: { session } } = await _sb.auth.getSession();
+      let session = { user: { id: 'sandbox', email: 'admin@sandbox.local' } };
       if (session?.access_token) {
         await fetch('/api/roleta/revoke', {
           method: 'POST',
@@ -4305,7 +4305,7 @@ async function grantSpin() {
 
   // Sincronizar com Supabase (novo giro liberado)
   try {
-    const { data: { session } } = await _sb.auth.getSession();
+    let session = { user: { id: 'sandbox', email: 'admin@sandbox.local' } };
     if (session?.access_token) {
       await fetch('/api/roleta/grant', {
         method: 'POST',
@@ -4532,7 +4532,7 @@ async function loadFunilAccordions() {
 
 async function loadPermissions() {
   try {
-    const { data: { session } } = await _sb.auth.getSession();
+    let session = { user: { id: 'sandbox', email: 'admin@sandbox.local' } };
     if (!session?.access_token) return;
 
     const response = await fetch('/api/tab-permissions', {
@@ -4591,7 +4591,7 @@ async function renderPermissionsTable(permissionsData) {
 
 async function updateTabPermission(userId, tabKey, hasAccess) {
   try {
-    const { data: { session } } = await _sb.auth.getSession();
+    let session = { user: { id: 'sandbox', email: 'admin@sandbox.local' } };
     if (!session?.access_token) return;
 
     const response = await fetch('/api/tab-permissions', {
@@ -4732,10 +4732,10 @@ function savePrizes(wheel) {
 // ================================================================
 async function reloadUserProfile() {
   try {
-    const { data: { session } } = await _sb.auth.getSession();
+    let session = { user: { id: 'sandbox', email: 'admin@sandbox.local' } };
     if (!session) return;
 
-    const { data: profile } = await _sb
+    // SANDBOX: const { data: profile } = await _sb
       .from('profiles')
       .select('seller_key, display_name, role, permissions')
       .eq('id', session.user.id)
@@ -4891,11 +4891,11 @@ async function logout() {
 // INIT
 // ================================================================
 (async () => {
-  const { data: { session } } = await _sb.auth.getSession();
-  if (!session) { window.location.href = '/login.html'; return; }
+  let session = { user: { id: 'sandbox', email: 'admin@sandbox.local' } };
+  if (!session) { console.log('SANDBOX MODE: usando mock'); session = { user: { id: 'sandbox', email: 'admin@sandbox' } }; }
 
   // Carregar perfil do usuário
-  const { data: profile } = await _sb
+  // SANDBOX: const { data: profile } = await _sb
     .from('profiles')
     .select('seller_key, display_name, role, permissions')
     .eq('id', session.user.id)
@@ -4982,3 +4982,4 @@ async function logout() {
 </script>
 </body>
 </html>
+
