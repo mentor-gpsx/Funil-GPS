@@ -5014,8 +5014,15 @@ async function logout() {
   if (!session) { console.log('SANDBOX MODE: usando mock'); session = { user: { id: 'sandbox', email: 'admin@sandbox' } }; }
 
   // ===== NOVO: Carregar vendedores dinamicamente do Supabase =====
-  await loadSellersFromSupabase();
+  console.log('[INIT] Antes de loadSellersFromSupabase');
+  try {
+    await loadSellersFromSupabase();
+    console.log('[INIT] Depois de loadSellersFromSupabase');
+  } catch (e) {
+    console.error('[INIT] Erro em loadSellersFromSupabase:', e);
+  }
   startAutoRefresh();
+  console.log('[INIT] startAutoRefresh chamado');
   // ===============================================================
 
   // Carregar perfil do usuário
