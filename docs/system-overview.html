@@ -1,0 +1,699 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Sistema de Comissão e Financeiro - Visão Geral</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+</head>
+<body class="bg-gray-50">
+    <!-- Header -->
+    <header class="bg-gradient-to-r from-blue-600 to-blue-800 text-white p-6 shadow-lg">
+        <div class="max-w-7xl mx-auto">
+            <h1 class="text-3xl font-bold mb-2">💰 Sistema de Comissão e Financeiro</h1>
+            <p class="text-blue-100">Plataforma Empresarial de Controle Financeiro e Comissões</p>
+        </div>
+    </header>
+
+    <div class="max-w-7xl mx-auto p-6">
+        <!-- Arquitetura Overview -->
+        <section class="mb-12">
+            <h2 class="text-2xl font-bold text-gray-800 mb-6">📋 Arquitetura do Sistema</h2>
+            <div class="bg-white rounded-lg shadow-md p-6 overflow-x-auto">
+                <div class="min-w-full">
+                    <svg width="100%" height="300" viewBox="0 0 1000 300">
+                        <!-- Frontend -->
+                        <rect x="50" y="20" width="200" height="80" fill="#3b82f6" stroke="#1e40af" stroke-width="2" rx="4"/>
+                        <text x="150" y="65" text-anchor="middle" fill="white" font-size="16" font-weight="bold">Frontend</text>
+                        <text x="150" y="85" text-anchor="middle" fill="white" font-size="12">Next.js 14 + TypeScript</text>
+
+                        <!-- Backend -->
+                        <rect x="350" y="20" width="200" height="80" fill="#10b981" stroke="#047857" stroke-width="2" rx="4"/>
+                        <text x="450" y="65" text-anchor="middle" fill="white" font-size="16" font-weight="bold">Backend</text>
+                        <text x="450" y="85" text-anchor="middle" fill="white" font-size="12">NestJS + TypeScript</text>
+
+                        <!-- Database -->
+                        <rect x="650" y="20" width="200" height="80" fill="#f59e0b" stroke="#b45309" stroke-width="2" rx="4"/>
+                        <text x="750" y="65" text-anchor="middle" fill="white" font-size="16" font-weight="bold">Database</text>
+                        <text x="750" y="85" text-anchor="middle" fill="white" font-size="12">PostgreSQL 15+</text>
+
+                        <!-- Redis -->
+                        <rect x="50" y="150" width="200" height="80" fill="#ef4444" stroke="#991b1b" stroke-width="2" rx="4"/>
+                        <text x="150" y="195" text-anchor="middle" fill="white" font-size="16" font-weight="bold">Cache & Queue</text>
+                        <text x="150" y="215" text-anchor="middle" fill="white" font-size="12">Redis + Bull</text>
+
+                        <!-- Audit -->
+                        <rect x="350" y="150" width="200" height="80" fill="#8b5cf6" stroke="#5b21b6" stroke-width="2" rx="4"/>
+                        <text x="450" y="195" text-anchor="middle" fill="white" font-size="16" font-weight="bold">Auditoria</text>
+                        <text x="450" y="215" text-anchor="middle" fill="white" font-size="12">Logs Completos</text>
+
+                        <!-- Monitoring -->
+                        <rect x="650" y="150" width="200" height="80" fill="#06b6d4" stroke="#0e7490" stroke-width="2" rx="4"/>
+                        <text x="750" y="195" text-anchor="middle" fill="white" font-size="16" font-weight="bold">Monitoring</text>
+                        <text x="750" y="215" text-anchor="middle" fill="white" font-size="12">Prometheus + Logs</text>
+
+                        <!-- Setas -->
+                        <path d="M 250 60 L 350 60" stroke="#333" stroke-width="2" fill="none" marker-end="url(#arrowhead)"/>
+                        <path d="M 550 60 L 650 60" stroke="#333" stroke-width="2" fill="none" marker-end="url(#arrowhead)"/>
+                        <path d="M 150 100 L 150 150" stroke="#333" stroke-width="2" fill="none" marker-end="url(#arrowhead)"/>
+                        <path d="M 450 100 L 450 150" stroke="#333" stroke-width="2" fill="none" marker-end="url(#arrowhead)"/>
+
+                        <defs>
+                            <marker id="arrowhead" markerWidth="10" markerHeight="10" refX="9" refY="3" orient="auto">
+                                <polygon points="0 0, 10 3, 0 6" fill="#333" />
+                            </marker>
+                        </defs>
+                    </svg>
+                </div>
+            </div>
+        </section>
+
+        <!-- Fluxos de Negócio -->
+        <section class="mb-12">
+            <h2 class="text-2xl font-bold text-gray-800 mb-6">🔄 Fluxos de Negócio</h2>
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <!-- Fluxo 1 -->
+                <div class="bg-white rounded-lg shadow-md p-6">
+                    <h3 class="text-lg font-bold text-gray-800 mb-4">📊 Fluxo de Venda + Comissão</h3>
+                    <ol class="space-y-3">
+                        <li class="flex items-start">
+                            <span class="inline-flex items-center justify-center h-8 w-8 rounded-full bg-blue-100 text-blue-600 mr-3 text-sm">1</span>
+                            <span>Venda Lançada no Sistema</span>
+                        </li>
+                        <li class="flex items-start">
+                            <span class="inline-flex items-center justify-center h-8 w-8 rounded-full bg-blue-100 text-blue-600 mr-3 text-sm">2</span>
+                            <span>Sistema Calcula Comissão Automáticamente</span>
+                        </li>
+                        <li class="flex items-start">
+                            <span class="inline-flex items-center justify-center h-8 w-8 rounded-full bg-blue-100 text-blue-600 mr-3 text-sm">3</span>
+                            <span>Registra Entrada Financeira</span>
+                        </li>
+                        <li class="flex items-start">
+                            <span class="inline-flex items-center justify-center h-8 w-8 rounded-full bg-blue-100 text-blue-600 mr-3 text-sm">4</span>
+                            <span>Enfileira para Processamento</span>
+                        </li>
+                        <li class="flex items-start">
+                            <span class="inline-flex items-center justify-center h-8 w-8 rounded-full bg-blue-100 text-blue-600 mr-3 text-sm">5</span>
+                            <span>Registra em Auditoria</span>
+                        </li>
+                        <li class="flex items-start">
+                            <span class="inline-flex items-center justify-center h-8 w-8 rounded-full bg-blue-100 text-blue-600 mr-3 text-sm">6</span>
+                            <span>Disponível para Aprovação</span>
+                        </li>
+                    </ol>
+                </div>
+
+                <!-- Fluxo 2 -->
+                <div class="bg-white rounded-lg shadow-md p-6">
+                    <h3 class="text-lg font-bold text-gray-800 mb-4">💳 Fluxo de Recebimento</h3>
+                    <ol class="space-y-3">
+                        <li class="flex items-start">
+                            <span class="inline-flex items-center justify-center h-8 w-8 rounded-full bg-green-100 text-green-600 mr-3 text-sm">1</span>
+                            <span>Entrada Registrada (PIX, TED, Boleto)</span>
+                        </li>
+                        <li class="flex items-start">
+                            <span class="inline-flex items-center justify-center h-8 w-8 rounded-full bg-green-100 text-green-600 mr-3 text-sm">2</span>
+                            <span>Sistema Valida o Pagamento</span>
+                        </li>
+                        <li class="flex items-start">
+                            <span class="inline-flex items-center justify-center h-8 w-8 rounded-full bg-green-100 text-green-600 mr-3 text-sm">3</span>
+                            <span>Atualiza Fluxo de Caixa</span>
+                        </li>
+                        <li class="flex items-start">
+                            <span class="inline-flex items-center justify-center h-8 w-8 rounded-full bg-green-100 text-green-600 mr-3 text-sm">4</span>
+                            <span>Notifica Vendedor</span>
+                        </li>
+                        <li class="flex items-start">
+                            <span class="inline-flex items-center justify-center h-8 w-8 rounded-full bg-green-100 text-green-600 mr-3 text-sm">5</span>
+                            <span>Registra Auditoria</span>
+                        </li>
+                    </ol>
+                </div>
+
+                <!-- Fluxo 3 -->
+                <div class="bg-white rounded-lg shadow-md p-6">
+                    <h3 class="text-lg font-bold text-gray-800 mb-4">🎯 Fluxo de Comissão Escalonada</h3>
+                    <ol class="space-y-3">
+                        <li class="flex items-start">
+                            <span class="inline-flex items-center justify-center h-8 w-8 rounded-full bg-purple-100 text-purple-600 mr-3 text-sm">1</span>
+                            <span>Regra de Comissão Definida</span>
+                        </li>
+                        <li class="flex items-start">
+                            <span class="inline-flex items-center justify-center h-8 w-8 rounded-full bg-purple-100 text-purple-600 mr-3 text-sm">2</span>
+                            <span>Coletar Vendas do Período</span>
+                        </li>
+                        <li class="flex items-start">
+                            <span class="inline-flex items-center justify-center h-8 w-8 rounded-full bg-purple-100 text-purple-600 mr-3 text-sm">3</span>
+                            <span>Calcular Escalas/Tiers</span>
+                        </li>
+                        <li class="flex items-start">
+                            <span class="inline-flex items-center justify-center h-8 w-8 rounded-full bg-purple-100 text-purple-600 mr-3 text-sm">4</span>
+                            <span>Aplicar Bonificações/Descontos</span>
+                        </li>
+                        <li class="flex items-start">
+                            <span class="inline-flex items-center justify-center h-8 w-8 rounded-full bg-purple-100 text-purple-600 mr-3 text-sm">5</span>
+                            <span>Gerar Comissões</span>
+                        </li>
+                        <li class="flex items-start">
+                            <span class="inline-flex items-center justify-center h-8 w-8 rounded-full bg-purple-100 text-purple-600 mr-3 text-sm">6</span>
+                            <span>Processar PIX/Pagamento</span>
+                        </li>
+                    </ol>
+                </div>
+
+                <!-- Fluxo 4 -->
+                <div class="bg-white rounded-lg shadow-md p-6">
+                    <h3 class="text-lg font-bold text-gray-800 mb-4">🔄 Fluxo de Conciliação</h3>
+                    <ol class="space-y-3">
+                        <li class="flex items-start">
+                            <span class="inline-flex items-center justify-center h-8 w-8 rounded-full bg-orange-100 text-orange-600 mr-3 text-sm">1</span>
+                            <span>Comparar Esperado vs Real</span>
+                        </li>
+                        <li class="flex items-start">
+                            <span class="inline-flex items-center justify-center h-8 w-8 rounded-full bg-orange-100 text-orange-600 mr-3 text-sm">2</span>
+                            <span>Identificar Divergências</span>
+                        </li>
+                        <li class="flex items-start">
+                            <span class="inline-flex items-center justify-center h-8 w-8 rounded-full bg-orange-100 text-orange-600 mr-3 text-sm">3</span>
+                            <span>Gerar Relatório</span>
+                        </li>
+                        <li class="flex items-start">
+                            <span class="inline-flex items-center justify-center h-8 w-8 rounded-full bg-orange-100 text-orange-600 mr-3 text-sm">4</span>
+                            <span>Resolver Manualmente ou Automático</span>
+                        </li>
+                        <li class="flex items-start">
+                            <span class="inline-flex items-center justify-center h-8 w-8 rounded-full bg-orange-100 text-orange-600 mr-3 text-sm">5</span>
+                            <span>Finalizar Conciliação</span>
+                        </li>
+                    </ol>
+                </div>
+            </div>
+        </section>
+
+        <!-- Tipos de Comissão -->
+        <section class="mb-12">
+            <h2 class="text-2xl font-bold text-gray-800 mb-6">💸 7 Tipos de Comissão</h2>
+            <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+                <div class="bg-gradient-to-br from-blue-50 to-blue-100 rounded-lg p-4 border-l-4 border-blue-600">
+                    <h4 class="font-bold text-gray-800 mb-2">1️⃣ Comissão Fixa</h4>
+                    <p class="text-sm text-gray-700">Valor fixo por venda</p>
+                    <p class="text-xs text-gray-600 mt-2">Ex: R$ 50 por venda</p>
+                </div>
+                <div class="bg-gradient-to-br from-green-50 to-green-100 rounded-lg p-4 border-l-4 border-green-600">
+                    <h4 class="font-bold text-gray-800 mb-2">2️⃣ Comissão %</h4>
+                    <p class="text-sm text-gray-700">Percentual sobre a venda</p>
+                    <p class="text-xs text-gray-600 mt-2">Ex: 10% do valor líquido</p>
+                </div>
+                <div class="bg-gradient-to-br from-purple-50 to-purple-100 rounded-lg p-4 border-l-4 border-purple-600">
+                    <h4 class="font-bold text-gray-800 mb-2">3️⃣ Comissão Escalonada</h4>
+                    <p class="text-sm text-gray-700">Aumenta com volume</p>
+                    <p class="text-xs text-gray-600 mt-2">Ex: 5% até 10k, 7% acima</p>
+                </div>
+                <div class="bg-gradient-to-br from-orange-50 to-orange-100 rounded-lg p-4 border-l-4 border-orange-600">
+                    <h4 class="font-bold text-gray-800 mb-2">4️⃣ Comissão Performance</h4>
+                    <p class="text-sm text-gray-700">Por meta atingida</p>
+                    <p class="text-xs text-gray-600 mt-2">Ex: R$ 1000 se atingir 50k</p>
+                </div>
+                <div class="bg-gradient-to-br from-red-50 to-red-100 rounded-lg p-4 border-l-4 border-red-600">
+                    <h4 class="font-bold text-gray-800 mb-2">5️⃣ Comissão Recorrente</h4>
+                    <p class="text-sm text-gray-700">Mensal sobre base fixa</p>
+                    <p class="text-xs text-gray-600 mt-2">Ex: 5% todo mês</p>
+                </div>
+                <div class="bg-gradient-to-br from-pink-50 to-pink-100 rounded-lg p-4 border-l-4 border-pink-600">
+                    <h4 class="font-bold text-gray-800 mb-2">6️⃣ Comissão por Produto</h4>
+                    <p class="text-sm text-gray-700">Taxa varia por categoria</p>
+                    <p class="text-xs text-gray-600 mt-2">Ex: Produto A 8%, Produto B 12%</p>
+                </div>
+                <div class="bg-gradient-to-br from-cyan-50 to-cyan-100 rounded-lg p-4 border-l-4 border-cyan-600">
+                    <h4 class="font-bold text-gray-800 mb-2">7️⃣ Comissão Lucro Líquido</h4>
+                    <p class="text-sm text-gray-700">Sobre margem de lucro</p>
+                    <p class="text-xs text-gray-600 mt-2">Ex: 20% do lucro</p>
+                </div>
+            </div>
+        </section>
+
+        <!-- Dashboard Preview -->
+        <section class="mb-12">
+            <h2 class="text-2xl font-bold text-gray-800 mb-6">📊 Dashboard Executivo</h2>
+            <div class="bg-white rounded-lg shadow-md p-6">
+                <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
+                    <div class="bg-gradient-to-br from-blue-50 to-blue-100 rounded-lg p-4">
+                        <p class="text-gray-600 text-sm">Total Vendido</p>
+                        <p class="text-3xl font-bold text-blue-600">R$ 125.450</p>
+                        <p class="text-xs text-gray-500 mt-1">Mês atual</p>
+                    </div>
+                    <div class="bg-gradient-to-br from-green-50 to-green-100 rounded-lg p-4">
+                        <p class="text-gray-600 text-sm">Total Recebido</p>
+                        <p class="text-3xl font-bold text-green-600">R$ 98.300</p>
+                        <p class="text-xs text-gray-500 mt-1">Mês atual</p>
+                    </div>
+                    <div class="bg-gradient-to-br from-orange-50 to-orange-100 rounded-lg p-4">
+                        <p class="text-gray-600 text-sm">Pendente</p>
+                        <p class="text-3xl font-bold text-orange-600">R$ 27.150</p>
+                        <p class="text-xs text-gray-500 mt-1">Mês atual</p>
+                    </div>
+                    <div class="bg-gradient-to-br from-purple-50 to-purple-100 rounded-lg p-4">
+                        <p class="text-gray-600 text-sm">Comissão Total</p>
+                        <p class="text-3xl font-bold text-purple-600">R$ 8.340</p>
+                        <p class="text-xs text-gray-500 mt-1">Mês atual</p>
+                    </div>
+                </div>
+
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                    <div class="bg-gray-50 rounded-lg p-4">
+                        <h4 class="font-bold text-gray-800 mb-4">Fluxo Financeiro (Últimos 7 dias)</h4>
+                        <canvas id="chartFluxo"></canvas>
+                    </div>
+                    <div class="bg-gray-50 rounded-lg p-4">
+                        <h4 class="font-bold text-gray-800 mb-4">Status de Vendas</h4>
+                        <canvas id="chartStatus"></canvas>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- Domínios DDD -->
+        <section class="mb-12">
+            <h2 class="text-2xl font-bold text-gray-800 mb-6">🏗️ Domínios DDD</h2>
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <div class="bg-blue-50 rounded-lg p-6 border-2 border-blue-200">
+                    <h3 class="text-lg font-bold text-blue-900 mb-3">👥 Users (Autenticação)</h3>
+                    <ul class="text-sm text-gray-700 space-y-2">
+                        <li>✓ Usuários do sistema</li>
+                        <li>✓ Roles: ADMIN, FINANCEIRO, GESTOR, COMERCIAL, AUDITOR</li>
+                        <li>✓ JWT + Refresh Token</li>
+                        <li>✓ Soft delete</li>
+                    </ul>
+                </div>
+
+                <div class="bg-green-50 rounded-lg p-6 border-2 border-green-200">
+                    <h3 class="text-lg font-bold text-green-900 mb-3">📊 Sales (Vendas)</h3>
+                    <ul class="text-sm text-gray-700 space-y-2">
+                        <li>✓ Gestão de vendedores</li>
+                        <li>✓ Cadastro de clientes</li>
+                        <li>✓ Lançamento de vendas</li>
+                        <li>✓ Auto-calcula comissão</li>
+                    </ul>
+                </div>
+
+                <div class="bg-purple-50 rounded-lg p-6 border-2 border-purple-200">
+                    <h3 class="text-lg font-bold text-purple-900 mb-3">💸 Commission (Comissões)</h3>
+                    <ul class="text-sm text-gray-700 space-y-2">
+                        <li>✓ 7 tipos de comissão</li>
+                        <li>✓ Calculadoras estratégia</li>
+                        <li>✓ Aprovação/Bloqueio/Estorno</li>
+                        <li>✓ Processamento assíncrono</li>
+                    </ul>
+                </div>
+
+                <div class="bg-orange-50 rounded-lg p-6 border-2 border-orange-200">
+                    <h3 class="text-lg font-bold text-orange-900 mb-3">💰 Financial (Financeiro)</h3>
+                    <ul class="text-sm text-gray-700 space-y-2">
+                        <li>✓ Entradas financeiras</li>
+                        <li>✓ Controle de pagamentos</li>
+                        <li>✓ Fluxo de caixa</li>
+                        <li>✓ Conciliação</li>
+                    </ul>
+                </div>
+
+                <div class="bg-red-50 rounded-lg p-6 border-2 border-red-200">
+                    <h3 class="text-lg font-bold text-red-900 mb-3">📋 Audit (Auditoria)</h3>
+                    <ul class="text-sm text-gray-700 space-y-2">
+                        <li>✓ Log de todas alterações</li>
+                        <li>✓ Valores antigos vs novos</li>
+                        <li>✓ Rastreio de usuário/IP</li>
+                        <li>✓ Relatórios de auditoria</li>
+                    </ul>
+                </div>
+
+                <div class="bg-cyan-50 rounded-lg p-6 border-2 border-cyan-200">
+                    <h3 class="text-lg font-bold text-cyan-900 mb-3">📊 Reports (Relatórios)</h3>
+                    <ul class="text-sm text-gray-700 space-y-2">
+                        <li>✓ Comissão por vendedor</li>
+                        <li>✓ Fluxo financeiro</li>
+                        <li>✓ Performance de vendas</li>
+                        <li>✓ Export PDF/Excel</li>
+                    </ul>
+                </div>
+            </div>
+        </section>
+
+        <!-- RBAC Matrix -->
+        <section class="mb-12">
+            <h2 class="text-2xl font-bold text-gray-800 mb-6">🔐 Controle de Acesso (RBAC)</h2>
+            <div class="bg-white rounded-lg shadow-md overflow-hidden">
+                <table class="w-full text-sm">
+                    <thead class="bg-gray-100 border-b">
+                        <tr>
+                            <th class="px-4 py-3 text-left font-semibold">Funcionalidade</th>
+                            <th class="px-4 py-3 text-center font-semibold">ADMIN</th>
+                            <th class="px-4 py-3 text-center font-semibold">FINANCEIRO</th>
+                            <th class="px-4 py-3 text-center font-semibold">GESTOR</th>
+                            <th class="px-4 py-3 text-center font-semibold">COMERCIAL</th>
+                            <th class="px-4 py-3 text-center font-semibold">AUDITOR</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr class="border-b hover:bg-gray-50">
+                            <td class="px-4 py-3">Dashboard</td>
+                            <td class="px-4 py-3 text-center">✅</td>
+                            <td class="px-4 py-3 text-center">✅</td>
+                            <td class="px-4 py-3 text-center">✅</td>
+                            <td class="px-4 py-3 text-center">✅</td>
+                            <td class="px-4 py-3 text-center">✅</td>
+                        </tr>
+                        <tr class="border-b hover:bg-gray-50">
+                            <td class="px-4 py-3">Gerenciar Usuários</td>
+                            <td class="px-4 py-3 text-center">✅</td>
+                            <td class="px-4 py-3 text-center">❌</td>
+                            <td class="px-4 py-3 text-center">❌</td>
+                            <td class="px-4 py-3 text-center">❌</td>
+                            <td class="px-4 py-3 text-center">❌</td>
+                        </tr>
+                        <tr class="border-b hover:bg-gray-50">
+                            <td class="px-4 py-3">Lançar Vendas</td>
+                            <td class="px-4 py-3 text-center">✅</td>
+                            <td class="px-4 py-3 text-center">❌</td>
+                            <td class="px-4 py-3 text-center">✅</td>
+                            <td class="px-4 py-3 text-center">✅</td>
+                            <td class="px-4 py-3 text-center">❌</td>
+                        </tr>
+                        <tr class="border-b hover:bg-gray-50">
+                            <td class="px-4 py-3">Aprovar Comissões</td>
+                            <td class="px-4 py-3 text-center">✅</td>
+                            <td class="px-4 py-3 text-center">✅</td>
+                            <td class="px-4 py-3 text-center">✅</td>
+                            <td class="px-4 py-3 text-center">❌</td>
+                            <td class="px-4 py-3 text-center">❌</td>
+                        </tr>
+                        <tr class="border-b hover:bg-gray-50">
+                            <td class="px-4 py-3">Registrar Pagamentos</td>
+                            <td class="px-4 py-3 text-center">✅</td>
+                            <td class="px-4 py-3 text-center">✅</td>
+                            <td class="px-4 py-3 text-center">❌</td>
+                            <td class="px-4 py-3 text-center">❌</td>
+                            <td class="px-4 py-3 text-center">❌</td>
+                        </tr>
+                        <tr class="border-b hover:bg-gray-50">
+                            <td class="px-4 py-3">Visualizar Auditoria</td>
+                            <td class="px-4 py-3 text-center">✅</td>
+                            <td class="px-4 py-3 text-center">✅</td>
+                            <td class="px-4 py-3 text-center">❌</td>
+                            <td class="px-4 py-3 text-center">❌</td>
+                            <td class="px-4 py-3 text-center">✅</td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+        </section>
+
+        <!-- Tech Stack -->
+        <section class="mb-12">
+            <h2 class="text-2xl font-bold text-gray-800 mb-6">🛠️ Stack Tecnológico</h2>
+            <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                <div class="bg-white rounded-lg shadow p-4 border-l-4 border-blue-500">
+                    <h4 class="font-bold text-gray-800 mb-2">Frontend</h4>
+                    <ul class="text-sm text-gray-600 space-y-1">
+                        <li>• Next.js 14 + TypeScript</li>
+                        <li>• TailwindCSS + Shadcn</li>
+                        <li>• Chart.js (Gráficos)</li>
+                        <li>• Zustand (State)</li>
+                        <li>• React Query (Data)</li>
+                    </ul>
+                </div>
+
+                <div class="bg-white rounded-lg shadow p-4 border-l-4 border-green-500">
+                    <h4 class="font-bold text-gray-800 mb-2">Backend</h4>
+                    <ul class="text-sm text-gray-600 space-y-1">
+                        <li>• NestJS + TypeScript</li>
+                        <li>• Prisma ORM</li>
+                        <li>• JWT Auth</li>
+                        <li>• Zod Validation</li>
+                        <li>• Class Validator</li>
+                    </ul>
+                </div>
+
+                <div class="bg-white rounded-lg shadow p-4 border-l-4 border-purple-500">
+                    <h4 class="font-bold text-gray-800 mb-2">Database</h4>
+                    <ul class="text-sm text-gray-600 space-y-1">
+                        <li>• PostgreSQL 15+</li>
+                        <li>• Prisma Migrations</li>
+                        <li>• Soft Delete</li>
+                        <li>• JSONB Config</li>
+                        <li>• RLS Policies</li>
+                    </ul>
+                </div>
+
+                <div class="bg-white rounded-lg shadow p-4 border-l-4 border-orange-500">
+                    <h4 class="font-bold text-gray-800 mb-2">Infrastructure</h4>
+                    <ul class="text-sm text-gray-600 space-y-1">
+                        <li>• Docker + Compose</li>
+                        <li>• GitHub Actions CI/CD</li>
+                        <li>• Turborepo Monorepo</li>
+                        <li>• Redis Cache/Queue</li>
+                        <li>• Bull.js Processing</li>
+                    </ul>
+                </div>
+
+                <div class="bg-white rounded-lg shadow p-4 border-l-4 border-red-500">
+                    <h4 class="font-bold text-gray-800 mb-2">Quality</h4>
+                    <ul class="text-sm text-gray-600 space-y-1">
+                        <li>• Jest Tests</li>
+                        <li>• Supertest API</li>
+                        <li>• ESLint + Prettier</li>
+                        <li>• Husky Hooks</li>
+                        <li>• 80%+ Coverage</li>
+                    </ul>
+                </div>
+
+                <div class="bg-white rounded-lg shadow p-4 border-l-4 border-cyan-500">
+                    <h4 class="font-bold text-gray-800 mb-2">Monitoring</h4>
+                    <ul class="text-sm text-gray-600 space-y-1">
+                        <li>• Winston Logging</li>
+                        <li>• Prometheus Metrics</li>
+                        <li>• Grafana Dashboards</li>
+                        <li>• OpenTelemetry</li>
+                        <li>• Error Tracking</li>
+                    </ul>
+                </div>
+            </div>
+        </section>
+
+        <!-- Timeline -->
+        <section class="mb-12">
+            <h2 class="text-2xl font-bold text-gray-800 mb-6">📅 Timeline de Implementação</h2>
+            <div class="space-y-4">
+                <div class="flex gap-4">
+                    <div class="flex-shrink-0">
+                        <div class="flex items-center justify-center h-12 w-12 rounded-full bg-blue-600 text-white font-bold">1</div>
+                    </div>
+                    <div class="flex-grow">
+                        <h4 class="font-bold text-gray-800">Semanas 1-2: Setup & Infraestrutura</h4>
+                        <p class="text-sm text-gray-600">Monorepo, Docker, CI/CD, Auth, Prisma</p>
+                    </div>
+                </div>
+                <div class="flex gap-4">
+                    <div class="flex-shrink-0">
+                        <div class="flex items-center justify-center h-12 w-12 rounded-full bg-green-600 text-white font-bold">2</div>
+                    </div>
+                    <div class="flex-grow">
+                        <h4 class="font-bold text-gray-800">Semanas 3-4: Backend Core</h4>
+                        <p class="text-sm text-gray-600">Users, Sales, Commission, Financial</p>
+                    </div>
+                </div>
+                <div class="flex gap-4">
+                    <div class="flex-shrink-0">
+                        <div class="flex items-center justify-center h-12 w-12 rounded-full bg-purple-600 text-white font-bold">3</div>
+                    </div>
+                    <div class="flex-grow">
+                        <h4 class="font-bold text-gray-800">Semana 5: Processamento Assíncrono</h4>
+                        <p class="text-sm text-gray-600">Queue Bull, Auditoria, Processamento</p>
+                    </div>
+                </div>
+                <div class="flex gap-4">
+                    <div class="flex-shrink-0">
+                        <div class="flex items-center justify-center h-12 w-12 rounded-full bg-orange-600 text-white font-bold">4</div>
+                    </div>
+                    <div class="flex-grow">
+                        <h4 class="font-bold text-gray-800">Semanas 6-7: Frontend</h4>
+                        <p class="text-sm text-gray-600">Dashboard, Formulários, Tabelas</p>
+                    </div>
+                </div>
+                <div class="flex gap-4">
+                    <div class="flex-shrink-0">
+                        <div class="flex items-center justify-center h-12 w-12 rounded-full bg-cyan-600 text-white font-bold">5</div>
+                    </div>
+                    <div class="flex-grow">
+                        <h4 class="font-bold text-gray-800">Semana 8: Relatórios</h4>
+                        <p class="text-sm text-gray-600">Relatórios, PDF/Excel, Gráficos</p>
+                    </div>
+                </div>
+                <div class="flex gap-4">
+                    <div class="flex-shrink-0">
+                        <div class="flex items-center justify-center h-12 w-12 rounded-full bg-pink-600 text-white font-bold">6</div>
+                    </div>
+                    <div class="flex-grow">
+                        <h4 class="font-bold text-gray-800">Semanas 9-10: QA & Deploy</h4>
+                        <p class="text-sm text-gray-600">Testes, Deploy, Produção</p>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- Checklist de Sucesso -->
+        <section class="bg-green-50 rounded-lg p-8 mb-12">
+            <h2 class="text-2xl font-bold text-green-900 mb-6">✅ Checklist de Sucesso</h2>
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <div>
+                    <h4 class="font-bold text-green-800 mb-3">Code Quality</h4>
+                    <ul class="space-y-2 text-sm">
+                        <li class="flex items-start">
+                            <span class="text-green-600 mr-2">✓</span>
+                            <span>TypeScript strict mode</span>
+                        </li>
+                        <li class="flex items-start">
+                            <span class="text-green-600 mr-2">✓</span>
+                            <span>ESLint zero errors</span>
+                        </li>
+                        <li class="flex items-start">
+                            <span class="text-green-600 mr-2">✓</span>
+                            <span>80%+ test coverage</span>
+                        </li>
+                        <li class="flex items-start">
+                            <span class="text-green-600 mr-2">✓</span>
+                            <span>Code review 2 approvals</span>
+                        </li>
+                    </ul>
+                </div>
+                <div>
+                    <h4 class="font-bold text-green-800 mb-3">Performance</h4>
+                    <ul class="space-y-2 text-sm">
+                        <li class="flex items-start">
+                            <span class="text-green-600 mr-2">✓</span>
+                            <span>API response < 500ms</span>
+                        </li>
+                        <li class="flex items-start">
+                            <span class="text-green-600 mr-2">✓</span>
+                            <span>Dashboard load < 2s</span>
+                        </li>
+                        <li class="flex items-start">
+                            <span class="text-green-600 mr-2">✓</span>
+                            <span>Reports < 5s</span>
+                        </li>
+                        <li class="flex items-start">
+                            <span class="text-green-600 mr-2">✓</span>
+                            <span>99.9% uptime</span>
+                        </li>
+                    </ul>
+                </div>
+                <div>
+                    <h4 class="font-bold text-green-800 mb-3">Business</h4>
+                    <ul class="space-y-2 text-sm">
+                        <li class="flex items-start">
+                            <span class="text-green-600 mr-2">✓</span>
+                            <span>7 tipos de comissão</span>
+                        </li>
+                        <li class="flex items-start">
+                            <span class="text-green-600 mr-2">✓</span>
+                            <span>100% auditoria</span>
+                        </li>
+                        <li class="flex items-start">
+                            <span class="text-green-600 mr-2">✓</span>
+                            <span>0 divergências financeiras</span>
+                        </li>
+                        <li class="flex items-start">
+                            <span class="text-green-600 mr-2">✓</span>
+                            <span>RBAC completo</span>
+                        </li>
+                    </ul>
+                </div>
+                <div>
+                    <h4 class="font-bold text-green-800 mb-3">Security</h4>
+                    <ul class="space-y-2 text-sm">
+                        <li class="flex items-start">
+                            <span class="text-green-600 mr-2">✓</span>
+                            <span>JWT + Refresh Token</span>
+                        </li>
+                        <li class="flex items-start">
+                            <span class="text-green-600 mr-2">✓</span>
+                            <span>Bcrypt + Hashing</span>
+                        </li>
+                        <li class="flex items-start">
+                            <span class="text-green-600 mr-2">✓</span>
+                            <span>CORS configured</span>
+                        </li>
+                        <li class="flex items-start">
+                            <span class="text-green-600 mr-2">✓</span>
+                            <span>Rate limiting</span>
+                        </li>
+                    </ul>
+                </div>
+            </div>
+        </section>
+
+        <!-- CTA -->
+        <section class="bg-gradient-to-r from-blue-600 to-blue-800 text-white rounded-lg p-8 text-center mb-12">
+            <h2 class="text-2xl font-bold mb-4">🚀 Pronto para Começar?</h2>
+            <p class="mb-6 text-blue-100">Documentação completa preparada. Próximo passo: Iniciar Fase 1 - Setup & Infraestrutura</p>
+            <div class="space-y-2">
+                <p class="text-sm">📄 <strong>3 Documentos Gerados:</strong></p>
+                <ul class="text-sm text-blue-100 space-y-1">
+                    <li>✓ FINANCE-SYSTEM-ARCHITECTURE.md</li>
+                    <li>✓ DATABASE-SCHEMA.md</li>
+                    <li>✓ IMPLEMENTATION-ROADMAP.md</li>
+                </ul>
+            </div>
+        </section>
+    </div>
+
+    <script>
+        // Chart 1: Fluxo Financeiro
+        const ctx1 = document.getElementById('chartFluxo').getContext('2d');
+        new Chart(ctx1, {
+            type: 'line',
+            data: {
+                labels: ['Seg', 'Ter', 'Qua', 'Qui', 'Sex', 'Sáb', 'Dom'],
+                datasets: [{
+                    label: 'Entradas',
+                    data: [12000, 15000, 18000, 16000, 20000, 5000, 8000],
+                    borderColor: '#10b981',
+                    backgroundColor: 'rgba(16, 185, 129, 0.1)',
+                    tension: 0.4,
+                    fill: true
+                }, {
+                    label: 'Saídas',
+                    data: [8000, 9000, 10000, 8500, 11000, 3000, 4000],
+                    borderColor: '#ef4444',
+                    backgroundColor: 'rgba(239, 68, 68, 0.1)',
+                    tension: 0.4,
+                    fill: true
+                }]
+            },
+            options: {
+                responsive: true,
+                plugins: { legend: { position: 'bottom' } }
+            }
+        });
+
+        // Chart 2: Status de Vendas
+        const ctx2 = document.getElementById('chartStatus').getContext('2d');
+        new Chart(ctx2, {
+            type: 'doughnut',
+            data: {
+                labels: ['Completada', 'Pendente', 'Cancelada'],
+                datasets: [{
+                    data: [65, 25, 10],
+                    backgroundColor: ['#10b981', '#f59e0b', '#ef4444'],
+                    borderColor: ['#fff', '#fff', '#fff'],
+                    borderWidth: 2
+                }]
+            },
+            options: {
+                responsive: true,
+                plugins: { legend: { position: 'bottom' } }
+            }
+        });
+    </script>
+</body>
+</html>
