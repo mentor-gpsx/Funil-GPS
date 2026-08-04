@@ -5003,12 +5003,8 @@ async function logout() {
   // ===============================================================
 
   // Carregar perfil do usuário
-  // SANDBOX: const { data: profile } = await _sb
-    .from('profiles')
-    .select('seller_key, display_name, role, permissions')
-    .eq('id', session.user.id)
-    .single();
-  _userProfile = profile || { role: 'seller', seller_key: null };
+  // SANDBOX: const { data: profile } = await _sb.from('profiles').select('seller_key, display_name, role, permissions').eq('id', session.user.id).single();
+  _userProfile = { role: 'admin', seller_key: null, display_name: 'Admin' };
 
   // Exibir nome no header
   const hdrUser = document.getElementById('hdr-user');
