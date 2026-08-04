@@ -1,0 +1,11 @@
+cd /tmp/Funil-GPS
+git add api/clickup-members-sync.js auto-login.html request-access.html package.json SETUP_CLICKUP_AUTO_LOGIN.md TOKEN_RENEWAL_GUIDE.md DEPLOY_INSTRUCTIONS.md
+git commit -m "feat: Add ClickUp auto-login system with token renewal
+
+- Add clickup-members-sync.js: Sincroniza membros ClickUp → Supabase
+- Add auto-login.html: Login automático com validação de token
+- Add request-access.html: Renovação de tokens expirados
+- Add TOKEN_RENEWAL_GUIDE.md: Documentação de renovação
+- Update package.json: Novo comando npm run sync:clickup-members"
+
+git push origin main
