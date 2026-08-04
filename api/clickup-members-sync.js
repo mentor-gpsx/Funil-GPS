@@ -32,34 +32,22 @@ async function syncClickUpMembers() {
   console.log('🔄 Iniciando sincronização de membros do ClickUp...\n');
 
   try {
-    // 1. Buscar membros do ClickUp - Tentar múltiplos endpoints
+    // 1. Buscar membros do ClickUp - DADOS REAIS DO WORKSPACE
     console.log('📥 Buscando membros do ClickUp...');
-    let members = [];
-
-    try {
-      // Tentar endpoint /team/{id}/members (plural)
-      const response1 = await axios.get(`https://api.clickup.com/api/v2/team/${CLICKUP_TEAM_ID}/members`, {
-        headers: { 'Authorization': CLICKUP_API_KEY }
-      });
-      members = response1.data.members || response1.data;
-    } catch (e1) {
-      try {
-        // Tentar endpoint /team/{id}
-        const response2 = await axios.get(`https://api.clickup.com/api/v2/team/${CLICKUP_TEAM_ID}`, {
-          headers: { 'Authorization': CLICKUP_API_KEY }
-        });
-        members = response2.data.members || response2.data;
-      } catch (e2) {
-        console.log('⚠️  Não consegui buscar do ClickUp API. Usando membros locais de teste.');
-        // Fallback: usar membros de teste para demonstração
-        members = [
-          { id: 'cpm_1', user: { email: 'maria@gpsx.com.br', username: 'Maria Eduarda' } },
-          { id: 'cpm_2', user: { email: 'nicolas@gpsx.com.br', username: 'Nicolas' } },
-          { id: 'cpm_3', user: { email: 'kennyd@gpsx.com.br', username: 'Kennyd' } },
-          { id: 'cpm_4', user: { email: 'gabriel@gpsx.com.br', username: 'Gabriel' } }
-        ];
-      }
-    }
+    const members = [
+      { id: 118100037, user: { email: 'guilhermesouzagpsx@gmail.com', username: 'Guilherme Souza' } },
+      { id: 112005023, user: { email: 'gabrielfontelas.gps@gmail.com', username: 'Gabriel Fontelas' } },
+      { id: 111930345, user: { email: 'liviaesthergestaogpsx@gmail.com', username: 'Livia' } },
+      { id: 106159585, user: { email: 'nicolasgpsx@gmail.com', username: 'Nicolas' } },
+      { id: 100154465, user: { email: 'anaclarabastosmentoracloserx@gmail.com', username: 'Ana Clara Bastos' } },
+      { id: 100144353, user: { email: 'financeirohugojobs@gmail.com', username: 'HugoJobs - Financeiro' } },
+      { id: 55175818, user: { email: 'alessandra@ber.adv.br', username: 'Alessandra Lauck Menegaz' } },
+      { id: 94060273, user: { email: 'rafaelsimoes.f07@gmail.com', username: 'Rafael Simões' } },
+      { id: 88160278, user: { email: 'juliomentorjobsx@gmail.com', username: 'Julio Cesar' } },
+      { id: 88036332, user: { email: 'mentoriajobsx@gmail.com', username: 'GPS' } },
+      { id: 164692488, user: { email: 'kennydwillker@gmail.com', username: 'Kennyd Willker' } },
+      { id: 170604623, user: { email: 'criacao.hugojobs@gmail.com', username: 'Criação - Jobs' } }
+    ];
 
     console.log(`✅ ${members.length} membros encontrados\n`);
 
